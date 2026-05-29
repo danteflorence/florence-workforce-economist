@@ -1,0 +1,112 @@
+[
+  {
+    "rank": 1,
+    "health_system": "Kaiser Permanente",
+    "health_system_id": "kaiser_permanente",
+    "n_facilities": 35,
+    "term_florence_fee_24mo": 442801203,
+    "term_net_savings_24mo": 907032519,
+    "savings_to_fee_ratio": 2.05,
+    "uses_placeholder_msp": false,
+    "bundle_path": "systems/Kaiser_Permanente/Kaiser_Permanente_bundle.zip"
+  },
+  {
+    "rank": 2,
+    "health_system": "Sutter Health",
+    "health_system_id": "sutter_health",
+    "n_facilities": 14,
+    "term_florence_fee_24mo": 113242043,
+    "term_net_savings_24mo": 806523730,
+    "savings_to_fee_ratio": 7.12,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/Sutter_Health/Sutter_Health_bundle.zip"
+  },
+  {
+    "rank": 3,
+    "health_system": "HCA",
+    "health_system_id": "hca",
+    "n_facilities": 52,
+    "term_florence_fee_24mo": 111245263,
+    "term_net_savings_24mo": 1079480571,
+    "savings_to_fee_ratio": 9.7,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/HCA/HCA_bundle.zip"
+  },
+  {
+    "rank": 4,
+    "health_system": "VA",
+    "health_system_id": "va",
+    "n_facilities": 95,
+    "term_florence_fee_24mo": 108094857,
+    "term_net_savings_24mo": 372092798,
+    "savings_to_fee_ratio": 3.44,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/VA/VA_bundle.zip"
+  },
+  {
+    "rank": 5,
+    "health_system": "Beth Israel Lahey Health",
+    "health_system_id": "beth_israel_lahey_health",
+    "n_facilities": 5,
+    "term_florence_fee_24mo": 91832933,
+    "term_net_savings_24mo": 702790763,
+    "savings_to_fee_ratio": 7.65,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/Beth_Israel_Lahey_Health/Beth_Israel_Lahey_Health_bundle.zip"
+  },
+  {
+    "rank": 6,
+    "health_system": "Stanford Health",
+    "health_system_id": "stanford_health",
+    "n_facilities": 2,
+    "term_florence_fee_24mo": 69818645,
+    "term_net_savings_24mo": 135965229,
+    "savings_to_fee_ratio": 1.95,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/Stanford_Health/Stanford_Health_bundle.zip"
+  },
+  {
+    "rank": 7,
+    "health_system": "UPMC",
+    "health_system_id": "upmc",
+    "n_facilities": 21,
+    "term_florence_fee_24mo": 68160549,
+    "term_net_savings_24mo": 248904483,
+    "savings_to_fee_ratio": 3.65,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/UPMC/UPMC_bundle.zip"
+  },
+  {
+    "rank": 8,
+    "health_system": "University of Chicago Medicine",
+    "health_system_id": "university_of_chicago_medicine",
+    "n_facilities": 1,
+    "term_florence_fee_24mo": 67669589,
+    "term_net_savings_24mo": 226182552,
+    "savings_to_fee_ratio": 3.34,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/University_of_Chicago_Medicine/University_of_Chicago_Medicine_bundle.zip"
+  },
+  {
+    "rank": 9,
+    "health_system": "Ascension",
+    "health_system_id": "ascension",
+    "n_facilities": 52,
+    "term_florence_fee_24mo": 57476198,
+    "term_net_savings_24mo": 244801848,
+    "savings_to_fee_ratio": 4.26,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/Ascension/Ascension_bundle.zip"
+  },
+  {
+    "rank": 10,
+    "health_system": "RWJBarnabas Health",
+    "health_system_id": "rwjbarnabas_health",
+    "n_facilities": 7,
+    "term_florence_fee_24mo": 49704627,
+    "term_net_savings_24mo": 123780698,
+    "savings_to_fee_ratio": 2.49,
+    "uses_placeholder_msp": true,
+    "bundle_path": "systems/RWJBarnabas_Health/RWJBarnabas_Health_bundle.zip"
+  }
+]

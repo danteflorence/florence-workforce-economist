@@ -1,0 +1,25 @@
+# Florence brand theme — matches the customer-facing deck language
+# (Newsreader serif headlines, Inter body, teal/navy palette)
+
+[theme]
+# Primary action color — Florence teal/mint (used in deck for "WITH FLORENCE" callouts)
+primaryColor = "#0BC5A0"
+
+# Page background — clean white
+backgroundColor = "#FFFFFF"
+
+# Secondary background — cool gray for cards / containers
+secondaryBackgroundColor = "#F4F6F8"
+
+# Body text — Florence deep navy
+textColor = "#0F1B2D"
+
+# Body font (sans-serif) — overridden by CSS to load Inter via Google Fonts
+font = "sans serif"
+
+[server]
+headless = true
+port = 8501
+
+[browser]
+gatherUsageStats = false

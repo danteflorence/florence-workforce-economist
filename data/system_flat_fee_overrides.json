@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "updated_at": "2026-05-29T02:52:38",
+  "overrides": [
+    {
+      "system_id": "kaiser_permanente",
+      "system_name": "Kaiser Permanente",
+      "flat_fee_per_rn": 50000.0,
+      "term_months": 36,
+      "note": "Reference deck calibration \u00b7 $50K \u00d7 36mo = $1,389/RN/mo",
+      "created_at": "2026-05-29T02:52:38"
+    }
+  ]
+}

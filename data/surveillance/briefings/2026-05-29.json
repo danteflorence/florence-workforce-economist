@@ -1,0 +1,170 @@
+{
+  "as_of": "2026-05-29",
+  "headline": "**Healthcare labor market is TIGHT.** As of March 2026, healthcare has 700K job openings against 463K quits (ratio: 1.51). Operators are competing for talent \u2014 Florence positioning is strongest in tight markets.",
+  "insights": [
+    {
+      "category": "Labor market",
+      "metric": "Healthcare job openings",
+      "current": 700.0,
+      "previous": 625.0,
+      "delta_pct": 12.0,
+      "period": "March 2026",
+      "prior_period": "February 2026",
+      "severity": "high",
+      "interpretation": "Openings rose 12.0% \u2014 demand intensifying. Florence pricing power increases."
+    },
+    {
+      "category": "Labor market",
+      "metric": "Healthcare quits",
+      "current": 463.0,
+      "previous": 426.0,
+      "delta_pct": 8.685446009389672,
+      "period": "March 2026",
+      "prior_period": "February 2026",
+      "severity": "high",
+      "interpretation": "Quits rose 8.7% \u2014 workers have more leverage. Wage pressure on operators."
+    },
+    {
+      "category": "Labor market",
+      "metric": "Healthcare layoffs",
+      "current": 157.0,
+      "previous": 162.0,
+      "delta_pct": -3.0864197530864197,
+      "period": "March 2026",
+      "prior_period": "February 2026",
+      "severity": "info",
+      "interpretation": "Layoffs fell 3.1% \u2014 stable headcount."
+    },
+    {
+      "category": "Employment & wages",
+      "metric": "Hospital sector employees",
+      "current": 23808.5,
+      "previous": 23754.6,
+      "delta_pct": 0.22690342081113324,
+      "period": "April 2026",
+      "prior_period": "March 2026",
+      "severity": "info",
+      "interpretation": "Hospital employment rose 0.23% \u2014 capacity growing."
+    },
+    {
+      "category": "Employment & wages",
+      "metric": "Nursing & residential care employees",
+      "current": 708.0,
+      "previous": 705.4,
+      "delta_pct": 0.3685851998865924,
+      "period": "April 2026",
+      "prior_period": "March 2026",
+      "severity": "info",
+      "interpretation": "rose 0.37%"
+    },
+    {
+      "category": "Employment & wages",
+      "metric": "Healthcare avg hourly earnings",
+      "current": 36.23,
+      "previous": 36.18,
+      "delta_pct": 0.1381978993919214,
+      "period": "April 2026",
+      "prior_period": "March 2026",
+      "severity": "info",
+      "interpretation": "Wages stable (rose 0.14%)."
+    }
+  ],
+  "news_mentions_7d": [
+    {
+      "source": "beckers_hospital",
+      "date_fetched": "2026-05-29 00:00:00",
+      "title": "Hospital CEO turnover rises 32% year over year: 6 things to know",
+      "link": "https://www.beckershospitalreview.com/hospital-executive-moves/hospital-ceo-turnover-rises-32-year-over-year-6-things-to-know/",
+      "pubDate": "Thu, 28 May 2026 21:54:52 +0000",
+      "systems": "[]",
+      "keywords": "['ceo']",
+      "systems_str": NaN,
+      "keywords_str": "ceo"
+    },
+    {
+      "source": "beckers_hospital",
+      "date_fetched": "2026-05-29 00:00:00",
+      "title": "University Hospitals launches innovation program for  startups",
+      "link": "https://www.beckershospitalreview.com/healthcare-information-technology/innovation/university-hospitals-launches-innovation-program-for-startups/",
+      "pubDate": "Thu, 28 May 2026 21:40:34 +0000",
+      "systems": "[]",
+      "keywords": "['rn ']",
+      "systems_str": NaN,
+      "keywords_str": "rn "
+    },
+    {
+      "source": "beckers_hospital",
+      "date_fetched": "2026-05-29 00:00:00",
+      "title": "OSF HealthCare\u2019s rural recruitment pitch: Come home",
+      "link": "https://www.beckershospitalreview.com/workforce/osf-healthcares-rural-recruitment-pitch-come-home/",
+      "pubDate": "Thu, 28 May 2026 21:39:19 +0000",
+      "systems": "[]",
+      "keywords": "['workforce']",
+      "systems_str": NaN,
+      "keywords_str": "workforce"
+    },
+    {
+      "source": "beckers_hospital",
+      "date_fetched": "2026-05-29 00:00:00",
+      "title": "70% of staff are housing-insecure: How 1 hospital is protecting its workforce",
+      "link": "https://www.beckershospitalreview.com/quality/70-of-staff-are-housing-insecure-how-1-hospital-is-protecting-its-workforce/",
+      "pubDate": "Thu, 28 May 2026 21:36:27 +0000",
+      "systems": "[]",
+      "keywords": "['workforce', 'leadership']",
+      "systems_str": NaN,
+      "keywords_str": "workforce|leadership"
+    },
+    {
+      "source": "beckers_hospital",
+      "date_fetched": "2026-05-29 00:00:00",
+      "title": "567 top hospitals for nurse communication",
+      "link": "https://www.beckershospitalreview.com/quality/nursing/567-top-hospitals-for-nurse-communication/",
+      "pubDate": "Thu, 28 May 2026 21:34:06 +0000",
+      "systems": "[]",
+      "keywords": "['nurse']",
+      "systems_str": NaN,
+      "keywords_str": "nurse"
+    },
+    {
+      "source": "beckers_hospital",
+      "date_fetched": "2026-05-29 00:00:00",
+      "title": "The FTC\u2019s new healthcare playbook: What hospital leaders should know",
+      "link": "https://www.beckershospitalreview.com/legal-regulatory-issues/the-ftcs-new-healthcare-playbook-what-hospital-leaders-should-know/",
+      "pubDate": "Thu, 28 May 2026 21:21:42 +0000",
+      "systems": "[]",
+      "keywords": "['agency']",
+      "systems_str": NaN,
+      "keywords_str": "agency"
+    },
+    {
+      "source": "fierce_healthcare",
+      "date_fetched": "2026-05-29 00:00:00",
+      "title": "Revenue with respect: Applying the golden rule to patient pay",
+      "link": "https://www.fiercehealthcare.com/resource/revenue-respect-applying-golden-rule-patient-pay",
+      "pubDate": "Thu, 14 May 2026 13:35:31 +0000",
+      "systems": "[]",
+      "keywords": "['rn ', 'revenue']",
+      "systems_str": NaN,
+      "keywords_str": "rn |revenue"
+    },
+    {
+      "source": "fierce_healthcare",
+      "date_fetched": "2026-05-29 00:00:00",
+      "title": "Healthcare Leadership in the Age of Complexity",
+      "link": "https://www.fiercehealthcare.com/resource/healthcare-leadership-age-complexity",
+      "pubDate": "Tue, 21 Apr 2026 18:56:45 +0000",
+      "systems": "[]",
+      "keywords": "['rn ', 'leadership']",
+      "systems_str": NaN,
+      "keywords_str": "rn |leadership"
+    }
+  ],
+  "ownership_changes_today": [],
+  "forecast_narrative": "12-month projection: openings/quits ratio 1.51 \u2192 1.54. Florence pricing power expanding over the next year.",
+  "feeds_status": {
+    "jolts_healthcare": "current",
+    "ces_rn": "current",
+    "news_feeds": "current",
+    "forecasts": "current"
+  }
+}

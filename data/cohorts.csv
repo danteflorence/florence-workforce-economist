@@ -1,0 +1,4 @@
+cohort_id,cohort_name,start_year,start_quarter,target_size,actual_size,status,origin_country,program_type,expected_start_year,expected_start_quarter,notes
+2024-Q3-PHI,Q3 2024 Philippines Cohort,2024,3,30,28,deployed,Philippines,F-1 student visa pipeline,2025,2,First fully-deployed cohort under v2 program.
+2024-Q4-IND,Q4 2024 India Cohort,2024,4,25,24,in_pipeline,India,F-1 student visa pipeline,2025,3,
+2025-Q1-PHI,Q1 2025 Philippines Cohort,2025,1,40,38,in_pipeline,Philippines,F-1 student visa pipeline,2025,4,

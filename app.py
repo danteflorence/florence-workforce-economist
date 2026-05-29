@@ -1,0 +1,4076 @@
+"""
+Florence Workforce Economist — internal pricing tool.
+
+Run with:
+    streamlit run app.py
+
+National dynamic pricing engine. For every Medicare-registered U.S. hospital,
+runs the market-sensitive pricing engine, surfaces the financial picture for
+all parties (hospital, partner channel, Florence net), and lets you generate a
+proposal for any hospital or health system.
+"""
+
+from __future__ import annotations
+
+from datetime import date, datetime
+from pathlib import Path
+
+import pandas as pd
+import streamlit as st
+
+from pricing_batch import (
+    calibration_sweep,
+    load_universe,
+    market_aggregate,
+    price_batch,
+    row_to_profile,
+)
+from pricing_engine import (
+    Calibration,
+    Channel,
+    CohortMix,
+    PricingMode,
+    REQUIRED_COMPLIANCE_SENTENCE,
+    price,
+    render_evidence_pack,
+)
+from excel_writer import write_hospital_workbook, write_system_workbook
+from exec_summary import build_hospital_exec_summary, build_system_exec_summary
+from customer_deck import build_deck_from_system_recs
+import system_overrides as sysov
+import io
+import tempfile
+import zipfile
+
+DATA_DIR = Path(__file__).parent / "data"
+
+st.set_page_config(
+    page_title="Florence Workforce Economist",
+    page_icon="🩺",
+    layout="wide",
+)
+
+
+# ---------------------------------------------------------------------------
+# Florence brand design system — matches the customer-facing deck language
+# ---------------------------------------------------------------------------
+FLORENCE_TEAL = "#0BC5A0"
+FLORENCE_TEAL_DARK = "#089478"
+FLORENCE_NAVY = "#0F1B2D"
+FLORENCE_NAVY_SOFT = "#1A2A44"
+FLORENCE_GRAY = "#F4F6F8"
+FLORENCE_GRAY_BORDER = "#E5E8EE"
+FLORENCE_INK = "#0F1B2D"
+FLORENCE_INK_MUTED = "#5B6675"
+
+FLORENCE_CSS = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    --f-teal: #0BC5A0;
+    --f-teal-dark: #089478;
+    --f-navy: #0F1B2D;
+    --f-navy-soft: #1A2A44;
+    --f-gray: #F4F6F8;
+    --f-border: #E5E8EE;
+    --f-ink: #0F1B2D;
+    --f-muted: #5B6675;
+}
+
+/* Base typography — Inter for body. Apply only to root elements;
+   inheritance handles the rest. NEVER apply to bare span or Material icons break. */
+html, body, .stApp {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+/* Material icon spans use Streamlit's Material Symbols Rounded font.
+   We must force this explicitly because html-level Inter inherits down. */
+[data-testid="stIconMaterial"],
+.material-symbols-rounded,
+.material-symbols-outlined {
+    font-family: "Material Symbols Rounded", "Material Symbols Outlined" !important;
+}
+
+/* Editorial serif for ALL headings (h1-h4) — matches the deck */
+h1, h2, h3, h4,
+[data-testid="stMarkdownContainer"] h1,
+[data-testid="stMarkdownContainer"] h2,
+[data-testid="stMarkdownContainer"] h3,
+[data-testid="stMarkdownContainer"] h4 {
+    font-family: 'Newsreader', 'Source Serif Pro', Georgia, serif !important;
+    color: var(--f-navy);
+    font-weight: 600;
+    letter-spacing: -0.015em;
+}
+h1 { font-size: 2.6rem; line-height: 1.1; }
+h2 { font-size: 2.0rem; line-height: 1.15; }
+h3 { font-size: 1.45rem; line-height: 1.2; }
+
+/* Tightened captions in muted gray */
+[data-testid="stCaptionContainer"], .stCaption {
+    color: var(--f-muted) !important;
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.875rem;
+}
+
+/* === Brand header strip === */
+.florence-brand-strip {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0 16px 0;
+    border-bottom: 1px solid var(--f-border);
+    margin-bottom: 22px;
+}
+.florence-mark {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 1.25rem; font-weight: 600; color: var(--f-navy);
+}
+.florence-mark .f-box {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; background: var(--f-teal);
+    border-radius: 6px; color: white; font-weight: 700;
+    font-family: 'Inter', sans-serif; font-size: 1rem;
+}
+.florence-section-tag {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: var(--f-muted);
+}
+
+/* === All-caps tracked section labels (deck-style "01 · THE OPPORTUNITY") === */
+.florence-eyebrow {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--f-teal-dark);
+    margin: 6px 0 10px 0;
+}
+
+/* === Deck-style comparison cards (TODAY vs WITH FLORENCE) === */
+.florence-card {
+    border-radius: 12px;
+    padding: 28px 30px;
+    height: 100%;
+    box-sizing: border-box;
+}
+.florence-card.today {
+    background: var(--f-gray);
+    border: 1px solid var(--f-border);
+}
+.florence-card.with-florence {
+    background: var(--f-teal);
+    color: white;
+}
+.florence-card .card-label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.22em; text-transform: uppercase;
+    color: var(--f-muted);
+    margin-bottom: 14px;
+}
+.florence-card.with-florence .card-label { color: rgba(255,255,255,0.85); }
+.florence-card .card-number {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 3.6rem; font-weight: 600;
+    line-height: 1;
+    color: var(--f-navy);
+    margin: 4px 0 6px 0;
+}
+.florence-card.with-florence .card-number { color: white; }
+.florence-card .card-unit {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 1.4rem; font-weight: 400;
+    color: var(--f-muted);
+}
+.florence-card.with-florence .card-unit { color: rgba(255,255,255,0.9); }
+.florence-card .card-headline {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 1.25rem; font-weight: 600;
+    color: var(--f-navy);
+    margin: 18px 0 6px 0;
+}
+.florence-card.with-florence .card-headline { color: white; }
+.florence-card .card-body {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.92rem; line-height: 1.5;
+    color: var(--f-muted);
+}
+.florence-card.with-florence .card-body { color: rgba(255,255,255,0.92); }
+
+/* === Navy footer banner (closing pitch sentence, deck-style) === */
+.florence-banner {
+    background: var(--f-navy);
+    color: white;
+    padding: 22px 32px;
+    border-radius: 12px;
+    margin-top: 18px;
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 28px;
+}
+.florence-banner .banner-text {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.98rem; font-weight: 500;
+    line-height: 1.5;
+}
+.florence-banner .banner-value {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 2.4rem; font-weight: 600;
+    color: var(--f-teal);
+    white-space: nowrap;
+}
+.florence-banner .banner-suffix {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem; font-weight: 600;
+    letter-spacing: 0.18em; text-transform: uppercase;
+    color: rgba(255,255,255,0.7);
+    margin-left: 10px;
+}
+
+/* === Headline + subhead pair (editorial-style serif) === */
+.florence-headline {
+    font-family: 'Newsreader', Georgia, serif;
+    font-size: 2.6rem; font-weight: 600;
+    line-height: 1.08; letter-spacing: -0.018em;
+    color: var(--f-navy);
+    margin: 4px 0 14px 0;
+}
+.florence-subhead {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.05rem; font-weight: 400;
+    color: var(--f-muted); line-height: 1.55;
+    margin: 0 0 16px 0;
+    max-width: 720px;
+}
+
+/* === Streamlit overrides === */
+/* Buttons: deck-styled */
+.stButton > button, .stDownloadButton > button {
+    border-radius: 8px !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 500 !important;
+    border: 1px solid var(--f-border);
+    transition: all 0.12s ease;
+}
+.stButton > button[kind="primary"], .stDownloadButton > button[kind="primary"] {
+    background: var(--f-teal) !important;
+    color: white !important;
+    border: none !important;
+}
+.stButton > button[kind="primary"]:hover, .stDownloadButton > button[kind="primary"]:hover {
+    background: var(--f-teal-dark) !important;
+}
+
+/* Metric tiles — softer, deck-card aesthetic */
+[data-testid="stMetric"] {
+    background: var(--f-gray);
+    border: 1px solid var(--f-border);
+    border-radius: 10px;
+    padding: 14px 18px;
+}
+[data-testid="stMetricLabel"] {
+    font-family: 'Inter', sans-serif !important;
+    font-size: 0.78rem !important;
+    font-weight: 500 !important;
+    color: var(--f-muted) !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+[data-testid="stMetricValue"] {
+    font-family: 'Newsreader', Georgia, serif !important;
+    color: var(--f-navy) !important;
+    font-weight: 600 !important;
+}
+[data-testid="stMetricDelta"] {
+    font-family: 'Inter', sans-serif !important;
+    color: var(--f-muted) !important;
+}
+
+/* Tabs — flatter, brand-aligned */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 4px;
+    border-bottom: 1px solid var(--f-border);
+}
+.stTabs [data-baseweb="tab"] {
+    font-family: 'Inter', sans-serif;
+    font-weight: 500;
+    color: var(--f-muted);
+    padding: 8px 14px;
+}
+.stTabs [aria-selected="true"] {
+    color: var(--f-teal-dark) !important;
+    border-bottom: 2px solid var(--f-teal) !important;
+}
+
+/* Success / info boxes — softer deck colors */
+[data-testid="stAlert"] {
+    border-radius: 10px;
+    border: none;
+}
+
+/* Expander label — Inter inherits from html; only override weight */
+[data-testid="stExpander"] details summary { font-weight: 500; }
+
+/* Divider — softer */
+hr { border-color: var(--f-border); margin: 28px 0 !important; }
+
+/* Hide Streamlit's default deploy/menu chrome for a cleaner brand presence */
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+</style>
+"""
+
+st.markdown(FLORENCE_CSS, unsafe_allow_html=True)
+
+
+def florence_brand_strip(section_tag: str = "PRICING ENGINE · INTERNAL"):
+    """Florence brand mark + page indicator strip — deck-style top header."""
+    st.markdown(
+        f"""
+        <div class="florence-brand-strip">
+          <div class="florence-mark">
+            <span class="f-box">F</span>
+            <span>Florence</span>
+          </div>
+          <div class="florence-section-tag">{section_tag}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def florence_eyebrow(text: str):
+    """All-caps tracked label, deck-style ('01 · THE OPPORTUNITY')."""
+    st.markdown(f'<div class="florence-eyebrow">{text}</div>', unsafe_allow_html=True)
+
+
+def florence_headline(text: str, subhead: str | None = None):
+    """Editorial-style serif headline + optional subhead."""
+    html = f'<div class="florence-headline">{text}</div>'
+    if subhead:
+        html += f'<div class="florence-subhead">{subhead}</div>'
+    st.markdown(html, unsafe_allow_html=True)
+
+
+# ---------------------------------------------------------------------------
+# Cached data
+# ---------------------------------------------------------------------------
+
+@st.cache_data
+def cached_universe(overrides_mtime: float = 0.0) -> pd.DataFrame:
+    """Universe with any active system-ownership overrides applied.
+
+    `overrides_mtime` is used as a cache key — when the override file changes,
+    Streamlit invalidates the cache and reloads.
+    """
+    return sysov.apply_overrides(load_universe())
+
+
+@st.cache_data
+def cached_priced(
+    pricing_mode: str,
+    target_offset_pct: float,
+    price_floor_monthly: float, price_ceiling_monthly: float,
+    standard_monthly_fee: float,
+    eta: float, fica_eligible_months: int, term_months: int,
+    immigration_addon_enabled: bool,
+    amn_partner_markup_pct: float, direct_partner_markup_pct: float,
+    rn_share_of_contracted_labor: float, coverage_fill_factor: float,
+    agency_displacement_factor: float,
+    placeholder_msp_markup_pct: float,
+    flat_placement_fee_per_rn: float = 50_000.0,
+    flat_fee_term_months: int = 36,
+    flat_fee_overrides_mtime: float = 0.0,  # cache key for system_fee_overrides.json
+) -> pd.DataFrame:
+    cal = Calibration(
+        pricing_mode=PricingMode(pricing_mode),
+        target_offset_pct=target_offset_pct,
+        price_floor_monthly=price_floor_monthly,
+        price_ceiling_monthly=price_ceiling_monthly,
+        standard_monthly_fee=standard_monthly_fee,
+        term_months=term_months,
+        fica_eligible_months_default=fica_eligible_months,
+        immigration_addon_enabled=immigration_addon_enabled,
+        amn_partner_markup_pct=amn_partner_markup_pct,
+        direct_partner_markup_pct=direct_partner_markup_pct,
+        rn_share_of_contracted_labor=rn_share_of_contracted_labor,
+        coverage_fill_factor=coverage_fill_factor,
+        agency_displacement_factor=agency_displacement_factor,
+        placeholder_msp_markup_pct=placeholder_msp_markup_pct,
+        flat_placement_fee_per_rn=flat_placement_fee_per_rn,
+        flat_fee_term_months=flat_fee_term_months,
+    )
+    cohort = CohortMix(eta=eta)
+    return price_batch(cached_universe(sysov.overrides_mtime()), cohort, cal)
+
+
+@st.cache_data
+def cached_sweep() -> pd.DataFrame:
+    return calibration_sweep(cached_universe(sysov.overrides_mtime()))
+
+
+# ---------------------------------------------------------------------------
+# Sidebar
+# ---------------------------------------------------------------------------
+
+st.sidebar.title("Pricing calibration")
+st.sidebar.caption(
+    "Florence Workforce Economist v2 (May 2026). "
+    "FICA-offset target pricing. Adjust the sliders below; all views update live."
+)
+
+# Pricing mode is locked to FICA_OFFSET_TARGET — the v2 canonical mode.
+# ─── Sidebar: clean grouped layout ────────────────────────────────────
+# Defaults that the rep rarely needs to touch live as constants;
+# everything in the sidebar is what a rep WOULD touch per deal.
+eta = 1.0                       # η — full F-1 cohort (locked, see bottom footnote)
+fica_eligible_months = 24       # FICA-exempt months per nurse
+
+# ── 1. Pricing mode — the top-level choice ──
+st.sidebar.markdown(
+    "<div style='font-family:Inter,sans-serif; font-size:0.7rem; "
+    "letter-spacing:0.18em; text-transform:uppercase; color:#089478; "
+    "font-weight:600; margin: 0 0 6px 0;'>Pricing model</div>",
+    unsafe_allow_html=True,
+)
+_pricing_mode_choice = st.sidebar.radio(
+    "Pricing model",
+    [
+        "Flat placement fee ($50K per RN, KP-style)",
+        "FICA-offset target (40% of fee)",
+    ],
+    index=0,
+    label_visibility="collapsed",
+    help=(
+        "Flat placement fee: Florence collects a one-time fee per RN (default $50K), "
+        "amortized over the contract term. Matches the KP/AMN deck math.\n\n"
+        "FICA-offset target: Florence fee sized so FICA savings cover a target % "
+        "of the fee. More dynamic, captures more revenue per facility."
+    ),
+)
+if _pricing_mode_choice.startswith("Flat"):
+    pricing_mode = PricingMode.FLAT_PLACEMENT_FEE.value
+else:
+    pricing_mode = PricingMode.FICA_OFFSET_TARGET.value
+
+# ── 2. Mode-specific calibration ──
+if pricing_mode == PricingMode.FLAT_PLACEMENT_FEE.value:
+    st.sidebar.markdown("**Flat-fee calibration**")
+    flat_placement_fee_per_rn = st.sidebar.slider(
+        "Placement fee per RN ($)",
+        25_000, 100_000, 50_000, 1_000,
+        format="$%d",
+        help="One-time per-RN placement fee. Default $50K matches the KP/AMN deck. "
+             "Per-system overrides live in the System Ownership tab.",
+    )
+    flat_fee_term_months = st.sidebar.selectbox(
+        "Amortization period (months)", [12, 18, 24, 36, 48], index=3,
+        help="Months over which the placement fee is amortized for monthly-display purposes. "
+             "v2 default = 36 (3-year contract).",
+    )
+    term_months = flat_fee_term_months
+    # Mode-agnostic but unused in this branch
+    target_offset_pct = 0.40
+    price_floor_monthly = 750.0
+    price_ceiling_monthly = 2000.0
+    standard_monthly_fee = 1750.0
+else:
+    st.sidebar.markdown("**FICA-offset calibration**")
+    _target_offset_pct_int = st.sidebar.slider(
+        "Target FICA offset %", 10, 100, 40, 5,
+        format="%d%%",
+        help="Target share of Florence fee offset by employer FICA savings. "
+             "Default 40% — Florence retains 60% of fee net of FICA.",
+    )
+    target_offset_pct = _target_offset_pct_int / 100.0
+    price_floor_monthly = st.sidebar.slider(
+        "Price floor ($/RN/month)", 500, 3000, 750, 50,
+    )
+    price_ceiling_monthly = st.sidebar.slider(
+        "Price ceiling ($/RN/month)", 1000, 5000, 2000, 50,
+    )
+    term_months = st.sidebar.selectbox(
+        "Contract term (months)", [12, 18, 24, 36, 48], index=2,
+    )
+    standard_monthly_fee = 1750.0
+    flat_placement_fee_per_rn = 50_000.0
+    flat_fee_term_months = 36
+
+# ── 3. Partner channel ──
+with st.sidebar.expander(":material/handshake: Partner channel (atop core rate)", expanded=False):
+    st.caption(
+        "Partners add their margin on top of Florence's core rate. "
+        "Florence's net is protected at the core rate; customer pays core + markup."
+    )
+    _direct_markup_int = st.slider(
+        "Direct enterprise markup", 0, 50, 0, 5,
+        format="%d%%",
+        key="sb_direct_markup",
+    )
+    _amn_markup_int = st.slider(
+        "AMN wholesale markup", 0, 50, 20, 1,
+        format="%d%%",
+        key="sb_amn_markup",
+    )
+    direct_partner_markup_pct = _direct_markup_int / 100.0
+    amn_partner_markup_pct = _amn_markup_int / 100.0
+amn_partner_share = amn_partner_markup_pct
+direct_partner_share = direct_partner_markup_pct
+
+# ── 4. Capacity assumptions (per-deal levers, less common) ──
+with st.sidebar.expander(":material/tune: Capacity & need assumptions", expanded=False):
+    rn_share = st.slider(
+        "RN share of contracted labor", 0.50, 1.0, 0.80, 0.05, key="sb_rn_share",
+    )
+    coverage = st.slider(
+        "Coverage / displacement target", 0.50, 1.0, 0.90, 0.05, key="sb_coverage",
+    )
+    agency_displacement_factor = st.slider(
+        "Agency displacement factor", 0.50, 1.0, 1.0, 0.05, key="sb_disp_factor",
+        help="Fraction of each Florence RN's hours that displace agency labor (vs. fills new vacancy).",
+    )
+    immigration_addon_enabled = st.checkbox(
+        "Include $5K immigration add-on",
+        value=False,
+        key="sb_immig",
+        help="$5,000 over 24mo = $208/RN/mo for transition coordination.",
+    )
+
+# ── 5. MSP overlay (one-line, mostly autopilot) ──
+with st.sidebar.expander(":material/balance: MSP / agency-overlay tuning", expanded=False):
+    st.caption(
+        "**Kaiser** uses real-disclosed $622M AMN overlay (+$17.39/hr). "
+        "**11 other systems** (HCA, Sutter, Providence, UPMC, etc.) use the placeholder "
+        "% below until their MSP data is disclosed."
+    )
+    _msp_markup_int = st.slider(
+        "Placeholder MSP markup %",
+        0, 50, 25, 1,
+        format="%d%%",
+        key="sb_msp_markup",
+    )
+    placeholder_msp_markup_pct = _msp_markup_int / 100.0
+
+# ── Backward-compat aliases for downstream code that referenced v1 names ─
+premium_capture_rate = 0.075         # legacy v1 default (kept for display only)
+premium_floor = 0.50
+premium_cap = 3.00
+exempt_years = fica_eligible_months / 12.0  # years equivalent
+commitment_years = max(1, int(round(term_months / 12)))
+amortization_months = term_months
+zeta = 0.0  # no buffer in v2 model
+
+
+# ---------------------------------------------------------------------------
+# Page header (compute aggregates silently; surface only via collapsed panel)
+# ---------------------------------------------------------------------------
+
+universe = cached_universe(sysov.overrides_mtime())
+import system_fee_overrides as sysfee
+priced = cached_priced(
+    pricing_mode,
+    target_offset_pct, price_floor_monthly, price_ceiling_monthly,
+    standard_monthly_fee,
+    eta, fica_eligible_months, term_months,
+    immigration_addon_enabled,
+    amn_partner_markup_pct, direct_partner_markup_pct,
+    rn_share, coverage, agency_displacement_factor,
+    placeholder_msp_markup_pct,
+    flat_placement_fee_per_rn=flat_placement_fee_per_rn,
+    flat_fee_term_months=flat_fee_term_months,
+    flat_fee_overrides_mtime=sysfee.overrides_mtime(),
+)
+
+total = len(priced)
+feas = priced[priced["feasible"]]
+manual_review_count = int(priced["manual_review_flag"].sum())
+addressable_rn = feas["rn_need"].sum()
+
+# v2 5 primary buyer-facing numbers (medians)
+median_monthly_fee = feas["florence_monthly_fee_per_rn"].median() if len(feas) else 0
+median_fica = feas["employer_fica_savings_per_rn_per_month"].median() if len(feas) else 0
+median_effective = feas["fica_adjusted_effective_cost_per_rn_month"].median() if len(feas) else 0
+median_offset_pct = feas["actual_fica_offset_pct"].median() if len(feas) else 0
+median_net = feas["net_monthly_savings_per_rn"].median() if len(feas) else 0
+
+# Aggregates
+total_monthly_fee = feas["monthly_florence_fee_account"].sum()
+total_monthly_fica = feas["monthly_fica_offset_account"].sum()
+total_monthly_net_savings = feas["monthly_net_savings_account"].sum()
+term_florence_fee = feas["term_florence_fee_account"].sum()
+term_net_savings = feas["term_net_savings_account"].sum()
+
+# Retain legacy variable aliases used by older tabs
+median_premium = median_monthly_fee
+median_fee = feas["f_total"].median() if len(feas) else 0
+median_monthly = median_monthly_fee
+gross_fee = term_florence_fee
+monthly_fee = total_monthly_fee
+florence_net = feas["florence_net_term_account"].sum() if len(feas) else 0
+partner_rev = feas["partner_revenue_term_account"].sum() if len(feas) else 0
+gross_agency_savings = feas["term_gross_agency_savings_account"].sum() if len(feas) else 0
+net_savings = term_net_savings
+# (Dropped legacy c5/c6 metric duplicates; v2 metrics are above in the k* and a* rows.)
+
+
+# ---------------------------------------------------------------------------
+# Internal auth gate (opt-in)
+# ---------------------------------------------------------------------------
+# Off by default so local dev runs without ceremony. To require login in any
+# shared / staging / production deployment, set:
+#     export FLORENCE_INTERNAL_AUTH=1
+# Then operators sign in with email-OTP (auth.py) and roles are enforced by
+# rbac.py. First user to sign in is auto-promoted to admin so the system is
+# bootstrappable from scratch.
+import os as _os
+_AUTH_REQUIRED = _os.environ.get("FLORENCE_INTERNAL_AUTH") == "1"
+current_user = None
+current_role = "admin"   # default in unauthenticated local mode
+current_territory = "ALL"
+
+if _AUTH_REQUIRED:
+    import auth as _flo_auth
+    import rbac as _rbac
+    _tok = st.session_state.get("florence_session_token")
+    current_user = _flo_auth.get_session(_tok) if _tok else None
+    if _tok and current_user is None:
+        st.session_state["florence_session_token"] = None
+    if current_user is None:
+        st.markdown(
+            "<div style='max-width:520px; margin:80px auto; padding:32px; "
+            "border:1px solid #E5E8EE; border-radius:12px; background:white;'>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("### Florence Workforce Economist")
+        st.caption("Internal tool — staff sign-in required.")
+        current_user = _flo_auth.streamlit_login(
+            st, default_role="rep",
+            title="", blurb="",
+        )
+        st.markdown("</div>", unsafe_allow_html=True)
+        if current_user is None:
+            st.stop()
+        # Bootstrap: first user becomes admin
+        _rbac.bootstrap_first_admin(current_user["email"])
+        current_user = _flo_auth.get_user(current_user["email"]) or current_user
+    current_role = _rbac.get_role(current_user["email"]) or "rep"
+    current_territory = _rbac.get_territory(current_user["email"]) or "ALL"
+
+# Expose for downstream code (tabs can call _rbac.require_role() etc.)
+st.session_state["current_user"] = current_user
+st.session_state["current_role"] = current_role
+st.session_state["current_territory"] = current_territory
+
+
+# ---------------------------------------------------------------------------
+# Coaching tooltip helper — surfaces playbook.coach_tip() inline.
+# ---------------------------------------------------------------------------
+# Use anywhere a number, button, or chart would benefit from a one-paragraph
+# explanation. Role-aware: reps see "what to say"; admins see "where it
+# comes from." Pass to any Streamlit widget's `help=` kwarg.
+def _tip(key: str, value=None) -> str:
+    try:
+        import playbook as _playbook_helper
+        return _playbook_helper.coach_tip(
+            key,
+            role=st.session_state.get("current_role", "rep"),
+            value=value,
+        )
+    except Exception:
+        return ""
+
+
+# ---------------------------------------------------------------------------
+# Tabs
+# ---------------------------------------------------------------------------
+
+# ---------------------------------------------------------------------------
+# Sidebar navigation — single source of truth for navigating the system
+# ---------------------------------------------------------------------------
+# Inpatient + Outpatient are the daily sales-today views and sit at the top
+# of the sidebar. Everything else is grouped by purpose below. On mobile
+# Streamlit collapses this into a hamburger icon automatically.
+if "nav_view" not in st.session_state:
+    st.session_state["nav_view"] = "inpatient"
+
+
+def _nav_button(label: str, view_key: str, icon: str = "") -> None:
+    is_active = (st.session_state.get("nav_view") == view_key)
+    full_label = f":material/{icon}: {label}" if icon else label
+    if st.sidebar.button(
+        full_label,
+        key=f"nav_{view_key}",
+        use_container_width=True,
+        type=("primary" if is_active else "secondary"),
+    ):
+        st.session_state["nav_view"] = view_key
+        st.rerun()
+
+
+def _nav_section(title: str) -> None:
+    st.sidebar.markdown(
+        f"<div style='font-family:Inter,sans-serif; font-size:0.7rem; "
+        f"letter-spacing:0.14em; text-transform:uppercase; color:#5B6675; "
+        f"margin:18px 0 6px 0; font-weight:600;'>{title}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+# Brand at top of sidebar
+st.sidebar.markdown(
+    "<div style='display:flex; align-items:center; gap:10px; "
+    "padding:6px 0 4px 0; margin-bottom:6px;'>"
+    "<span style='display:inline-block; width:32px; height:32px; "
+    "background:#0BC5A0; color:#fff; border-radius:7px; text-align:center; "
+    "line-height:32px; font-family:Newsreader,Georgia,serif; "
+    "font-size:1.15rem; font-weight:500;'>F</span>"
+    "<span style='font-family:Newsreader,Georgia,serif; font-size:1.05rem; "
+    "color:#0F1B2D; font-weight:500; line-height:1.1;'>"
+    "Workforce<br>Economist</span></div>"
+    "<div style='font-family:Inter,sans-serif; font-size:0.7rem; "
+    "letter-spacing:0.14em; color:#5B6675; text-transform:uppercase;'>"
+    "INTERNAL</div>",
+    unsafe_allow_html=True,
+)
+
+# ─── Sales today ──────────────────────────────────────────────────
+_nav_section("Sales today")
+_nav_button("Inpatient", "inpatient", "local_hospital")
+_nav_button("Outpatient", "outpatient", "medical_services")
+
+# ─── Live intelligence ───────────────────────────────────────────
+_nav_section("Live intelligence")
+_nav_button("Market intelligence", "market_intel", "trending_up")
+_nav_button("Forecasting", "forecast", "insights")
+
+# ─── Sales training ──────────────────────────────────────────────
+_nav_section("Sales training")
+_nav_button("Playbook", "playbook", "menu_book")
+_nav_button("Onboarding", "onboarding", "school")
+_nav_button("Pipeline", "pipeline", "assignment")
+
+# ─── Deep tools ──────────────────────────────────────────────────
+_nav_section("Deep tools")
+_nav_button("National map", "national_map", "public")
+_nav_button("Health systems", "health_systems", "business")
+_nav_button("System ownership", "system_ownership", "swap_horiz")
+_nav_button("Price a hospital", "price_hospital", "local_hospital")
+_nav_button("Hospital table", "hospital_table", "table_view")
+_nav_button("Market view", "market_view", "stacked_line_chart")
+_nav_button("Elasticity", "elasticity", "show_chart")
+_nav_button("Calibration sweep", "calibration_sweep", "settings")
+
+# ─── Data ────────────────────────────────────────────────────────
+_nav_section("Data")
+_nav_button("Data quality", "data_quality", "verified")
+_nav_button("Data provenance", "data_provenance", "library_books")
+
+# ─── Auth signed-in info (at the bottom of sidebar) ─────────────
+if _AUTH_REQUIRED and current_user is not None:
+    st.sidebar.markdown(
+        "<hr style='border:none; border-top:1px solid #E5E8EE; margin:18px 0 10px 0;'>",
+        unsafe_allow_html=True,
+    )
+    with st.sidebar:
+        st.markdown(
+            f"<div style='font-size:0.7rem; letter-spacing:0.12em; "
+            f"text-transform:uppercase; color:#5B6675; font-weight:600;'>"
+            f"SIGNED IN</div>"
+            f"<div style='font-weight:600; color:#0F1B2D; font-size:0.9rem; "
+            f"margin-top:2px;'>{current_user['email']}</div>"
+            f"<div style='font-size:0.78rem; color:#5B6675; margin-top:2px;'>"
+            f"Role: <b>{current_role}</b> · Territory: <b>{current_territory}</b>"
+            f"</div>",
+            unsafe_allow_html=True,
+        )
+        if st.button("Sign out", use_container_width=True, key="internal_signout"):
+            import auth as _flo_auth_logout
+            _flo_auth_logout.streamlit_logout(st)
+            st.rerun()
+
+        # Admin panel — role assignment, only for admins
+        if current_role == "admin":
+            with st.expander(":material/admin_panel_settings: Admin · "
+                             "user roles", expanded=False):
+                import rbac as _rbac_admin
+                _rbac_admin.streamlit_admin_panel(st)
+
+
+# Active view from session state (used by every content block below)
+view = st.session_state.get("nav_view", "inpatient")
+
+
+# Florence brand header at the top of the main area
+florence_brand_strip(section_tag="WORKFORCE ECONOMIST  ·  INTERNAL")
+
+# =====================================================================
+# 🎯 SYSTEM RECOMMENDATION TAB — the sales-rep landing page
+# =====================================================================
+if view == "inpatient":
+    florence_eyebrow("Inpatient · Build a customer proposal")
+    florence_headline(
+        "Pick a hospital system. See the savings.",
+        subhead=(
+            "Florence converts premium agency RN labor at U.S. hospitals into "
+            "permanent international RN capacity. Every system below has a "
+            "customer-ready proposal one click away — same numbers, same "
+            "language, same brand as your customer-facing deck. "
+            "(For outpatient settings — ASCs, HHAs, SNFs, hospice, dialysis — "
+            "see the **Outpatient** tab. For pipeline management, see "
+            "**More tools → Pipeline**.)"
+        ),
+    )
+
+    # ── Data load ─────────────────────────────────────────────────────
+    @st.cache_data
+    def _load_recs(overrides_mtime: float = 0.0) -> pd.DataFrame:
+        """Load recommendations parquet and apply any active system overrides
+        on top of it, so the System Recommendation tab always shows current
+        ownership mappings without needing a full recompute."""
+        rec_path = DATA_DIR / "recommendations.parquet"
+        if not rec_path.exists():
+            from recommendation_engine import batch_recommend
+            df = batch_recommend(cached_universe(sysov.overrides_mtime()))
+            df.to_parquet(rec_path, index=False)
+        else:
+            df = pd.read_parquet(rec_path)
+        # Re-apply current ownership from the override-applied universe
+        u = cached_universe(overrides_mtime)
+        u["ccn"] = u["ccn"].astype(str).str.zfill(6)
+        df["ccn"] = df["ccn"].astype(str).str.zfill(6)
+        df = df.drop(columns=["health_system_id", "health_system"], errors="ignore")
+        df = df.merge(
+            u[["ccn", "health_system_id", "health_system"]],
+            on="ccn", how="left",
+        )
+        return df
+
+    CENSUS_REGION = {
+        # Northeast
+        "CT": "Northeast", "ME": "Northeast", "MA": "Northeast", "NH": "Northeast",
+        "NJ": "Northeast", "NY": "Northeast", "PA": "Northeast", "RI": "Northeast", "VT": "Northeast",
+        # Midwest
+        "IL": "Midwest", "IN": "Midwest", "IA": "Midwest", "KS": "Midwest", "MI": "Midwest",
+        "MN": "Midwest", "MO": "Midwest", "NE": "Midwest", "ND": "Midwest", "OH": "Midwest",
+        "SD": "Midwest", "WI": "Midwest",
+        # South
+        "AL": "South", "AR": "South", "DE": "South", "DC": "South", "FL": "South",
+        "GA": "South", "KY": "South", "LA": "South", "MD": "South", "MS": "South",
+        "NC": "South", "OK": "South", "SC": "South", "TN": "South", "TX": "South",
+        "VA": "South", "WV": "South",
+        # West
+        "AK": "West", "AZ": "West", "CA": "West", "CO": "West", "HI": "West",
+        "ID": "West", "MT": "West", "NV": "West", "NM": "West", "OR": "West",
+        "UT": "West", "WA": "West", "WY": "West",
+    }
+
+    recs = _load_recs(sysov.overrides_mtime())
+    # RBAC: filter recs to the signed-in rep's territory (no-op if territory == ALL)
+    if _AUTH_REQUIRED:
+        import rbac as _rbac_filt
+        _terr = st.session_state.get("current_territory", "ALL")
+        recs_pre = len(recs)
+        recs = _rbac_filt.filter_by_territory(recs, _terr, state_col="state")
+        if _terr != "ALL" and recs_pre != len(recs):
+            st.caption(
+                f":material/filter_alt: Filtered to your territory "
+                f"({_terr}) — {len(recs):,} of {recs_pre:,} facilities."
+            )
+    feas_recs = recs[recs["feasible"]].copy()
+    feas_recs["region"] = feas_recs["state"].map(CENSUS_REGION).fillna("Other")
+
+    # ── Compact filter & sort (collapsed by default) ──────────────────
+    with st.expander(":material/tune: Filter & sort", expanded=False):
+        ctrl_col1, ctrl_col2, ctrl_col3, ctrl_col4 = st.columns([1.2, 1.2, 1.4, 1.0])
+        with ctrl_col1:
+            rate_basis = st.radio(
+                "Show pricing as",
+                ["Per RN per month", "Per RN per hour"],
+                horizontal=True,
+                help="Hospital CFOs anchor in different units — monthly for budgets, hourly for agency comparisons.",
+            )
+            use_hourly = rate_basis == "Per RN per hour"
+        with ctrl_col2:
+            sort_mode = st.selectbox(
+                "Sort systems",
+                ["By Florence revenue (desc)", "Alphabetical", "By primary state",
+                 "By region (West→Northeast)"],
+            )
+        with ctrl_col3:
+            state_filter = st.multiselect(
+                "Filter by state (multi)",
+                sorted(feas_recs["state"].unique()),
+                help="For regional reps: select your states; only systems with facilities there are shown.",
+            )
+        with ctrl_col4:
+            show_independent = st.checkbox(
+                "Include Independent / Unknown",
+                value=False,
+                help="Hospitals not yet classified into a named system. ~85% of the universe.",
+            )
+
+    # Apply filter
+    fr = feas_recs.copy()
+    if state_filter:
+        sys_with_state = fr[fr["state"].isin(state_filter)]["health_system_id"].unique()
+        fr = fr[fr["health_system_id"].isin(sys_with_state)]
+    if not show_independent:
+        fr = fr[fr["health_system"] != "Independent / Unknown"]
+
+    sys_agg = (
+        fr.groupby(["health_system_id", "health_system"])
+        .agg(
+            n_facilities=("ccn", "count"),
+            monthly_fee_target=("target_monthly_florence_fee_account", "sum"),
+            term_savings_target=("target_term_net_savings_account", "sum"),
+            primary_state=("state", lambda s: s.mode().iat[0] if len(s.mode()) else ""),
+        )
+        .reset_index()
+    )
+    sys_agg["primary_region"] = sys_agg["primary_state"].map(CENSUS_REGION).fillna("Other")
+
+    if sort_mode == "Alphabetical":
+        sys_agg = sys_agg.sort_values("health_system")
+    elif sort_mode == "By primary state":
+        sys_agg = sys_agg.sort_values(["primary_state", "health_system"])
+    elif sort_mode == "By region (West→Northeast)":
+        region_order = {"West": 0, "Midwest": 1, "South": 2, "Northeast": 3, "Other": 4}
+        sys_agg["_ro"] = sys_agg["primary_region"].map(region_order)
+        sys_agg = sys_agg.sort_values(["_ro", "primary_state", "health_system"])
+    else:
+        sys_agg = sys_agg.sort_values("monthly_fee_target", ascending=False)
+
+    if len(sys_agg) == 0:
+        st.warning("No systems match the current filter — clear state filter or include Independent.")
+        st.stop()
+
+    # Build selector labels — customer-savings-led, not Florence-rev-led
+    sys_label_map = {}
+    last_region = None
+    for _, row in sys_agg.iterrows():
+        if sort_mode == "By region (West→Northeast)" and row["primary_region"] != last_region:
+            divider = f"── {row['primary_region']} ──"
+            sys_label_map[divider] = None
+            last_region = row["primary_region"]
+        savings_b = row["term_savings_target"] / 1e9
+        savings_m = row["term_savings_target"] / 1e6
+        savings_str = f"${savings_b:.2f}B" if savings_b >= 1 else f"${savings_m:,.0f}M"
+        label = (
+            f"{row['health_system']} ({row['primary_state']}) — "
+            f"{row['n_facilities']} facilities · saves {savings_str} over 24 mo"
+        )
+        sys_label_map[label] = row["health_system_id"]
+
+    selected_label = st.selectbox(
+        "Health system",
+        list(sys_label_map.keys()),
+        label_visibility="collapsed",
+    )
+    if sys_label_map[selected_label] is None:
+        st.info("Pick a system from the list below the divider.")
+        st.stop()
+
+    selected_sys_id = sys_label_map[selected_label]
+    sys_recs = fr[fr["health_system_id"] == selected_sys_id].copy()
+    selected_sys_name = sys_recs.iloc[0]["health_system"]
+
+    # ── Core numbers (computed once, used everywhere) ─────────────────
+    n_facilities = len(sys_recs)
+    states = sorted(sys_recs["state"].unique())
+    total_rn_need = sys_recs["rn_need"].sum()
+    total_monthly_target = sys_recs["target_monthly_florence_fee_account"].sum()
+    total_monthly_stretch = sys_recs["stretch_monthly_florence_fee_account"].sum()
+    total_monthly_reference = sys_recs["reference_monthly_florence_fee_account"].sum()
+    total_term_fee_target = sys_recs["target_term_florence_fee_account"].sum()
+    total_term_savings_target = sys_recs["target_term_net_savings_account"].sum()
+    total_monthly_savings_target = total_term_savings_target / 24
+    median_target_fee_monthly = sys_recs["target_monthly_fee"].median()
+    median_target_savings_monthly = sys_recs["target_net_monthly_savings_per_rn"].median()
+    median_savings_ratio = sys_recs["target_savings_ratio"].median()
+    median_target_pct = sys_recs["target_target_offset_pct"].median()
+    weighted_deal_score = (
+        (sys_recs["target_deal_score"] * sys_recs["target_monthly_florence_fee_account"]).sum()
+        / total_monthly_target if total_monthly_target > 0 else 0
+    )
+    posture = (
+        "Aggressive (high-confidence accounts)" if median_target_pct <= 0.42 else
+        "Balanced" if median_target_pct <= 0.52 else
+        "Conservative (focus on close rate)"
+    )
+
+    def _fmt_rate(monthly: float) -> str:
+        if use_hourly:
+            return f"${monthly/156:,.2f}/hr"
+        return f"${monthly:,.0f}/mo"
+
+    def _fmt_big(value: float) -> str:
+        """Format a $ value as $X.XXB or $XXM as appropriate."""
+        if value >= 1e9:
+            return f"${value/1e9:.2f}B"
+        return f"${value/1e6:,.0f}M"
+
+    # ─────────────────────────────────────────────────────────────────
+    # 🏥 CUSTOMER PITCH HERO — deck-style "Same hours. Two prices."
+    # ─────────────────────────────────────────────────────────────────
+    st.divider()
+    states_str = ", ".join(states[:5]) + ("..." if len(states) > 5 else "")
+
+    # Compute deck-style comparison numbers
+    median_agency_premium = float(sys_recs["signal_agency_premium"].median())
+    median_florence_hourly = float(sys_recs["target_hourly_fee"].median())
+    median_fica_per_hour = float(sys_recs["target_fica_savings_per_rn_per_month"].median()) / 156
+    florence_net_hourly = max(median_florence_hourly - median_fica_per_hour, 0.01)
+    annual_savings = total_term_savings_target / 2  # 24mo → annual
+    annual_rn_hours = total_rn_need * 156 * 12
+    cost_ratio = median_agency_premium / florence_net_hourly if florence_net_hourly > 0 else 0
+
+    florence_eyebrow(f"01 · The opportunity · For {selected_sys_name}")
+    florence_headline(
+        "Same hours. Two prices.",
+        subhead=(
+            f"The {annual_rn_hours/1e6:,.1f}M agency RN hours {selected_sys_name} used last year will recur. "
+            f"The choice is what to pay per hour, and what to get for it."
+        ),
+    )
+
+    st.markdown(
+        f"""
+        <div style="display:flex; align-items:baseline; gap:14px; margin: 6px 0 22px 0;">
+          <div style="font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600;
+                      letter-spacing:0.22em; text-transform:uppercase; color:#5B6675;">SAME</div>
+          <div style="font-family:'Newsreader',serif; font-size:1.9rem; font-weight:600;
+                      color:#0F1B2D;">{annual_rn_hours/1e6:,.1f}M</div>
+          <div style="font-family:'Inter',sans-serif; font-size:0.95rem; color:#5B6675;">
+            RN hours per year · {selected_sys_name} baseline, expected to recur
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # The two-card comparison — TODAY (white) vs WITH FLORENCE (teal)
+    card_l, card_arrow, card_r = st.columns([5, 0.6, 5])
+    with card_l:
+        st.markdown(
+            f"""
+            <div class="florence-card today">
+              <div class="card-label">Today</div>
+              <div style="display:flex; align-items:baseline; gap:6px;">
+                <div class="card-number">${median_agency_premium:,.2f}</div>
+                <div class="card-unit">/hour</div>
+              </div>
+              <div class="card-headline">Agency staffing premium.</div>
+              <div class="card-body">
+                Contingent labor. No continuity of unit, panel, or workforce planning.
+                Premium recurs every cycle.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with card_arrow:
+        st.markdown(
+            "<div style='font-family:Newsreader,serif; font-size:2rem; color:#0BC5A0;"
+            " text-align:center; padding-top:90px;'>→</div>",
+            unsafe_allow_html=True,
+        )
+    with card_r:
+        st.markdown(
+            f"""
+            <div class="florence-card with-florence">
+              <div class="card-label">With Florence</div>
+              <div style="display:flex; align-items:baseline; gap:6px;">
+                <div class="card-number">${florence_net_hourly:,.2f}</div>
+                <div class="card-unit">/hour</div>
+              </div>
+              <div class="card-headline">Permanent RN capacity.</div>
+              <div class="card-body">
+                Full-time {selected_sys_name} employees on multi-year contracts.
+                Labor-partnership aligned. Fee payable on successful employment start;
+                replacement protection for early attrition.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Navy footer banner — the closing pitch number
+    st.markdown(
+        f"""
+        <div class="florence-banner">
+          <div class="banner-text">
+            Annual savings opportunity · net of Florence fees and FICA equivalence
+          </div>
+          <div style="display:flex; align-items:baseline; gap:14px;">
+            <div class="banner-value">{_fmt_big(annual_savings)}</div>
+            <div class="banner-suffix">{cost_ratio:.0f}× lower per-hour cost</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ─────────────────────────────────────────────────────────────────
+    # 02 · CHANNEL PRICING — Direct vs Via AMN (markup atop core rate)
+    # ─────────────────────────────────────────────────────────────────
+    st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("02 · Channel pricing")
+    florence_headline(
+        "Two channels. Same Florence economics.",
+        subhead=(
+            "Florence collects its core rate regardless of channel. "
+            "Selling direct gives the customer the core price. Selling through AMN "
+            "adds AMN's distribution margin on top — Florence's net is identical."
+        ),
+    )
+    core_monthly = sys_recs["target_monthly_fee"].median()
+    core_per_rn_per_mo = sys_recs["target_monthly_florence_fee_account"].sum() / max(sys_recs["rn_need"].sum(), 1)
+    direct_per_rn_per_mo = core_per_rn_per_mo * (1 + direct_partner_markup_pct)
+    amn_per_rn_per_mo = core_per_rn_per_mo * (1 + amn_partner_markup_pct)
+    amn_margin_per_rn = core_per_rn_per_mo * amn_partner_markup_pct
+
+    ch_l, ch_r = st.columns(2)
+    with ch_l:
+        st.markdown(
+            f"""
+            <div class="florence-card today" style="min-height:200px;">
+              <div class="card-label">Direct enterprise</div>
+              <div style="display:flex; align-items:baseline; gap:6px;">
+                <div class="card-number">${direct_per_rn_per_mo:,.0f}</div>
+                <div class="card-unit">/RN/mo</div>
+              </div>
+              <div class="card-headline">Sold direct.</div>
+              <div class="card-body">
+                Florence direct enterprise channel. Customer pays Florence's core rate
+                with {direct_partner_markup_pct:.0%} partner markup. Florence collects
+                <b>${core_per_rn_per_mo:,.0f}/RN/mo</b> net.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with ch_r:
+        st.markdown(
+            f"""
+            <div class="florence-card with-florence" style="min-height:200px;">
+              <div class="card-label">Via AMN ({amn_partner_markup_pct:.0%} markup)</div>
+              <div style="display:flex; align-items:baseline; gap:6px;">
+                <div class="card-number">${amn_per_rn_per_mo:,.0f}</div>
+                <div class="card-unit">/RN/mo</div>
+              </div>
+              <div class="card-headline">Sold through AMN.</div>
+              <div class="card-body">
+                AMN's distribution channel. Customer pays Florence's core rate
+                <b>+ ${amn_margin_per_rn:,.0f}/RN/mo</b> AMN margin atop.
+                Florence still collects <b>${core_per_rn_per_mo:,.0f}/RN/mo</b> —
+                core rate protected.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # ─────────────────────────────────────────────────────────────────
+    # 03 · SEND THIS TO THE CUSTOMER — proposal downloads
+    # ─────────────────────────────────────────────────────────────────
+    st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("03 · Send this to the customer")
+    florence_headline(
+        "Customer-ready proposal in one click.",
+        subhead=(
+            f"Each file uses this system's recommended Target calibration "
+            f"({median_target_pct:.0%} FICA-offset). Reproducible — same system, same numbers, "
+            f"every time. Brand-aligned with the customer-facing deck."
+        ),
+    )
+    safe_sys = selected_sys_name.replace(" ", "_").replace("/", "_").replace("'", "")[:48]
+    rc1, rc2, rc3, rc4 = st.columns(4)
+    with rc1:
+        if st.button(":material/slideshow:  Customer deck (.pptx)", key="reco_pptx",
+                     type="primary", use_container_width=True):
+            buf = build_deck_from_system_recs(
+                sys_recs, selected_sys_name,
+                target_offset_pct=float(sys_recs["target_target_offset_pct"].median()),
+            )
+            st.session_state[f"reco_pptx_{safe_sys}"] = buf.getvalue()
+        if f"reco_pptx_{safe_sys}" in st.session_state:
+            st.download_button(
+                ":material/download: Download .pptx",
+                st.session_state[f"reco_pptx_{safe_sys}"],
+                file_name=f"{safe_sys}_customer_deck.pptx",
+                mime="application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                use_container_width=True,
+            )
+    with rc2:
+        if st.button(":material/description:  Exec Summary (PDF)", key="reco_pdf",
+                     use_container_width=True):
+            with tempfile.TemporaryDirectory() as tmp:
+                bundle_cal = Calibration(
+                    target_offset_pct=float(sys_recs["target_target_offset_pct"].median()),
+                    placeholder_msp_markup_pct=placeholder_msp_markup_pct,
+                )
+                h, p = build_system_exec_summary(selected_sys_id, Path(tmp), bundle_cal, CohortMix(eta=1.0))
+                st.session_state[f"reco_pdf_{safe_sys}"] = p.read_bytes()
+        if f"reco_pdf_{safe_sys}" in st.session_state:
+            st.download_button(
+                ":material/download: Download PDF",
+                st.session_state[f"reco_pdf_{safe_sys}"],
+                file_name=f"{safe_sys}_exec_summary.pdf",
+                mime="application/pdf",
+                use_container_width=True,
+            )
+    with rc3:
+        if st.button(":material/table_view:  Excel workbook", key="reco_xlsx",
+                     use_container_width=True):
+            with tempfile.TemporaryDirectory() as tmp:
+                bundle_cal = Calibration(
+                    target_offset_pct=float(sys_recs["target_target_offset_pct"].median()),
+                    placeholder_msp_markup_pct=placeholder_msp_markup_pct,
+                )
+                out = Path(tmp) / f"{safe_sys}_recommendation.xlsx"
+                write_system_workbook(selected_sys_id, out, bundle_cal, CohortMix(eta=1.0))
+                st.session_state[f"reco_xlsx_{safe_sys}"] = out.read_bytes()
+        if f"reco_xlsx_{safe_sys}" in st.session_state:
+            st.download_button(
+                ":material/download: Download .xlsx",
+                st.session_state[f"reco_xlsx_{safe_sys}"],
+                file_name=f"{safe_sys}_recommendation.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+            )
+    with rc4:
+        if st.button(":material/inventory_2:  Complete bundle (.zip)", key="reco_zip",
+                     use_container_width=True):
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                bundle_cal = Calibration(
+                    target_offset_pct=float(sys_recs["target_target_offset_pct"].median()),
+                    placeholder_msp_markup_pct=placeholder_msp_markup_pct,
+                )
+                xlsx = write_system_workbook(selected_sys_id, tmp / f"{safe_sys}.xlsx", bundle_cal, CohortMix(eta=1.0))
+                h, p = build_system_exec_summary(selected_sys_id, tmp, bundle_cal, CohortMix(eta=1.0))
+                pptx_buf = build_deck_from_system_recs(
+                    sys_recs, selected_sys_name,
+                    target_offset_pct=float(sys_recs["target_target_offset_pct"].median()),
+                )
+                pptx_path = tmp / f"{safe_sys}_customer_deck.pptx"
+                pptx_path.write_bytes(pptx_buf.getvalue())
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                    zf.write(pptx_path, pptx_path.name)
+                    zf.write(xlsx, xlsx.name)
+                    zf.write(p, p.name)
+                    zf.write(h, h.name)
+                st.session_state[f"reco_zip_{safe_sys}"] = buf.getvalue()
+        if f"reco_zip_{safe_sys}" in st.session_state:
+            st.download_button(
+                ":material/download: Download bundle.zip",
+                st.session_state[f"reco_zip_{safe_sys}"],
+                file_name=f"{safe_sys}_recommendation_bundle.zip",
+                mime="application/zip",
+                use_container_width=True,
+            )
+
+    # ─────────────────────────────────────────────────────────────────
+    # 03 · PER-FACILITY SAVINGS STORY
+    # ─────────────────────────────────────────────────────────────────
+    st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("04 · Per-facility detail")
+    fac_left, fac_right = st.columns([3, 1])
+    with fac_left:
+        florence_headline(
+            "What this means, facility by facility.",
+            subhead=(
+                "Each row leads with what the hospital saves. Expand any facility to see "
+                "the three-tier negotiation band the rep can work with."
+            ),
+        )
+    with fac_right:
+        st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+        facility_view = st.radio(
+            "Show",
+            ["Top 10", f"All {n_facilities}"],
+            horizontal=True,
+            label_visibility="collapsed",
+        )
+
+    sys_recs_sorted = sys_recs.sort_values("target_term_net_savings_account", ascending=False)
+    if facility_view == "Top 10":
+        sys_recs_sorted = sys_recs_sorted.head(10)
+    unit_label = "/hr" if use_hourly else "/RN/mo"
+
+    def _fmt_fee(v: float) -> str:
+        return f"${v:,.2f}" if use_hourly else f"${v:,.0f}"
+
+    for i, (_, r) in enumerate(sys_recs_sorted.iterrows()):
+        fac_savings = r["target_term_net_savings_account"]
+        fac_fee = r["target_term_florence_fee_account"]
+        t_fee = r["target_hourly_fee"] if use_hourly else r["target_monthly_fee"]
+
+        with st.expander(
+            f"{r['name']}  ·  {r['city']}, {r['state']}  ·  "
+            f"saves {_fmt_big(fac_savings)} over 24 mo  ·  "
+            f"Florence fee {_fmt_fee(t_fee)}{unit_label}",
+            expanded=(i == 0),
+        ):
+            # Deck-style two-pane comparison
+            fica_pct_of_fee = (
+                r['target_fica_savings_per_rn_per_month']
+                / max(r['target_monthly_fee'], 1) * 100
+            )
+            pane_l, pane_r = st.columns(2)
+            with pane_l:
+                st.markdown(
+                    f"""
+                    <div class="florence-card today" style="min-height:240px;">
+                      <div class="card-label">The Agency Model Today</div>
+                      <div class="card-headline" style="margin-top:8px;">
+                        Contingent. Recycled. Premium-priced.
+                      </div>
+                      <div class="card-body" style="margin-top:14px;">
+                        • Hospital pays <b>${r['signal_agency_premium']:.2f}/hour</b> agency premium over baseline RN wage<br/>
+                        • <b>{r['signal_cl_intensity']*100:.0f}%</b> of nursing payroll currently runs through contract labor<br/>
+                        • No continuity of unit, team, or panel<br/>
+                        • Premium recurs every fiscal cycle
+                      </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            with pane_r:
+                st.markdown(
+                    f"""
+                    <div class="florence-card with-florence" style="min-height:240px;">
+                      <div class="card-label">The Florence Pathway</div>
+                      <div class="card-headline" style="margin-top:8px;">
+                        Permanent. Aligned. Repeatable.
+                      </div>
+                      <div class="card-body" style="margin-top:14px;">
+                        • <b>{r['rn_need']:.0f} full-time international RNs</b> placed under standard hiring &amp; onboarding<br/>
+                        • Florence fee <b>{_fmt_rate(r['target_monthly_fee'])}</b> per RN, amortized over 24 months<br/>
+                        • FICA exemption alone covers <b>{fica_pct_of_fee:.0f}%</b> of the Florence fee<br/>
+                        • Net hospital savings: <b>{_fmt_rate(r['target_net_monthly_savings_per_rn'])}</b> per RN
+                      </div>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
+
+            # Closing pitch banner for this facility
+            st.markdown(
+                f"""
+                <div class="florence-banner" style="margin-top:18px;">
+                  <div class="banner-text">
+                    24-month savings net of Florence fees &amp; FICA equivalence
+                  </div>
+                  <div style="display:flex; align-items:baseline; gap:14px;">
+                    <div class="banner-value">{_fmt_big(fac_savings)}</div>
+                    <div class="banner-suffix">{r['target_savings_ratio']:.1f}× return</div>
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            # Negotiation band — rep-facing, secondary
+            st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
+            florence_eyebrow("Three-tier negotiation band · For the rep")
+            t_col1, t_col2, t_col3 = st.columns(3)
+            for col, prefix, icon, label in [
+                (t_col1, "stretch",   "Stretch",   "Open high"),
+                (t_col2, "target",    "Target",    "Land here"),
+                (t_col3, "reference", "Reference", "Max customer pitch"),
+            ]:
+                fee_monthly = r[f"{prefix}_monthly_fee"]
+                fee_hourly = r[f"{prefix}_hourly_fee"]
+                fee_show = f"${fee_hourly:,.2f}/hr" if use_hourly else f"${fee_monthly:,.0f}/mo"
+
+                savings_monthly = r[f"{prefix}_net_monthly_savings_per_rn"]
+                savings_hourly = savings_monthly / 156
+                savings_show = (
+                    f"${savings_hourly:,.2f}/hr"
+                    if use_hourly
+                    else f"${savings_monthly:,.0f}/mo"
+                )
+
+                col.markdown(f"**{icon}** &nbsp;<span style='color:#5B6675;'>{label}</span>",
+                             unsafe_allow_html=True)
+                col.metric(
+                    "Hospital saves",
+                    savings_show,
+                    f"{r[f'{prefix}_savings_ratio']:.1f}× return",
+                )
+                col.metric(
+                    "Florence fee",
+                    fee_show,
+                    f"{r[f'{prefix}_target_offset_pct']:.0%} FICA-offset",
+                )
+                col.caption(
+                    f"Deal-attractiveness: **{r[f'{prefix}_deal_score']*100:.0f}/100**  ·  "
+                    f"24-mo: {_fmt_big(r[f'{prefix}_term_net_savings_account'])} saved "
+                    f"on {_fmt_big(r[f'{prefix}_term_florence_fee_account'])} fee"
+                )
+
+            # Why this band
+            with st.expander(":material/menu_book: Why this recommendation", expanded=False):
+                st.markdown(r["rationale"])
+                st.caption("**Signals informing the recommendation:**")
+                sig_cols = st.columns(5)
+                sig_cols[0].metric(
+                    "Savings ratio", f"{r['target_savings_ratio']:.1f}×",
+                    help=_tip("savings"),
+                )
+                sig_cols[1].metric(
+                    "CL share", f"{r['signal_cl_intensity']*100:.1f}%",
+                    help=_tip("contract_labor_intensity"),
+                )
+                sig_cols[2].metric(
+                    "Agency premium", f"${r['signal_agency_premium']:,.0f}/hr",
+                    help=_tip("agency_premium"),
+                )
+                sig_cols[3].metric(
+                    "FICA offset", f"{r['signal_fica_offset_pct']*100:.0f}%",
+                    help=_tip("fica_offset"),
+                )
+                sig_cols[4].metric(
+                    "Data confidence", f"{r['signal_data_confidence']:.2f}",
+                    help=(
+                        "0–1 score combining HCRIS data completeness and "
+                        "MSA wage availability. Low = honor the manual-review "
+                        "flag; don't quote without admin sign-off."
+                    ),
+                )
+
+    # ─────────────────────────────────────────────────────────────────
+    # 💼 SYSTEM-WIDE ECONOMICS (Florence-internal — collapsed at bottom)
+    # ─────────────────────────────────────────────────────────────────
+    st.divider()
+    with st.expander(":material/business_center: System-wide totals & Florence internal economics", expanded=False):
+        st.caption(
+            "Aggregate across all facilities at the recommended Target tier — "
+            "internal numbers for Florence sales ops, not for the customer-facing pitch."
+        )
+        h1, h2, h3, h4, h5 = st.columns(5)
+        h1.metric(
+            "Total monthly Florence revenue",
+            f"${total_monthly_target/1e6:,.1f}M/mo",
+            f"{_fmt_big(total_term_fee_target)} over 24 months",
+            help=_tip("florence_fee"),
+        )
+        h2.metric(
+            "Total hospital savings",
+            _fmt_big(total_term_savings_target),
+            f"vs Florence fee {_fmt_big(total_term_fee_target)}",
+            help=_tip("savings", value=f"{total_term_savings_target/1e6:,.0f}M"),
+        )
+        h3.metric(
+            "Median Target fee",
+            _fmt_rate(median_target_fee_monthly),
+            f"FICA-offset {median_target_pct:.0%}",
+            help=_tip("fica_offset"),
+        )
+        h4.metric(
+            "Deal-attractiveness (median)",
+            f"{sys_recs['target_deal_score'].median()*100:.0f}/100",
+            f"rev-weighted {weighted_deal_score*100:.0f}/100",
+            help=_tip("deal_score"),
+        )
+        h5.metric(
+            "System savings : fee ratio",
+            f"{total_term_savings_target/total_term_fee_target:.1f}×"
+                if total_term_fee_target > 0 else "—",
+            help=_tip("savings"),
+        )
+
+        st.markdown("**Negotiation band — system-wide monthly revenue**")
+        band_col1, band_col2, band_col3 = st.columns(3)
+        band_col1.metric(
+            "Stretch",
+            f"${total_monthly_stretch/1e6:,.1f}M/mo",
+            f"median {_fmt_rate(sys_recs['stretch_monthly_fee'].median())}",
+        )
+        band_col2.metric(
+            "Target",
+            f"${total_monthly_target/1e6:,.1f}M/mo",
+            f"median {_fmt_rate(sys_recs['target_monthly_fee'].median())}",
+        )
+        band_col3.metric(
+            "Reference",
+            f"${total_monthly_reference/1e6:,.1f}M/mo",
+            f"median {_fmt_rate(sys_recs['reference_monthly_fee'].median())}",
+        )
+
+    with st.expander(":material/balance: Methodology & compliance disclosure", expanded=False):
+        st.markdown(
+            "**Pricing methodology:** Florence Workforce Restoration Economics v2 — "
+            "FICA-offset target pricing. Per-facility Target offset percentages are "
+            "calibrated using HCRIS contract-labor rates (CMS Form 2552-10 Worksheet S-3 "
+            "line 01100), BLS OEWS MSA-level RN wages, and known system-level overlays "
+            "(Kaiser AMN markup, placeholder MSP fees for HCA / Sutter / Ascension / etc.)."
+        )
+        st.markdown(
+            f"**Recommendation posture for {selected_sys_name}:** {posture} "
+            f"(median Target offset {median_target_pct:.0%})"
+        )
+        st.info(REQUIRED_COMPLIANCE_SENTENCE, icon=":material/balance:")
+
+
+
+# =====================================================================
+# PLAYBOOK — sales onboarding + source-of-truth for the pitch
+# =====================================================================
+if view == "playbook":
+    import playbook as _playbook
+    _playbook.streamlit_render(
+        st,
+        current_role=current_role,
+        current_user_email=(current_user or {}).get("email", "") if current_user else "",
+    )
+
+
+# =====================================================================
+# ONBOARDING — 5-day guided sales rep onboarding track
+# =====================================================================
+if view == "onboarding":
+    import onboarding as _onboarding
+    _rep_email_onb = (
+        (current_user or {}).get("email", "")
+        if current_user else "demo@florence.dev"
+    )
+    # Admins + ops see the team view; reps see their own track
+    if current_role in ("admin", "ops"):
+        leader_col, rep_col = st.tabs(["Team progress", "My track"])
+        with leader_col:
+            _onboarding.streamlit_leader_view(st)
+        with rep_col:
+            _onboarding.streamlit_rep_view(st, rep_email=_rep_email_onb)
+    else:
+        _onboarding.streamlit_rep_view(st, rep_email=_rep_email_onb)
+
+
+# =====================================================================
+# PIPELINE — workbench: per-rep deals, suggested next moves, stage tracking
+# =====================================================================
+if view == "pipeline":
+    import workbench as _workbench_pipeline
+    florence_eyebrow("Pipeline")
+    florence_headline(
+        "Your active deals. One next move per deal.",
+        subhead=(
+            "Every deal you open here is saved. The workbench tracks the "
+            "stage and suggests the next-best-move so you spend cycles on "
+            "selling, not on remembering. Generate proposals from the "
+            "**Inpatient** or **Outpatient** tabs; come back here to log "
+            "discovery notes, advance stages, and escalate to leadership."
+        ),
+    )
+
+    _pipe_rep_email = (
+        (current_user or {}).get("email", "") if current_user else ""
+    ) or "demo@florence.dev"
+    _pipe_active_deal = st.session_state.get("workbench_active_deal")
+
+    if not _pipe_active_deal:
+        # Pipeline list view
+        _workbench_pipeline.streamlit_pipeline_view(
+            st, rep_email=_pipe_rep_email,
+        )
+
+        st.markdown("---")
+        # New-deal form — derive system list from cached_universe (works
+        # for any care setting). Apply RBAC territory filter when auth is on.
+        try:
+            _u_for_pipe = cached_universe(sysov.overrides_mtime())
+            _systems_for_pipe = (
+                _u_for_pipe[["health_system_id", "health_system", "state"]]
+                .drop_duplicates("health_system_id")
+            )
+            if _AUTH_REQUIRED:
+                import rbac as _rbac_pipe2
+                _systems_for_pipe = _rbac_pipe2.filter_by_territory(
+                    _systems_for_pipe,
+                    st.session_state.get("current_territory", "ALL"),
+                    state_col="state",
+                )
+        except Exception:
+            _systems_for_pipe = pd.DataFrame()
+        _workbench_pipeline.streamlit_new_deal_form(
+            st, rep_email=_pipe_rep_email,
+            systems_df=_systems_for_pipe,
+        )
+    else:
+        # Deal detail view
+        _workbench_pipeline.streamlit_deal_detail(
+            st, deal_id=_pipe_active_deal,
+            generate_proposal_callback=lambda d: st.info(
+                "To generate the proposal bundle for this deal, open the "
+                "**Inpatient** or **Outpatient** tab, pick this system, "
+                "and the existing Excel + PDF generators will run as before. "
+                "Paste the resulting filename below to save it on the deal.",
+                icon=":material/lightbulb:",
+            ),
+        )
+
+
+# =====================================================================
+# MARKET INTELLIGENCE — live BLS surveillance + interactive Plotly charts
+# =====================================================================
+if view == "market_intel":
+    florence_eyebrow("Market intelligence")
+    florence_headline(
+        "What changed in the U.S. RN labor market.",
+        subhead=(
+            "Live signals from BLS JOLTS (healthcare openings, hires, quits), "
+            "CES (employment + wages), and OEWS (state-level RN wages). "
+            "Refreshed manually via `python -m surveillance.briefing` — wire to cron monthly."
+        ),
+    )
+
+    # ─── Natural-language query box (AI Q&A if configured, else rule-based) ─
+    try:
+        from ai_qa.llm_client import is_available as _ai_available
+        ai_ready = _ai_available()
+    except Exception:
+        ai_ready = False
+    ai_status = (
+        ":material/auto_awesome: AI Q&A active"
+        if ai_ready
+        else ":material/info: Rule-based parser (set ANTHROPIC_API_KEY for AI Q&A)"
+    )
+    st.caption(ai_status)
+    nl_query = st.text_input(
+        "Ask a market question",
+        placeholder=(
+            "Try: 'Show me California RN wages' · 'Compare CA TX FL' · "
+            "'Top 10 states by wage' · 'What's the labor market headline?'"
+        ),
+        key="intel_nl_query",
+    )
+
+    # Load surveillance data
+    try:
+        from surveillance.briefing import BRIEFINGS_DIR
+        latest_briefings = sorted(BRIEFINGS_DIR.glob("*.json"))
+        if not latest_briefings:
+            st.info(
+                "No briefing yet. Run `python -m surveillance.briefing` from the project root.",
+                icon=":material/info:",
+            )
+            st.stop()
+        import json as _json
+        with open(latest_briefings[-1]) as f:
+            briefing = _json.load(f)
+    except Exception as e:
+        st.error(f"Surveillance load error: {e}")
+        st.stop()
+
+    # Load state wages
+    state_bench = pd.read_csv(DATA_DIR / "state_benchmarks.csv")
+    state_bench = state_bench[~state_bench["state"].isin(["GU","PR","VI","MP","AS"])]
+
+    # Load JOLTS / CES history
+    try:
+        jolts_hist = pd.read_csv(DATA_DIR / "surveillance" / "jolts_healthcare" / "long_history.csv")
+        ces_hist = pd.read_csv(DATA_DIR / "surveillance" / "ces_rn" / "long_history.csv")
+    except Exception:
+        jolts_hist = pd.DataFrame()
+        ces_hist = pd.DataFrame()
+
+    # ─── Process natural-language query (AI first, then rule-based fallback) ─
+    query_result = None
+    if nl_query.strip():
+        # 1) Try AI Q&A if available
+        if ai_ready:
+            try:
+                from ai_qa.router import ask as ai_ask
+                ai_result = ai_ask(nl_query)
+                if ai_result.get("kind") == "table" and hasattr(ai_result.get("data"), "columns"):
+                    query_result = ("table", ai_result["data"])
+                elif ai_result.get("kind") == "text":
+                    query_result = ("text", str(ai_result.get("data", "")))
+                if ai_result.get("narrative"):
+                    st.caption(ai_result["narrative"])
+            except Exception as e:
+                st.warning(f"AI Q&A error: {e}; falling back to rules.")
+
+        # 2) Rule-based fallback (and primary when no API key)
+        if query_result is None:
+            q = nl_query.lower().strip()
+            import re as _re
+            state_codes_in_q = _re.findall(r"\b([A-Z]{2})\b", nl_query.upper())
+            valid_states = [s for s in state_codes_in_q if s in set(state_bench["state"])]
+            if "headline" in q or "summary" in q or "what changed" in q:
+                query_result = ("text", briefing["headline"])
+            elif "top" in q and "wage" in q:
+                n_match = _re.search(r"top\s+(\d+)", q)
+                n = int(n_match.group(1)) if n_match else 10
+                top = state_bench.sort_values("rn_wage", ascending=False).head(n)
+                query_result = ("table", top[["state", "rn_wage"]].rename(
+                    columns={"state": "State", "rn_wage": "RN hourly wage"}))
+            elif "compare" in q and len(valid_states) >= 2:
+                cmp = state_bench[state_bench["state"].isin(valid_states)]
+                query_result = ("table", cmp[["state", "rn_wage"]].rename(
+                    columns={"state": "State", "rn_wage": "RN hourly wage"}))
+            elif len(valid_states) == 1:
+                st_code = valid_states[0]
+                row = state_bench[state_bench["state"] == st_code].iloc[0]
+                rank = (state_bench["rn_wage"] > row["rn_wage"]).sum() + 1
+                query_result = ("text",
+                    f"**{st_code}** prevailing RN wage: **${row['rn_wage']:,.2f}/hour** "
+                    f"— ranked #{rank} of {len(state_bench)} states. "
+                    f"At ${row['rn_wage']:,.2f}/hr × 156 = ${row['rn_wage']*156:,.0f}/mo wage, "
+                    f"a Florence placement here delivers strong unit economics for the customer."
+                )
+            else:
+                query_result = ("text",
+                    "Couldn't parse that query with rules. "
+                    "Set ANTHROPIC_API_KEY to enable AI Q&A for free-form queries, or try one of "
+                    "the suggested patterns in the placeholder.")
+
+        if query_result is not None:
+            kind, payload = query_result
+            st.markdown(
+                f"""
+                <div style="background:#F4F6F8; border-left:4px solid #0BC5A0;
+                            padding:14px 22px; border-radius:0 8px 8px 0; margin: 18px 0;">
+                  <div style="font-family:Inter,sans-serif; font-size:0.72rem;
+                              font-weight:600; letter-spacing:0.18em; text-transform:uppercase;
+                              color:#089478; margin-bottom:6px;">Query result</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if kind == "text":
+                st.markdown(payload)
+            else:  # table
+                st.dataframe(payload, use_container_width=True, hide_index=True)
+
+    # ─── Headline banner ────────────────────────────────────────────
+    st.markdown(
+        f"""
+        <div class="florence-banner" style="margin: 18px 0;">
+          <div class="banner-text">
+            {briefing["headline"]}
+          </div>
+          <div style="font-family:Inter,sans-serif; font-size:0.78rem;
+                      font-weight:600; letter-spacing:0.18em;
+                      text-transform:uppercase; color:rgba(255,255,255,0.7);">
+            AS OF {briefing["as_of"]}
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ─── State-level RN wage choropleth (Plotly) ─────────────────────
+    st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("State-level RN wages — interactive map")
+    try:
+        from viz.charts import state_choropleth
+        state_dict = dict(zip(state_bench["state"], state_bench["rn_wage"]))
+        fig = state_choropleth(
+            state_dict,
+            title="Prevailing RN hourly wage by state (BLS OEWS, May 2024)",
+            colorbar_title="$/hr",
+            value_format="$,.2f",
+            height=480,
+        )
+        st.plotly_chart(fig, use_container_width=True)
+        # Education caption
+        st.caption(
+            "California, Hawaii, and Oregon lead in RN wages — driven by union density, "
+            "cost of living, and state nurse-staffing ratio laws. The bottom quartile (AL, MS, AR, "
+            "SD) reflects rural labor markets and lower union penetration. Florence flat-fee "
+            "economics scale uniformly — but customer ROI improves in higher-wage markets where "
+            "agency premiums are highest."
+        )
+    except Exception as e:
+        st.warning(f"Map render error: {e}")
+
+    # ─── JOLTS time series ───────────────────────────────────────────
+    st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("Healthcare labor market — JOLTS trends")
+    if not jolts_hist.empty:
+        try:
+            from viz.charts import time_series
+            # Filter to last 24 months of data
+            jolts_hist["period_num"] = jolts_hist["period"].str.replace("M", "").astype(int)
+            jolts_hist["yearmonth"] = (
+                jolts_hist["year"].astype(str) + "-" +
+                jolts_hist["period_num"].astype(str).str.zfill(2)
+            )
+            jolts_filtered = jolts_hist[
+                jolts_hist["metric"].isin(["job_openings_level", "hires_level",
+                                           "quits_level", "layoffs_level"])
+            ].dropna(subset=["value"])
+            # Pretty metric labels
+            label_map = {
+                "job_openings_level": "Job openings",
+                "hires_level": "Hires",
+                "quits_level": "Quits",
+                "layoffs_level": "Layoffs",
+            }
+            jolts_filtered["metric"] = jolts_filtered["metric"].map(label_map)
+            jolts_filtered = jolts_filtered.sort_values(["metric", "year", "period_num"])
+            fig_ts = time_series(
+                jolts_filtered.tail(96),  # last 24mo × 4 metrics = 96 rows
+                x_col="yearmonth", y_col="value", color_col="metric",
+                title="Healthcare sector openings / hires / quits / layoffs (thousands)",
+                y_label="Thousands of workers", height=400,
+            )
+            st.plotly_chart(fig_ts, use_container_width=True)
+            st.caption(
+                "The JOLTS series tracks monthly flows: **openings** = unmet demand, "
+                "**hires** = actual filling, **quits** = worker leverage (people leaving "
+                "voluntarily), **layoffs** = employer cost-pressure. When openings > hires "
+                "for sustained periods, wages rise. When quits stay elevated, operators face "
+                "retention costs. Florence's permanent-placement value increases in both "
+                "scenarios."
+            )
+        except Exception as e:
+            st.warning(f"Time series error: {e}")
+
+    # ─── Insight stat cards (preserved from before) ──────────────────
+    by_cat: dict[str, list] = {}
+    for ins in briefing["insights"]:
+        by_cat.setdefault(ins["category"], []).append(ins)
+    for cat, items in by_cat.items():
+        st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
+        florence_eyebrow(cat)
+        n_cols = min(len(items), 4)
+        cols = st.columns(n_cols)
+        for i, ins in enumerate(items):
+            col = cols[i % n_cols]
+            arrow = "↑" if ins["delta_pct"] >= 0 else "↓"
+            severity_color = "#0BC5A0" if ins["severity"] == "high" else "#5B6675"
+            col.markdown(
+                f"""
+                <div style="background:#F4F6F8; border:1px solid #E5E8EE;
+                            border-radius:10px; padding:14px 18px; margin-bottom:14px;
+                            height:160px;">
+                  <div style="font-family:Inter,sans-serif; font-size:0.72rem;
+                              font-weight:600; letter-spacing:0.12em; text-transform:uppercase;
+                              color:#5B6675;">{ins['metric'].upper()}</div>
+                  <div style="font-family:Newsreader,serif; font-size:1.65rem;
+                              font-weight:600; color:#0F1B2D; margin-top:6px;">
+                    {ins['current']:,.1f}
+                  </div>
+                  <div style="font-family:Inter,sans-serif; font-size:0.85rem;
+                              color:{severity_color}; font-weight:600;">
+                    {arrow} {ins['delta_pct']:+.1f}%
+                    <span style="color:#5B6675; font-weight:400;">
+                      from {ins['prior_period']}
+                    </span>
+                  </div>
+                  <div style="font-family:Inter,sans-serif; font-size:0.78rem;
+                              color:#5B6675; line-height:1.4; margin-top:8px;">
+                    {ins['interpretation']}
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # ─── Top + bottom states by wage (horizontal bars) ───────────────
+    st.markdown("<div style='height:18px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("State wage distribution")
+    wc1, wc2 = st.columns(2)
+    try:
+        from viz.charts import bar_horizontal
+        top10 = state_bench.nlargest(10, "rn_wage")[["state", "rn_wage"]]
+        bot10 = state_bench.nsmallest(10, "rn_wage")[["state", "rn_wage"]]
+        with wc1:
+            fig_top = bar_horizontal(
+                top10, label_col="state", value_col="rn_wage",
+                title="Top 10 states by RN hourly wage",
+                x_label="$/hour", height=380,
+            )
+            st.plotly_chart(fig_top, use_container_width=True)
+        with wc2:
+            fig_bot = bar_horizontal(
+                bot10, label_col="state", value_col="rn_wage",
+                title="Bottom 10 states by RN hourly wage",
+                x_label="$/hour", height=380,
+            )
+            st.plotly_chart(fig_bot, use_container_width=True)
+        st.caption(
+            "**Florence opportunity:** highest-wage states (CA, HI, OR) face the steepest "
+            "agency premiums — the deepest pool for Florence's hospital pricing power. "
+            "Lowest-wage states (AL, MS, AR, SD) have the strongest capacity-expansion "
+            "story for non-hospital settings, where flat-fee economics scale uniformly."
+        )
+    except Exception as e:
+        st.warning(f"Bar chart error: {e}")
+
+    # ─── Surveillance feed status ────────────────────────────────────
+    st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("Surveillance feeds")
+    feed_cols = st.columns(len(briefing["feeds_status"]))
+    for col, (feed, status) in zip(feed_cols, briefing["feeds_status"].items()):
+        marker = ":material/check_circle:" if status == "current" else ":material/warning:"
+        col.markdown(f"**{feed}**  \n{marker} {status}")
+
+    with st.expander(":material/refresh: Manual refresh & history", expanded=False):
+        st.code(
+            "python -m surveillance.jolts_healthcare\n"
+            "python -m surveillance.ces_rn\n"
+            "python -m surveillance.oews_state_rn   # state RN wages (API ID refinement pending)\n"
+            "python -m surveillance.briefing",
+            language="bash",
+        )
+        st.caption(
+            "Schedule monthly via cron — `5 0 5 * *` runs at 00:05 on the 5th of each "
+            "month (after BLS publishes JOLTS monthly release on the 1st). "
+            "Brings each feed to current and regenerates the briefing."
+        )
+        if len(latest_briefings) > 1:
+            st.markdown("**Past briefings:**")
+            for b in latest_briefings[-10:]:
+                st.caption(f"- {b.stem}")
+
+
+# =====================================================================
+# FORECASTING — 12-24mo projection of JOLTS healthcare labor signals
+# =====================================================================
+if view == "forecast":
+    florence_eyebrow("Forecasting")
+    florence_headline(
+        "Where the RN labor market is going.",
+        subhead=(
+            "SARIMA projections of BLS JOLTS healthcare signals 6-24 months forward. "
+            "Use these for annual sales planning, pricing-power forecasts, and the "
+            "multi-year TAM story in fundraising decks."
+        ),
+    )
+
+    # ─── Controls ─────────────────────────────────────────────────────
+    col_h, col_r = st.columns([3, 2])
+    with col_h:
+        horizon = st.slider(
+            "Forecast horizon (months)",
+            min_value=6, max_value=24, value=12, step=1,
+            help="How far forward to project. 12mo is the default for annual planning.",
+        )
+    with col_r:
+        if st.button(":material/refresh: Re-run forecast",
+                     type="primary", use_container_width=True):
+            st.cache_data.clear()
+
+    @st.cache_data(show_spinner="Fitting SARIMA models…")
+    def _run_forecasts(periods: int) -> dict:
+        from surveillance.forecast import forecast_jolts_metric
+        out = {}
+        for metric in ["job_openings_level", "hires_level",
+                       "quits_level", "layoffs_level"]:
+            out[metric] = forecast_jolts_metric(metric, periods=periods)
+        return out
+
+    @st.cache_data
+    def _load_jolts_hist() -> pd.DataFrame:
+        path = DATA_DIR / "surveillance" / "jolts_healthcare" / "long_history.csv"
+        if not path.exists():
+            return pd.DataFrame()
+        df = pd.read_csv(path)
+        df["period_num"] = df["period"].astype(str).str.replace("M", "")
+        df["period_num"] = pd.to_numeric(df["period_num"], errors="coerce")
+        df = df.dropna(subset=["period_num"])
+        df["date"] = pd.to_datetime(
+            df["year"].astype(int).astype(str) + "-" +
+            df["period_num"].astype(int).astype(str).str.zfill(2) + "-01",
+            errors="coerce",
+        )
+        return df.sort_values("date")
+
+    hist = _load_jolts_hist()
+    if hist.empty:
+        st.info(
+            "No JOLTS history yet. Run `python -m surveillance.jolts_healthcare` "
+            "to seed the forecasting layer.",
+            icon=":material/info:",
+        )
+        st.stop()
+
+    fc_results = _run_forecasts(horizon)
+
+    # ─── Narrative headline ──────────────────────────────────────────
+    op = fc_results.get("job_openings_level", {})
+    qt = fc_results.get("quits_level", {})
+    if "forecast_mean" in op and "forecast_mean" in qt:
+        cur_op = op["last_observed"]
+        fut_op = op["forecast_mean"][-1]
+        cur_qt = qt["last_observed"]
+        fut_qt = qt["forecast_mean"][-1]
+        cur_ratio = cur_op / max(cur_qt, 1)
+        fut_ratio = fut_op / max(fut_qt, 1)
+        tightening = fut_ratio > cur_ratio
+        direction = "TIGHTENING" if tightening else "SOFTENING"
+        pricing_dir = "expanding" if tightening else "normalizing"
+
+        st.markdown(
+            f"""
+            <div style="background: {'#0BC5A0' if tightening else '#F4A261'}1A;
+                        border-left: 4px solid {'#0BC5A0' if tightening else '#F4A261'};
+                        padding: 16px 20px; border-radius: 8px; margin: 12px 0;">
+              <div style="font-family: Inter, sans-serif; font-size: 12px;
+                          letter-spacing: 0.08em; color: #5A6B82; text-transform: uppercase;">
+                Forward-looking headline
+              </div>
+              <div style="font-family: Newsreader, Georgia, serif; font-size: 24px;
+                          color: #0F1B2D; font-weight: 500; margin: 6px 0 4px 0;">
+                Healthcare labor market projected to be <b>{direction}</b> over the next {horizon} months.
+              </div>
+              <div style="font-family: Inter, sans-serif; font-size: 14px; color: #2C3E50;">
+                Openings:quits ratio · <b>{cur_ratio:.2f}</b> today &nbsp;→&nbsp; <b>{fut_ratio:.2f}</b> in {horizon}mo.
+                Florence pricing power {pricing_dir} over the period.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # ─── Metric summary cards ────────────────────────────────────────
+    metric_labels = {
+        "job_openings_level": "Healthcare job openings",
+        "hires_level": "Hires",
+        "quits_level": "Quits",
+        "layoffs_level": "Layoffs",
+    }
+    cols = st.columns(4)
+    for col, (metric, label) in zip(cols, metric_labels.items()):
+        r = fc_results.get(metric, {})
+        with col:
+            if "error" in r:
+                st.metric(label, "—", help=r["error"])
+                continue
+            cur = r["last_observed"]
+            fut = r["forecast_mean"][-1]
+            pct = (fut - cur) / max(cur, 1) * 100
+            st.metric(
+                label,
+                f"{fut:,.0f}",
+                delta=f"{pct:+.1f}% vs today",
+                delta_color="normal" if metric != "layoffs_level" else "inverse",
+            )
+            st.caption(f"Today: {cur:,.0f}")
+
+    # ─── Forecast charts ─────────────────────────────────────────────
+    st.markdown("### Projection charts")
+    st.caption(
+        "Solid line = observed history. Dashed line = SARIMA forecast. "
+        "Shaded band = 80% confidence interval."
+    )
+
+    import plotly.graph_objects as _go
+    from viz import (FLORENCE_TEAL as _FL_TEAL,
+                     FLORENCE_NAVY as _FL_NAVY,
+                     FLORENCE_MUTED as _FL_MUTED)
+
+    def _make_forecast_fig(metric: str, label: str) -> _go.Figure:
+        m_hist = hist[hist["metric"] == metric].copy()
+        r = fc_results.get(metric, {})
+        fig = _go.Figure()
+        if not m_hist.empty:
+            fig.add_trace(_go.Scatter(
+                x=m_hist["date"], y=m_hist["value"],
+                mode="lines", name="Observed",
+                line=dict(color=_FL_NAVY, width=2),
+                hovertemplate="%{x|%b %Y}<br>%{y:,.0f}<extra></extra>",
+            ))
+        if "forecast_mean" in r and not m_hist.empty:
+            last_dt = m_hist["date"].max()
+            future_dates = pd.date_range(
+                start=last_dt + pd.DateOffset(months=1),
+                periods=len(r["forecast_mean"]), freq="MS",
+            )
+            fig.add_trace(_go.Scatter(
+                x=future_dates, y=r["ci_upper"],
+                mode="lines", line=dict(width=0),
+                showlegend=False, hoverinfo="skip",
+            ))
+            fig.add_trace(_go.Scatter(
+                x=future_dates, y=r["ci_lower"],
+                mode="lines", line=dict(width=0),
+                fill="tonexty", fillcolor="rgba(11, 197, 160, 0.18)",
+                name="80% CI", hoverinfo="skip",
+            ))
+            fig.add_trace(_go.Scatter(
+                x=future_dates, y=r["forecast_mean"],
+                mode="lines", name="Forecast",
+                line=dict(color=_FL_TEAL, width=2.5, dash="dash"),
+                hovertemplate="%{x|%b %Y}<br>%{y:,.0f}<extra></extra>",
+            ))
+        fig.update_layout(
+            title=dict(text=label,
+                       font=dict(family="Newsreader, Georgia, serif",
+                                 size=18, color=_FL_NAVY),
+                       x=0, xanchor="left"),
+            font=dict(family="Inter, sans-serif", color=_FL_NAVY, size=12),
+            paper_bgcolor="white", plot_bgcolor="white",
+            height=320, margin=dict(l=20, r=20, t=50, b=30),
+            legend=dict(orientation="h", yanchor="bottom",
+                        y=1.0, xanchor="right", x=1.0),
+            xaxis=dict(showgrid=False),
+            yaxis=dict(showgrid=True, gridcolor="#EEF1F5"),
+        )
+        return fig
+
+    chart_cols = st.columns(2)
+    for i, (metric, label) in enumerate(metric_labels.items()):
+        with chart_cols[i % 2]:
+            r = fc_results.get(metric, {})
+            if "error" in r:
+                st.warning(f"{label}: {r['error']}")
+                continue
+            st.plotly_chart(_make_forecast_fig(metric, label),
+                            use_container_width=True)
+
+    # ─── Florence pricing implication block ──────────────────────────
+    with st.expander(":material/insights: Florence pricing & sales implication"):
+        st.markdown(
+            f"""
+**Annual sales planning** — Plug `{horizon}mo` projected openings into your TAM model.
+Today: **{op.get('last_observed', 0):,.0f}** open healthcare positions.
+{horizon}-month projection: **{op.get('forecast_mean', [0])[-1]:,.0f}** open positions
+({((op.get('forecast_mean', [0])[-1] - op.get('last_observed', 1)) / max(op.get('last_observed', 1), 1) * 100):+.1f}% change).
+
+**Pricing power** — When openings:quits ratio rises, employers are competing harder
+for fewer movers. That is when Florence's permanent-placement value proposition
+commands the most price. The ratio is moving from **{cur_ratio:.2f}** to
+**{fut_ratio:.2f}** over the next {horizon} months.
+
+**Fundraising story** — Use the chart above when investors ask whether the RN
+shortage is a "blip." The SARIMA fit on multi-year BLS data shows the structural
+trajectory, not a snapshot.
+            """
+            if "forecast_mean" in op and "forecast_mean" in qt else
+            "Forecast data not yet available for all metrics. "
+            "Run `python -m surveillance.jolts_healthcare` to extend history."
+        )
+
+    # ─── Methodology footnote ────────────────────────────────────────
+    with st.expander(":material/help: Methodology"):
+        st.markdown(
+            """
+**Model.** SARIMA(1,1,1)×(1,1,0)₁₂ fit on monthly BLS JOLTS healthcare series.
+Confidence intervals at 80% (alpha=0.20).
+
+**Source data.** `data/surveillance/jolts_healthcare/long_history.csv`.
+Refreshed via `python -m surveillance.jolts_healthcare` (recommended monthly,
+right after BLS releases on the 1st of each month).
+
+**Series.**
+- *Job openings level* — JTU6200000000000000JOL
+- *Hires level* — JTU6200000000000000HIL
+- *Quits level* — JTU6200000000000000QUL
+- *Layoffs level* — JTU6200000000000000LDL
+
+**Caveats.**
+- SARIMA is a structural projection. Major regime shifts (Medicare cuts,
+  pandemic surge) require manual override.
+- Confidence widens with horizon — 24mo intervals are wide. Use 12mo for
+  point estimates and the band for sensitivity.
+- Aggregate national signal. State / MSA forecasts require state-level
+  JOLTS subscriptions (not in the free BLS API).
+            """
+        )
+
+
+# =====================================================================
+# CARE SETTINGS BEYOND HOSPITALS — ASCs, HHAs, SNFs, Hospices, Dialysis
+# =====================================================================
+if view == "outpatient":
+    florence_eyebrow("Outpatient · Build a customer proposal")
+    florence_headline(
+        "Monthly subscription. Credit card. Expand RN capacity.",
+        subhead=(
+            "Surgery centers, home health, skilled nursing, hospice, and dialysis "
+            "are all RN-constrained. Florence delivers permanent international RNs "
+            "on a **monthly credit-card subscription** — not the $50K placement "
+            "fee model used for hospitals. One-month deposit at signing, applied "
+            "to the final month. No long-term commitment beyond the 24-month "
+            "service term. (For hospital-level proposals, see the **Inpatient** tab.)"
+        ),
+    )
+
+    @st.cache_data
+    def _load_non_hospital() -> pd.DataFrame:
+        import non_hospital_pricing as nhp
+        path = DATA_DIR / "non_hospital_priced.parquet"
+        if not path.exists():
+            facilities = pd.read_csv(DATA_DIR / "non_hospital_facilities.csv",
+                                     dtype={"ccn": str})
+            facilities["ccn"] = facilities["ccn"].astype(str).str.zfill(6)
+            df = nhp.price_non_hospital(facilities)
+            df.to_parquet(path, index=False)
+            return df
+        return pd.read_parquet(path)
+
+    nh = _load_non_hospital()
+
+    # ── Filters (compact) ─────────────────────────────────────────────
+    with st.expander(":material/tune: Filter & sort", expanded=False):
+        ctrl1, ctrl2, ctrl3 = st.columns([1.4, 1.2, 1.2])
+        with ctrl1:
+            type_filter = st.multiselect(
+                "Facility types",
+                ["ASC", "HHA", "SNF", "HOSPICE", "DIALYSIS"],
+                default=["ASC", "HHA", "SNF", "HOSPICE", "DIALYSIS"],
+                key="nh_types",
+            )
+        with ctrl2:
+            nh_state = st.multiselect(
+                "State",
+                sorted(nh["state"].dropna().unique()),
+                key="nh_state",
+            )
+        with ctrl3:
+            sort_by = st.selectbox(
+                "Sort facilities by",
+                ["Revenue uplift (highest)", "Florence fee (highest)",
+                 "RN headcount (largest)", "Facility name (A–Z)"],
+                key="nh_sort",
+            )
+
+    fr = nh[nh["facility_type"].isin(type_filter)].copy() if type_filter else nh.copy()
+    if nh_state:
+        fr = fr[fr["state"].isin(nh_state)]
+    if len(fr) == 0:
+        st.warning("No facilities match the current filter.")
+        st.stop()
+
+    # ── Chain selector (mirrors the hospital-tab system pattern) ──────
+    chain_summary = (
+        fr.groupby(["health_system_id", "health_system"])
+        .agg(n=("ccn", "count"),
+             rn=("rn_estimate", "sum"),
+             rev=("account_term_revenue_uplift", "sum"))
+        .reset_index()
+        .sort_values("rev", ascending=False)
+    )
+    # Show "All facilities" first, then named chains, then Independent last
+    chain_labels = ["All facilities in this filter"]
+    chain_map = {chain_labels[0]: None}
+    for _, r in chain_summary.iterrows():
+        if r["health_system_id"] == "independent":
+            continue
+        label = (
+            f"{r['health_system']}  ·  "
+            f"{int(r['n']):,} facilities  ·  "
+            f"unlocks ${r['rev']/1e9:.2f}B"
+            if r["rev"] >= 1e9 else
+            f"{r['health_system']}  ·  "
+            f"{int(r['n']):,} facilities  ·  "
+            f"unlocks ${r['rev']/1e6:,.0f}M"
+        )
+        chain_labels.append(label)
+        chain_map[label] = r["health_system_id"]
+    # Append Independent at the end
+    indep_row = chain_summary[chain_summary["health_system_id"] == "independent"]
+    if len(indep_row):
+        r = indep_row.iloc[0]
+        label = (
+            f"Independent / Unknown  ·  "
+            f"{int(r['n']):,} facilities  ·  "
+            f"unlocks ${r['rev']/1e9:.2f}B"
+        )
+        chain_labels.append(label)
+        chain_map[label] = "independent"
+
+    selected_chain_label = st.selectbox(
+        "Chain / system",
+        chain_labels,
+        label_visibility="collapsed",
+        key="nh_chain_selector",
+    )
+    selected_chain_id = chain_map[selected_chain_label]
+    if selected_chain_id is not None:
+        fr = fr[fr["health_system_id"] == selected_chain_id]
+        selected_chain_name = fr.iloc[0]["health_system"]
+    else:
+        selected_chain_name = None
+
+    # ── Aggregate hero numbers ────────────────────────────────────────
+    total_facilities = len(fr)
+    total_rns = int(fr["rn_estimate"].sum())
+    total_term_fee = fr["account_term_florence_fee"].sum()
+    total_term_fica = (fr["account_monthly_fica_savings"] * 24).sum()
+    total_term_net_cost = fr["account_term_net_cost"].sum()
+    total_term_rev = fr["account_term_revenue_uplift"].sum()
+    total_term_benefit = fr["account_term_net_benefit"].sum()
+    annual_rev_uplift = total_term_rev / 2
+    median_wage = fr["rn_wage_hourly"].median()
+    median_fee = fr["florence_fee_per_rn_month"].median()
+    median_fica = fr["monthly_fica_savings_per_rn"].median()
+    median_rev_per_rn_mo = fr["capacity_revenue_per_rn_month"].median()
+
+    def _fmt_big(v: float) -> str:
+        if v >= 1e12: return f"${v/1e12:.2f}T"
+        if v >= 1e9:  return f"${v/1e9:.2f}B"
+        return f"${v/1e6:,.0f}M"
+
+    # ── Hero: Without Florence (gray) vs With Florence (teal) ─────────
+    st.divider()
+    type_label = " · ".join(type_filter) if len(type_filter) < 5 else "All non-hospital settings"
+    if selected_chain_name and selected_chain_name != "Independent / Unknown":
+        florence_eyebrow(f"01 · The opportunity · For {selected_chain_name}")
+    else:
+        florence_eyebrow("01 · The opportunity · The full non-hospital universe")
+    st.markdown(
+        f"""
+        <div style="display:flex; align-items:baseline; gap:14px; margin: 6px 0 22px 0;">
+          <div style="font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600;
+                      letter-spacing:0.22em; text-transform:uppercase; color:#5B6675;">UNIVERSE</div>
+          <div style="font-family:'Newsreader',serif; font-size:1.9rem; font-weight:600;
+                      color:#0F1B2D;">{total_facilities:,}</div>
+          <div style="font-family:'Inter',sans-serif; font-size:0.95rem; color:#5B6675;">
+            facilities · {total_rns:,} placeable RNs · {type_label}
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    card_l, card_arrow, card_r = st.columns([5, 0.6, 5])
+    with card_l:
+        st.markdown(
+            f"""
+            <div class="florence-card today">
+              <div class="card-label">Without Florence</div>
+              <div style="display:flex; align-items:baseline; gap:6px;">
+                <div class="card-number" style="font-size:2.6rem;">Labor-capped</div>
+              </div>
+              <div class="card-headline">Revenue ceiling = staffing ceiling.</div>
+              <div class="card-body">
+                Every open RN seat is procedures not done, episodes not opened,
+                bed-days not billed. Operators in these settings turn business
+                away because they can't hire fast enough. The cost of inaction
+                isn't agency premium — it's foregone revenue.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with card_arrow:
+        st.markdown(
+            "<div style='font-family:Newsreader,serif; font-size:2rem; color:#0BC5A0;"
+            " text-align:center; padding-top:90px;'>→</div>",
+            unsafe_allow_html=True,
+        )
+    with card_r:
+        st.markdown(
+            f"""
+            <div class="florence-card with-florence">
+              <div class="card-label">With Florence</div>
+              <div style="display:flex; align-items:baseline; gap:6px;">
+                <div class="card-number">${median_fee:,.0f}</div>
+                <div class="card-unit">/RN/month</div>
+              </div>
+              <div class="card-headline">Monthly subscription. Credit card.</div>
+              <div class="card-body">
+                Permanent international RNs delivered as a monthly subscription —
+                no $50K placement fee, no upfront capex. One-month deposit at
+                signing, applied to month 24. Each placed RN unlocks a median
+                <b>${median_rev_per_rn_mo:,.0f}/RN/mo</b> in incremental revenue.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        f"""
+        <div class="florence-banner">
+          <div class="banner-text">
+            Annual incremental revenue unlocked across this filter
+          </div>
+          <div style="display:flex; align-items:baseline; gap:14px;">
+            <div class="banner-value">{_fmt_big(annual_rev_uplift)}</div>
+            <div class="banner-suffix">{(total_term_rev / max(total_term_fee, 1)):.0f}× revenue : Florence fee</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    # ── How the customer pays (NEW) ──────────────────────────────────
+    st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("02 · How the customer pays")
+    florence_headline(
+        "Monthly subscription. Credit card on file. One-month deposit.",
+        subhead=(
+            "Outpatient operators don't buy on a $50K placement-fee model — "
+            "they buy on an opex line item. Florence charges the customer's "
+            "credit card on the same day each month, with a one-month deposit "
+            "at signing applied to month 24. No invoices, no collections, "
+            "no committee approvals."
+        ),
+    )
+
+    median_fee_per_rn = float(median_fee)
+    _ex_rn_count = 8  # typical outpatient cohort size
+    _ex_monthly = median_fee_per_rn * _ex_rn_count
+    _ex_first_month = _ex_monthly * 2  # deposit + first month
+    _ex_term_total = _ex_monthly * 24
+
+    pay_cols = st.columns(3)
+    with pay_cols[0]:
+        st.markdown(
+            f"""
+            <div class="florence-card today" style="height:auto;">
+              <div class="card-label">Month 1 · at signing</div>
+              <div class="card-number" style="font-size:2.3rem;">
+                ${median_fee_per_rn * 2:,.0f}<span style="font-size:1rem;color:#5B6675;">/RN</span>
+              </div>
+              <div class="card-body" style="margin-top:8px;">
+                Deposit (1 month) + first month's subscription. Charged at
+                contract signing.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with pay_cols[1]:
+        st.markdown(
+            f"""
+            <div class="florence-card today" style="height:auto;">
+              <div class="card-label">Months 2 – 23 · recurring</div>
+              <div class="card-number" style="font-size:2.3rem;">
+                ${median_fee_per_rn:,.0f}<span style="font-size:1rem;color:#5B6675;">/RN/mo</span>
+              </div>
+              <div class="card-body" style="margin-top:8px;">
+                Auto-charged to credit card on the same day each month.
+                No invoices. No chasing payment.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    with pay_cols[2]:
+        st.markdown(
+            f"""
+            <div class="florence-card with-florence" style="height:auto;">
+              <div class="card-label">Month 24 · final</div>
+              <div class="card-number" style="font-size:2.3rem;">$0</div>
+              <div class="card-body" style="margin-top:8px;">
+                Deposit applied to the final month. Customer's 24-month total
+                per RN: <b>${median_fee_per_rn * 24:,.0f}</b>.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+    # Worked example so the rep can quote a real cohort
+    st.markdown(
+        f"""
+        <div style="margin-top:14px; padding:14px 18px; background:#F4F6F8;
+                    border-left:3px solid #0BC5A0; border-radius:6px;">
+          <div style="font-family:Inter,sans-serif; font-size:0.72rem;
+                      font-weight:600; letter-spacing:0.18em; color:#5B6675;
+                      text-transform:uppercase;">WORKED EXAMPLE — 8 RN COHORT</div>
+          <div style="font-family:Inter,sans-serif; font-size:0.95rem;
+                      color:#0F1B2D; margin-top:6px; line-height:1.6;">
+            For a typical <b>8-RN outpatient cohort at ${median_fee_per_rn:,.0f}/RN/mo</b>:
+            <br>
+            <b>${_ex_first_month:,.0f}</b> charged at signing (deposit + month 1)
+            &nbsp;→&nbsp;
+            <b>${_ex_monthly:,.0f}/month</b> for months 2 – 23
+            &nbsp;→&nbsp;
+            <b>$0</b> in month 24
+            &nbsp;→&nbsp;
+            <b>${_ex_term_total:,.0f}</b> total over the 24-month term.
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.caption(
+        f"Median per-RN monthly fee in this filter is **${median_fee_per_rn:,.0f}**. "
+        "Internally, this is sized to a 40% offset of the customer's payroll-side "
+        "tax savings on F-1 RN wages — the FICA_OFFSET_TARGET mode. To the "
+        "customer, it's just a monthly subscription. Lead with the subscription "
+        "number; the FICA mechanics are how WE size the fee, not how we "
+        "explain it to the buyer."
+    )
+
+    # ── By-type breakdown ─────────────────────────────────────────────
+    st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("03 · Coverage by setting")
+    type_summary = (
+        fr.groupby("facility_type")
+        .agg(
+            n=("ccn", "count"),
+            rn_total=("rn_estimate", "sum"),
+            fee_term=("account_term_florence_fee", "sum"),
+            rev_term=("account_term_revenue_uplift", "sum"),
+        )
+        .reindex(["ASC", "HHA", "SNF", "HOSPICE", "DIALYSIS"])
+        .dropna()
+    )
+    cols = st.columns(len(type_summary))
+    for col, (ft, row) in zip(cols, type_summary.iterrows()):
+        col.metric(
+            ft,
+            f"{int(row['n']):,}",
+            f"{int(row['rn_total']):,} RNs · {_fmt_big(row['rev_term']/2)}/yr uplift",
+        )
+
+    # ── Per-facility table ────────────────────────────────────────────
+    st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+    florence_eyebrow("04 · Per-facility opportunity")
+    fac_left, fac_right = st.columns([3, 1])
+    with fac_left:
+        florence_headline(
+            "Highest-value targets first.",
+            subhead=(
+                "Sorted by 24-month incremental revenue uplift. "
+                "Click any facility for the per-RN breakdown."
+            ),
+        )
+    with fac_right:
+        st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+        view_n = st.radio(
+            "Show",
+            ["Top 25", "Top 100", "All"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="nh_view_n",
+        )
+
+    sort_map = {
+        "Revenue uplift (highest)": ("account_term_revenue_uplift", False),
+        "Florence fee (highest)": ("account_term_florence_fee", False),
+        "RN headcount (largest)": ("rn_estimate", False),
+        "Facility name (A–Z)": ("name", True),
+    }
+    sort_col, ascending = sort_map[sort_by]
+    sorted_fr = fr.sort_values(sort_col, ascending=ascending)
+    limit = {"Top 25": 25, "Top 100": 100, "All": len(sorted_fr)}[view_n]
+    sorted_fr = sorted_fr.head(limit)
+
+    display = sorted_fr[[
+        "ccn", "name", "facility_type", "city", "state",
+        "rn_estimate", "florence_fee_per_rn_month",
+        "employer_net_cost_per_rn_month",
+        "capacity_revenue_per_rn_month",
+        "account_term_revenue_uplift",
+        "roi_revenue_to_fee",
+    ]].copy()
+    display.columns = [
+        "CCN", "Facility", "Type", "City", "ST", "RNs",
+        "Florence fee/RN/mo", "Net cost/RN/mo",
+        "Rev uplift/RN/mo", "24-mo total rev uplift", "ROI",
+    ]
+    st.dataframe(
+        display,
+        use_container_width=True,
+        hide_index=True,
+        column_config={
+            "Florence fee/RN/mo": st.column_config.NumberColumn(format="$%.0f"),
+            "Net cost/RN/mo": st.column_config.NumberColumn(format="$%.0f"),
+            "Rev uplift/RN/mo": st.column_config.NumberColumn(format="$%.0f"),
+            "24-mo total rev uplift": st.column_config.NumberColumn(format="$%.0f"),
+            "ROI": st.column_config.NumberColumn(format="%.1f×"),
+        },
+        height=460,
+    )
+
+    # ── Methodology ───────────────────────────────────────────────────
+    with st.expander(":material/balance: Methodology & data sources", expanded=False):
+        st.markdown(
+            """
+            **Data sources.**
+            - Facility universe: CMS Provider Data Catalog (ASC, HHA, SNF, Hospice, Dialysis — May 2026 snapshots)
+            - Prevailing RN wage: BLS OEWS state-level annual mean (rolling 12-month, RN SOC 29-1141)
+            - RN headcounts: setting-specific operational benchmarks (ASCs by OR count, SNFs by certified beds, HHAs/Hospices/Dialysis by ADC)
+            - Capacity revenue per RN: setting-specific gross-revenue benchmarks
+              ($400K ASC, $300K HHA, $200K SNF, $250K Hospice, $280K Dialysis per RN per year)
+
+            **Pricing model — monthly subscription.**
+            Outpatient settings use a credit-card monthly subscription model —
+            NOT the $50K flat placement fee used for hospital deals. The monthly
+            fee per RN is sized as `FICA_savings / target_offset_pct` at a 40%
+            target offset (so the customer's payroll-side tax savings on F-1 RN
+            wages under IRC §3121(b)(19) cover ~40% of the subscription).
+            Clamped to a $750 floor and $2,000 ceiling per RN per month so
+            small-wage and high-wage settings stay in a defensible band.
+
+            **Payment structure.** One-month deposit + first month's subscription
+            charged at signing. Months 2 – 23 auto-charged to credit card on the
+            same day each month. Month 24 covered by the deposit. 24-month total
+            = 24 × monthly fee.
+
+            **What the customer hears.** "Monthly subscription on your credit
+            card. One-month deposit at signing. No long-term commitment beyond
+            the 24-month service term." The FICA mechanics are internal — how WE
+            size the fee, not how we explain it. The pitch leads with capacity
+            expansion because non-hospital settings are revenue-ceiling-limited
+            by labor supply, not cost-displacement opportunities.
+
+            **What's not yet modeled.**
+            - Chain ownership: NASHP doesn't cover non-hospital. The System Ownership
+              tab + bulk CSV import is the path to add USPI, Encompass, Genesis,
+              DaVita, Fresenius, etc.
+            - MSA-level wage refinement (we use state-level today)
+            - Per-facility RN headcount validation (using setting-specific defaults)
+            """
+        )
+        st.info(REQUIRED_COMPLIANCE_SENTENCE, icon=":material/balance:")
+
+
+# =====================================================================
+# MAP — every hospital plotted, colored by system or financial opportunity
+# =====================================================================
+if view == "national_map":
+    st.subheader("National hospital map")
+    st.caption(
+        "Every Medicare-registered hospital plotted by ZIP centroid. "
+        "Filter by state, system, opportunity tier; color and size encode "
+        "the Florence net revenue potential at this calibration."
+    )
+
+    map_view = priced[priced["lat"].notna() & priced["lon"].notna()].copy()
+
+    f1, f2, f3, f4 = st.columns(4)
+    state_filter = f1.multiselect("State", sorted(map_view["state"].unique()), default=[], key="map_state")
+    system_filter = f2.multiselect(
+        "Health system",
+        sorted(map_view["health_system"].unique()),
+        default=[],
+        key="map_system",
+    )
+    htype_filter = f3.multiselect(
+        "Hospital type",
+        sorted(map_view["hospital_type"].dropna().unique()),
+        default=[],
+        key="map_htype",
+    )
+    min_florence_net = f4.number_input(
+        "Min Florence net revenue ($)", min_value=0, value=0, step=100_000,
+    )
+
+    mv = map_view.copy()
+    if state_filter:
+        mv = mv[mv["state"].isin(state_filter)]
+    if system_filter:
+        mv = mv[mv["health_system"].isin(system_filter)]
+    if htype_filter:
+        mv = mv[mv["hospital_type"].isin(htype_filter)]
+    mv = mv[mv["florence_net_total"] >= min_florence_net]
+
+    st.write(f"**{len(mv):,}** hospitals plotted of {len(map_view):,} total")
+
+    # Render using pydeck for tooltips + sizing
+    try:
+        import pydeck as pdk
+
+        # Color tier by Florence net potential
+        def _tier_color(v: float) -> list:
+            if v >= 50_000_000: return [220, 20, 20, 200]    # red
+            if v >= 10_000_000: return [240, 130, 30, 200]   # orange
+            if v >= 1_000_000:  return [240, 210, 50, 200]   # yellow
+            if v >  0:          return [110, 190, 100, 180]  # green
+            return [120, 120, 130, 100]                       # grey
+
+        mv["_color"] = mv["florence_net_total"].apply(_tier_color)
+        mv["_radius"] = (mv["florence_net_total"].clip(lower=0) ** 0.5) * 3 + 1500
+
+        layer = pdk.Layer(
+            "ScatterplotLayer",
+            data=mv,
+            get_position="[lon, lat]",
+            get_fill_color="_color",
+            get_radius="_radius",
+            pickable=True,
+            opacity=0.7,
+            stroked=False,
+            radius_min_pixels=2,
+            radius_max_pixels=40,
+        )
+        view_state = pdk.ViewState(
+            latitude=39.5, longitude=-98.0, zoom=3.5, pitch=0,
+        )
+        tooltip = {
+            "html": (
+                "<b>{name}</b><br/>"
+                "{city}, {state}<br/>"
+                "System: {health_system}<br/>"
+                "Fee/nurse: ${f_total}<br/>"
+                "Monthly: ${monthly_fee_per_nurse}<br/>"
+                "RN need: {rn_need} FTE<br/>"
+                "Florence net: ${florence_net_total}"
+            ),
+            "style": {"backgroundColor": "white", "color": "black"},
+        }
+        st.pydeck_chart(pdk.Deck(
+            map_style=None,
+            layers=[layer],
+            initial_view_state=view_state,
+            tooltip=tooltip,
+        ))
+        st.caption(
+            "Color tiers: 🔴 ≥$50M  🟠 ≥$10M  🟡 ≥$1M  🟢 ≥$1  ⚫ infeasible. "
+            "Size scales with Florence net at projected RN need."
+        )
+    except Exception as e:
+        st.warning(f"pydeck render failed ({e}); falling back to st.map")
+        st.map(mv[["lat", "lon"]])
+
+# =====================================================================
+# HEALTH SYSTEMS — aggregate pricing & financials by parent system
+# =====================================================================
+if view == "health_systems":
+    st.subheader("Health-system rollup")
+    st.caption(
+        "Each row is a parent health system, with all owned/branded hospitals "
+        "aggregated. Click into a system to see the breakdown and generate a "
+        "system-level proposal."
+    )
+
+    sys_agg = priced.groupby("health_system", dropna=False).agg(
+        hospitals=("ccn", "count"),
+        feasible=("feasible", "sum"),
+        states=("state", "nunique"),
+        median_loaded_staff=("loaded_staff_cost_per_hr", "median"),
+        median_agency_premium=("agency_premium_per_hr", "median"),
+        median_florence_premium=("delta_chosen", "median"),
+        median_fee=("f_total", "median"),
+        median_monthly_fee=("monthly_fee_per_nurse", "median"),
+        total_rn_need=("rn_need", "sum"),
+        total_florence_fee=("total_florence_fee", "sum"),
+        total_monthly_fee=("monthly_florence_fee", "sum"),
+        florence_net=("florence_net_total", "sum"),
+        partner_revenue=("partner_revenue_total", "sum"),
+        net_savings=("net_savings_total", "sum"),
+        gross_agency_savings=("gross_agency_savings_total", "sum"),
+        median_cl_intensity=("contract_labor_intensity", "median"),
+    ).reset_index().sort_values("florence_net", ascending=False)
+
+    # Hide tiny systems for clarity
+    min_hospitals = st.slider("Min hospitals per system to show", 1, 25, 1, 1)
+    sys_view = sys_agg[sys_agg["hospitals"] >= min_hospitals]
+
+    st.write(f"**{len(sys_view):,}** systems shown (of {len(sys_agg):,})")
+    st.dataframe(
+        sys_view,
+        column_config={
+            "median_loaded_staff": st.column_config.NumberColumn("Loaded staff $/hr", format="$%.2f"),
+            "median_agency_premium": st.column_config.NumberColumn("Agency premium $/hr", format="$%.2f"),
+            "median_florence_premium": st.column_config.NumberColumn("Median Florence prem $/hr", format="$%.2f"),
+            "median_fee": st.column_config.NumberColumn("Median fee / nurse", format="$%d"),
+            "median_monthly_fee": st.column_config.NumberColumn("Median monthly fee", format="$%d"),
+            "total_rn_need": st.column_config.NumberColumn("Total RN need (FTE)", format="%d"),
+            "total_florence_fee": st.column_config.NumberColumn("Total Florence fee", format="$%d"),
+            "total_monthly_fee": st.column_config.NumberColumn("Total monthly fee", format="$%d"),
+            "florence_net": st.column_config.NumberColumn("Florence net", format="$%d"),
+            "partner_revenue": st.column_config.NumberColumn("Partner revenue", format="$%d"),
+            "net_savings": st.column_config.NumberColumn("Hospital net savings", format="$%d"),
+            "gross_agency_savings": st.column_config.NumberColumn("Gross agency savings", format="$%d"),
+            "median_cl_intensity": st.column_config.NumberColumn("Median CL share", format="%.1f%%"),
+        },
+        height=500,
+        use_container_width=True,
+    )
+
+    st.markdown("---")
+    st.subheader("System-level proposal")
+    selected_system = st.selectbox(
+        "Select a system to generate a proposal",
+        sys_view[sys_view["health_system"] != "Independent / Unknown"]["health_system"].tolist(),
+    )
+
+    if selected_system:
+        sys_hospitals = priced[priced["health_system"] == selected_system].copy()
+        sys_feas = sys_hospitals[sys_hospitals["feasible"]]
+        manual_n = int(sys_hospitals["manual_review_flag"].sum())
+        proposal_lines = [
+            f"# Florence Pricing Proposal — {selected_system}",
+            f"_Generated {date.today().isoformat()} — Calibration: "
+            f"premium capture rate {premium_capture_rate:.1%}, "
+            f"floor ${premium_floor:.2f}, cap ${premium_cap:.2f}, "
+            f"{amortization_months}-month amortization, η={eta:.2f}_",
+            "",
+            "## System overview",
+            f"- **Hospitals in system:** {len(sys_hospitals)} "
+            f"({len(sys_feas)} quotable, {manual_n} flagged for manual review)",
+            f"- **States covered:** {sys_hospitals['state'].nunique()} "
+            f"({', '.join(sorted(sys_hospitals['state'].unique())[:8])}"
+            f"{'...' if sys_hospitals['state'].nunique() > 8 else ''})",
+            f"- **Estimated RN need:** {sys_hospitals['rn_need'].sum():,.0f} FTE "
+            f"(contracted-labor FTE × {rn_share:.0%} RN share × {coverage:.0%} coverage)",
+            f"- **Median loaded staff cost:** ${sys_hospitals['loaded_staff_cost_per_hr'].median():.2f}/hr",
+            f"- **Median agency premium:** ${sys_hospitals['agency_premium_per_hr'].median():.2f}/hr",
+            f"- **Median Florence premium chosen:** ${sys_feas['delta_chosen'].median():.2f}/hr" if len(sys_feas) else "",
+            f"- **Median contract labor share:** "
+            f"{sys_hospitals['contract_labor_intensity'].median()*100 if sys_hospitals['contract_labor_intensity'].notna().any() else 0:.1f}% "
+            "(HCRIS)",
+            "",
+            "## Financial picture",
+            "",
+            "| Party | 3-year total | Monthly (24mo amort) |",
+            "|---|---:|---:|",
+            f"| Hospital — pays Florence (gross) | ${sys_feas['total_florence_fee'].sum():,.0f} | "
+            f"${sys_feas['monthly_florence_fee'].sum():,.0f} / mo |",
+            f"| Hospital — gross agency savings (premium otherwise paid) | "
+            f"${sys_feas['gross_agency_savings_total'].sum():,.0f} | — |",
+            f"| **Hospital — net savings after Florence fee** | "
+            f"**${sys_feas['net_savings_total'].sum():,.0f}** | — |",
+            f"| Partner channel (e.g. AMN) | ${sys_feas['partner_revenue_total'].sum():,.0f} | — |",
+            f"| **Florence net revenue** | **${sys_feas['florence_net_total'].sum():,.0f}** | "
+            f"**${sys_feas['florence_net_total'].sum() / amortization_months:,.0f} / mo** |",
+            "",
+            "## Per-hospital pricing summary",
+            "",
+            f"| Hospital | City, State | RN need | Loaded $/hr | Agency $/hr | Florence prem $/hr | Fee/nurse | Monthly | Net savings |",
+            "|---|---|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for _, h in sys_feas.sort_values("florence_net_total", ascending=False).head(50).iterrows():
+            proposal_lines.append(
+                f"| {h['name']} | {h['city']}, {h['state']} | "
+                f"{h['rn_need']:,.0f} | "
+                f"${h['loaded_staff_cost_per_hr']:.2f} | "
+                f"${h['all_in_agency_per_hr']:.2f} | "
+                f"${h['delta_chosen']:.2f} | "
+                f"${h['f_total']:,.0f} | "
+                f"${h['monthly_fee_per_nurse']:,.0f} | "
+                f"${h['net_savings_per_nurse']:,.0f} |"
+            )
+        if len(sys_feas) > 50:
+            proposal_lines.append(f"\n_… {len(sys_feas)-50} more hospitals not shown._")
+        proposal_lines += [
+            "",
+            "## Tax assumption",
+            "Pricing assumes the cohort visa-exempt share η specified above. FICA "
+            "capture under IRC §3121(b)(19) applies only to F-1/J-1/M-1/Q-1/Q-2 "
+            "nonresident aliens during their nonresident-alien tax period. EB-3/H-1B/"
+            "TN/USC placements have η=0 with no FICA component. Florence does not "
+            "provide tax, payroll, immigration, or legal advice; the hospital's tax/"
+            "payroll/immigration/legal teams must independently verify status and "
+            "applicability per-placement before relying on the projected FICA component.",
+            "",
+            "## Calibration parameters used",
+            f"- Florence premium = min(${premium_cap:.2f}, max(${premium_floor:.2f}, "
+            f"agency_premium × {premium_capture_rate:.1%}))",
+            f"- RN need = contracted labor FTE × {rn_share:.0%} × {coverage:.0%}",
+            f"- Commitment / benefit period: {commitment_years} years × 1,872 hrs/yr",
+            f"- Amortization: {amortization_months} months",
+            f"- AMN partner markup (atop core rate): {amn_partner_markup_pct:.0%}",
+            f"- Direct partner markup (atop core rate): {direct_partner_markup_pct:.0%}",
+        ]
+        proposal_md = "\n".join(proposal_lines)
+        st.markdown(proposal_md)
+
+        # ── DOWNLOAD BUNDLE: Excel + 2-page Exec Summary (PDF) + Markdown ──
+        st.markdown("---")
+        st.subheader("Download proposal bundle for this system")
+        st.caption(
+            "Excel workbook (10 tabs per v2 §8) + 2-page executive summary (PDF) for "
+            "the pitch-deck-builder workflow. Use these as the data + visual source "
+            "for the system's PowerPoint deck."
+        )
+
+        col_xlsx, col_pdf, col_zip = st.columns(3)
+        system_id_sel = sys_hospitals.iloc[0].get("health_system_id", selected_system)
+
+        # Build the live calibration that matches current sidebar settings
+        live_cal = Calibration(
+            pricing_mode=PricingMode(pricing_mode),
+            target_offset_pct=target_offset_pct,
+            price_floor_monthly=price_floor_monthly,
+            price_ceiling_monthly=price_ceiling_monthly,
+            standard_monthly_fee=standard_monthly_fee,
+            term_months=term_months,
+            fica_eligible_months_default=fica_eligible_months,
+            immigration_addon_enabled=immigration_addon_enabled,
+            amn_partner_markup_pct=amn_partner_markup_pct,
+            direct_partner_markup_pct=direct_partner_markup_pct,
+            rn_share_of_contracted_labor=rn_share,
+            coverage_fill_factor=coverage,
+            agency_displacement_factor=agency_displacement_factor,
+            placeholder_msp_markup_pct=placeholder_msp_markup_pct,
+        )
+        live_cohort = CohortMix(eta=eta, eligible_months=fica_eligible_months)
+
+        safe = selected_system.replace(" ", "_").replace("/", "_")[:48]
+
+        with col_xlsx:
+            if st.button(":material/table_view: Generate Excel workbook", key="sys_xlsx_btn"):
+                with tempfile.TemporaryDirectory() as tmp:
+                    out = Path(tmp) / f"{safe}_v2.xlsx"
+                    write_system_workbook(system_id_sel, out, live_cal, live_cohort)
+                    st.session_state[f"sys_xlsx_{safe}"] = out.read_bytes()
+            if f"sys_xlsx_{safe}" in st.session_state:
+                st.download_button(
+                    ":material/download: Download .xlsx",
+                    st.session_state[f"sys_xlsx_{safe}"],
+                    file_name=f"{safe}_v2.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                )
+
+        with col_pdf:
+            if st.button(":material/description: Generate 2-page Exec Summary (PDF)", key="sys_pdf_btn"):
+                with tempfile.TemporaryDirectory() as tmp:
+                    h, p = build_system_exec_summary(system_id_sel, Path(tmp), live_cal, live_cohort)
+                    st.session_state[f"sys_pdf_{safe}"] = p.read_bytes()
+                    st.session_state[f"sys_html_{safe}"] = h.read_bytes()
+            if f"sys_pdf_{safe}" in st.session_state:
+                st.download_button(
+                    ":material/download: Download .pdf",
+                    st.session_state[f"sys_pdf_{safe}"],
+                    file_name=f"{safe}_exec_summary.pdf",
+                    mime="application/pdf",
+                )
+
+        with col_zip:
+            if st.button(":material/inventory_2: Generate full bundle (.zip)", key="sys_zip_btn"):
+                with tempfile.TemporaryDirectory() as tmp:
+                    tmp = Path(tmp)
+                    xlsx = write_system_workbook(system_id_sel, tmp / f"{safe}.xlsx", live_cal, live_cohort)
+                    h, p = build_system_exec_summary(system_id_sel, tmp, live_cal, live_cohort)
+                    md_path = tmp / f"{safe}_proposal.md"
+                    md_path.write_text(proposal_md, encoding="utf-8")
+                    buf = io.BytesIO()
+                    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                        zf.write(xlsx, f"{safe}/{xlsx.name}")
+                        zf.write(p, f"{safe}/{p.name}")
+                        zf.write(h, f"{safe}/{h.name}")
+                        zf.write(md_path, f"{safe}/{md_path.name}")
+                    st.session_state[f"sys_zip_{safe}"] = buf.getvalue()
+            if f"sys_zip_{safe}" in st.session_state:
+                st.download_button(
+                    ":material/download: Download bundle.zip",
+                    st.session_state[f"sys_zip_{safe}"],
+                    file_name=f"{safe}_florence_bundle.zip",
+                    mime="application/zip",
+                )
+
+        st.download_button(
+            "Markdown proposal (text only)",
+            proposal_md.encode("utf-8"),
+            file_name=f"florence_proposal_{safe.lower()}.md",
+            mime="text/markdown",
+        )
+
+# =====================================================================
+# SYSTEM OWNERSHIP — M&A scenario modeling, manual ownership overrides
+# =====================================================================
+if view == "system_ownership":
+    florence_eyebrow("04 · System ownership")
+    florence_headline(
+        "Adjust hospital system assignments.",
+        subhead=(
+            "Hospitals get sold, systems merge, regional brands roll up. "
+            "Override the default ownership mapping here — every proposal, "
+            "recommendation, and report reflects your changes immediately. "
+            "Use this to fix HCA coverage gaps or model an acquisition scenario."
+        ),
+    )
+
+    current_universe = cached_universe(sysov.overrides_mtime())
+    current_overrides = sysov.load_overrides()
+    sys_summary = sysov.known_systems(current_universe)
+
+    # Top-line stats
+    s1, s2, s3, s4 = st.columns(4)
+    s1.metric(
+        "Total hospitals",
+        f"{len(current_universe):,}",
+    )
+    s2.metric(
+        "Assigned to a system",
+        f"{(current_universe['health_system_id'] != 'independent').sum():,}",
+        f"{(current_universe['health_system_id'] != 'independent').sum() / len(current_universe) * 100:.1f}% of universe",
+    )
+    s3.metric(
+        "Independent / Unknown",
+        f"{(current_universe['health_system_id'] == 'independent').sum():,}",
+    )
+    s4.metric(
+        "Active overrides",
+        f"{len(current_overrides):,}",
+        f"updated {datetime.utcnow().date().isoformat()}" if current_overrides else "none",
+    )
+
+    # ─── Reassign hospitals ─────────────────────────────────────────
+    st.divider()
+    florence_eyebrow("Reassign hospitals")
+    st.markdown("### Find hospitals to move")
+
+    f1, f2, f3 = st.columns([2, 1, 1])
+    with f1:
+        ownership_search = st.text_input(
+            "Search by hospital name or CCN",
+            placeholder="e.g. 'methodist', 'st francis', '100007'",
+            key="own_search",
+        )
+    with f2:
+        ownership_state = st.multiselect(
+            "Filter by state",
+            sorted(current_universe["state"].dropna().unique()),
+            key="own_state",
+        )
+    with f3:
+        ownership_current_system = st.multiselect(
+            "Filter by current system",
+            sorted(current_universe["health_system"].dropna().unique()),
+            key="own_current_sys",
+        )
+
+    # Build filtered candidate list
+    cand = current_universe.copy()
+    if ownership_search.strip():
+        q = ownership_search.strip().lower()
+        cand = cand[
+            cand["name"].str.lower().str.contains(q, na=False)
+            | cand["ccn"].astype(str).str.contains(q)
+        ]
+    if ownership_state:
+        cand = cand[cand["state"].isin(ownership_state)]
+    if ownership_current_system:
+        cand = cand[cand["health_system"].isin(ownership_current_system)]
+
+    st.caption(f"**{len(cand):,}** hospitals match. Showing first 100; refine filters to narrow.")
+    cand_show = cand.head(100)[["ccn", "name", "city", "state", "health_system"]].copy()
+    cand_show["select"] = False
+    edited = st.data_editor(
+        cand_show,
+        column_config={
+            "select": st.column_config.CheckboxColumn("Select"),
+            "ccn": st.column_config.TextColumn("CCN", disabled=True, width="small"),
+            "name": st.column_config.TextColumn("Hospital", disabled=True),
+            "city": st.column_config.TextColumn("City", disabled=True, width="small"),
+            "state": st.column_config.TextColumn("ST", disabled=True, width="small"),
+            "health_system": st.column_config.TextColumn("Current system", disabled=True),
+        },
+        hide_index=True,
+        use_container_width=True,
+        key="own_editor",
+    )
+
+    selected_ccns = edited.loc[edited["select"]]["ccn"].tolist()
+
+    if selected_ccns:
+        st.markdown("### Choose new system")
+        target_options = ["── Pick one ──"] + sys_summary["health_system"].tolist() + [
+            "[Add a new system not in this list]"
+        ]
+        sel_target = st.selectbox(
+            "Move selected hospitals to",
+            target_options,
+            key="own_target",
+        )
+        if sel_target == "[Add a new system not in this list]":
+            new_sys_name = st.text_input(
+                "New system display name",
+                placeholder="e.g. 'Banner Health System' or 'Adventist Health Florida'",
+                key="own_new_name",
+            )
+            new_sys_id = st.text_input(
+                "New system id (lowercase, underscores)",
+                placeholder=(new_sys_name.lower().replace(" ", "_") if new_sys_name else "e.g. 'banner_health'"),
+                key="own_new_id",
+            )
+        else:
+            row = sys_summary[sys_summary["health_system"] == sel_target]
+            if len(row):
+                new_sys_id = row.iloc[0]["health_system_id"]
+                new_sys_name = sel_target
+            else:
+                new_sys_id, new_sys_name = "", ""
+        note_text = st.text_input(
+            "Note (optional — e.g. 'HCA acquired Q1 2026')",
+            key="own_note",
+        )
+        c_apply, c_clear = st.columns([1, 1])
+        with c_apply:
+            apply_disabled = (
+                sel_target == "── Pick one ──"
+                or not new_sys_id
+                or not new_sys_name
+            )
+            if st.button(
+                f":material/check_circle: Reassign {len(selected_ccns)} hospital(s)",
+                type="primary",
+                disabled=apply_disabled,
+                use_container_width=True,
+                key="own_apply",
+            ):
+                rows = [
+                    {"ccn": ccn, "new_system_id": new_sys_id,
+                     "new_system_name": new_sys_name, "note": note_text}
+                    for ccn in selected_ccns
+                ]
+                n = sysov.append_overrides_bulk(rows)
+                st.success(
+                    f"Reassigned {n} hospital(s) to **{new_sys_name}**. "
+                    "All proposals & recommendations now reflect this change."
+                )
+                st.cache_data.clear()
+                st.rerun()
+        with c_clear:
+            st.caption(
+                "Note: changes propagate immediately to the Build a customer proposal "
+                "tab, Excel exports, and PDF summaries."
+            )
+
+    # ─── Active overrides table ─────────────────────────────────────
+    st.divider()
+    florence_eyebrow("Active overrides")
+    if not current_overrides:
+        st.info(
+            "No overrides yet. Search above and reassign hospitals to start customizing "
+            "system ownership for your sales territory or M&A scenarios.",
+            icon=":material/info:",
+        )
+    else:
+        # Show table of current overrides
+        u_idx = current_universe.set_index("ccn")
+        rows = []
+        for r in current_overrides:
+            name = u_idx.loc[r.ccn]["name"] if r.ccn in u_idx.index else "(unknown CCN)"
+            state = u_idx.loc[r.ccn]["state"] if r.ccn in u_idx.index else ""
+            rows.append({
+                "ccn": r.ccn,
+                "name": name,
+                "state": state,
+                "now_in": r.new_system_name or r.new_system_id,
+                "note": r.note,
+                "added": r.created_at[:10],
+            })
+        ov_df = pd.DataFrame(rows)
+        st.dataframe(
+            ov_df,
+            column_config={
+                "ccn": st.column_config.TextColumn("CCN", width="small"),
+                "name": st.column_config.TextColumn("Hospital"),
+                "state": st.column_config.TextColumn("ST", width="small"),
+                "now_in": st.column_config.TextColumn("Now assigned to"),
+                "note": st.column_config.TextColumn("Note"),
+                "added": st.column_config.TextColumn("Added", width="small"),
+            },
+            hide_index=True,
+            use_container_width=True,
+        )
+        d1, d2 = st.columns([1, 3])
+        with d1:
+            if st.button(
+                ":material/delete_sweep: Clear ALL overrides",
+                type="secondary",
+                use_container_width=True,
+                key="own_clear_all",
+            ):
+                n = sysov.delete_all_overrides()
+                st.success(f"Cleared {n} override(s). Reverted to default ownership mapping.")
+                st.cache_data.clear()
+                st.rerun()
+        with d2:
+            st.caption(
+                "Clearing all overrides reverts every reassigned hospital to its "
+                "default `hospital_universe.csv` ownership. Cannot be undone."
+            )
+
+    # ─── Bulk CSV import ─────────────────────────────────────────────
+    st.divider()
+    florence_eyebrow("Bulk import / export")
+    bi_l, bi_r = st.columns([1, 1])
+    with bi_l:
+        st.markdown("**Upload a CSV** with columns: `ccn`, `new_system_id`, `new_system_name`, `note` (optional)")
+        upload = st.file_uploader(
+            "Bulk override CSV",
+            type=["csv"],
+            label_visibility="collapsed",
+            key="own_upload",
+        )
+        if upload is not None:
+            try:
+                bulk_df = pd.read_csv(upload, dtype={"ccn": str})
+                bulk_df["ccn"] = bulk_df["ccn"].astype(str).str.zfill(6)
+                st.write(f"Preview ({len(bulk_df)} rows):")
+                st.dataframe(bulk_df.head(10), use_container_width=True, hide_index=True)
+                if st.button(
+                    f":material/upload: Apply {len(bulk_df)} override(s) from CSV",
+                    type="primary",
+                    key="own_apply_csv",
+                ):
+                    n = sysov.append_overrides_bulk(bulk_df.to_dict(orient="records"))
+                    st.success(f"Applied {n} override(s) from CSV.")
+                    st.cache_data.clear()
+                    st.rerun()
+            except Exception as e:
+                st.error(f"CSV parse error: {e}")
+    with bi_r:
+        st.markdown("**Download current overrides** for backup or sharing")
+        if current_overrides:
+            ov_export = pd.DataFrame([r.to_dict() for r in current_overrides])
+            st.download_button(
+                ":material/download: Download overrides as CSV",
+                ov_export.to_csv(index=False).encode("utf-8"),
+                file_name=f"florence_system_overrides_{datetime.utcnow().date().isoformat()}.csv",
+                mime="text/csv",
+                use_container_width=True,
+            )
+        else:
+            st.caption("No active overrides to export.")
+
+    # ─────────────────────────────────────────────────────────────────
+    # Per-system flat-fee overrides — for FLAT_PLACEMENT_FEE pricing
+    # ─────────────────────────────────────────────────────────────────
+    st.divider()
+    florence_eyebrow("05 · Per-system flat-fee overrides")
+    florence_headline(
+        "System-specific placement fees.",
+        subhead=(
+            "Default is $50K per RN amortized over 36 months. Override per system "
+            "(Kaiser, HCA, Sutter, etc.) when a customer accepts a premium or demands a discount. "
+            "Florence's flat-fee pricing mode uses these per-system values automatically."
+        ),
+    )
+
+    active_fee_ovs = sysfee.load_overrides()
+    fee_sys_summary = sysov.known_systems(current_universe)
+    fee_sys_summary = fee_sys_summary[
+        fee_sys_summary["health_system_id"] != "independent"
+    ]
+
+    sf1, sf2, sf3 = st.columns(3)
+    sf1.metric(
+        "Active fee overrides",
+        f"{len(active_fee_ovs):,}",
+        "out of {} named systems".format(len(fee_sys_summary)),
+    )
+    if active_fee_ovs:
+        avg_fee = sum(o.flat_fee_per_rn for o in active_fee_ovs.values()) / len(active_fee_ovs)
+        sf2.metric(
+            "Mean override fee",
+            f"${avg_fee:,.0f}/RN",
+            f"default ${50_000:,.0f}",
+        )
+        avg_term = sum(o.term_months for o in active_fee_ovs.values()) / len(active_fee_ovs)
+        sf3.metric(
+            "Mean override term",
+            f"{avg_term:.0f} mo",
+            "default 36 mo",
+        )
+    else:
+        sf2.metric("Mean override fee", "—", "no overrides yet")
+        sf3.metric("Mean override term", "—", "no overrides yet")
+
+    # ─── Add or edit override ───────────────────────────────────────
+    st.markdown("### Add or update an override")
+    af1, af2, af3 = st.columns([2, 1, 1])
+    with af1:
+        sys_picker_labels = ["— Pick a system —"] + [
+            f"{row['health_system']} · {row['n_hospitals']:,} hospitals"
+            + (
+                f"  (current: ${active_fee_ovs[row['health_system_id']].flat_fee_per_rn:,.0f}/RN, "
+                f"{active_fee_ovs[row['health_system_id']].term_months}mo)"
+                if row['health_system_id'] in active_fee_ovs
+                else ""
+            )
+            for _, row in fee_sys_summary.iterrows()
+        ]
+        sys_picker_ids = ["__none__"] + fee_sys_summary["health_system_id"].tolist()
+        sys_picker_names = [""] + fee_sys_summary["health_system"].tolist()
+        sel_idx = st.selectbox(
+            "Health system",
+            range(len(sys_picker_labels)),
+            format_func=lambda i: sys_picker_labels[i],
+            key="fee_sys_picker",
+        )
+        sel_sys_id = sys_picker_ids[sel_idx]
+        sel_sys_name = sys_picker_names[sel_idx]
+        existing_ov = active_fee_ovs.get(sel_sys_id) if sel_sys_id != "__none__" else None
+    with af2:
+        fee_default = int(existing_ov.flat_fee_per_rn) if existing_ov else 50_000
+        new_fee = st.slider(
+            "Placement fee per RN ($)",
+            25_000, 100_000, fee_default, 1_000,
+            format="$%d",
+            key="fee_new_fee",
+        )
+    with af3:
+        term_default = existing_ov.term_months if existing_ov else 36
+        new_term = st.selectbox(
+            "Amortization (months)",
+            [12, 18, 24, 36, 48],
+            index=[12, 18, 24, 36, 48].index(term_default) if term_default in [12, 18, 24, 36, 48] else 3,
+            key="fee_new_term",
+        )
+
+    new_note = st.text_input(
+        "Note (optional — e.g., 'Pilot pricing, accepted Q1 2026')",
+        value=existing_ov.note if existing_ov else "",
+        key="fee_new_note",
+    )
+
+    fa1, fa2 = st.columns([1, 4])
+    with fa1:
+        save_disabled = sel_sys_id == "__none__"
+        if st.button(
+            ":material/save: Save override",
+            type="primary",
+            disabled=save_disabled,
+            use_container_width=True,
+            key="fee_save",
+        ):
+            sysfee.upsert(
+                system_id=sel_sys_id,
+                system_name=sel_sys_name,
+                flat_fee_per_rn=new_fee,
+                term_months=new_term,
+                note=new_note,
+            )
+            monthly_amort = new_fee / new_term
+            st.success(
+                f"Saved override for **{sel_sys_name}** — "
+                f"${new_fee:,.0f}/RN over {new_term}mo = "
+                f"${monthly_amort:,.0f}/RN/mo. "
+                "Live in flat-fee pricing immediately."
+            )
+            st.cache_data.clear()
+            st.rerun()
+    with fa2:
+        if existing_ov:
+            st.caption(
+                f"**Editing existing override.** Currently {sel_sys_name}: "
+                f"${existing_ov.flat_fee_per_rn:,.0f}/RN over {existing_ov.term_months}mo. "
+                f"Note: _{existing_ov.note or '(none)'}_"
+            )
+        else:
+            st.caption(
+                "No override exists for the selected system. "
+                "Saving will create a new one. Default if no override: "
+                f"$50,000/RN over 36 months ($1,389/RN/mo amortized)."
+            )
+
+    # ─── Active overrides table ─────────────────────────────────────
+    st.markdown("### Active overrides")
+    if not active_fee_ovs:
+        st.info(
+            "No per-system flat-fee overrides yet. Add one above, or every system "
+            "falls back to the global default ($50K / 36mo).",
+            icon=":material/info:",
+        )
+    else:
+        rows = []
+        for sid, ov in active_fee_ovs.items():
+            monthly = ov.flat_fee_per_rn / ov.term_months
+            rows.append({
+                "system_id": sid,
+                "system_name": ov.system_name,
+                "flat_fee_per_rn": ov.flat_fee_per_rn,
+                "term_months": ov.term_months,
+                "monthly_amortized": monthly,
+                "note": ov.note,
+                "created_at": ov.created_at[:10],
+            })
+        ov_df = pd.DataFrame(rows)
+        st.dataframe(
+            ov_df,
+            column_config={
+                "system_id": st.column_config.TextColumn("System id", width="small"),
+                "system_name": st.column_config.TextColumn("System name"),
+                "flat_fee_per_rn": st.column_config.NumberColumn("Fee per RN", format="$%d"),
+                "term_months": st.column_config.NumberColumn("Term (mo)", width="small"),
+                "monthly_amortized": st.column_config.NumberColumn("$/RN/mo", format="$%.0f"),
+                "note": st.column_config.TextColumn("Note"),
+                "created_at": st.column_config.TextColumn("Added", width="small"),
+            },
+            hide_index=True,
+            use_container_width=True,
+        )
+        del_l, del_r = st.columns([1, 3])
+        with del_l:
+            if st.button(
+                ":material/delete_sweep: Clear ALL fee overrides",
+                type="secondary",
+                use_container_width=True,
+                key="fee_clear_all",
+            ):
+                n = sysfee.delete_all()
+                st.success(f"Cleared {n} fee override(s). Reverted to $50K/36mo global default.")
+                st.cache_data.clear()
+                st.rerun()
+        with del_r:
+            st.caption(
+                "Clearing all reverts every system to the global flat-fee default "
+                "($50K per RN over 36 months = $1,389/RN/mo). Cannot be undone."
+            )
+
+
+# =====================================================================
+# PRICE A HOSPITAL — single-hospital evidence pack with proposal
+# =====================================================================
+if view == "price_hospital":
+    st.subheader("Price a hospital")
+    st.caption(
+        "Pick any hospital, get the full CFO pricing breakdown — what the hospital "
+        "pays, what they save vs agency, what splits to partner, what Florence nets."
+    )
+
+    state_pick = st.selectbox(
+        "State", sorted(universe["state"].unique()),
+        index=sorted(universe["state"].unique()).index("CA"),
+    )
+    hosp_list = universe[universe["state"] == state_pick].sort_values("name")
+    hosp_label = st.selectbox(
+        "Hospital",
+        hosp_list.apply(lambda r: f"{r['name']} — {r['city']}", axis=1).tolist(),
+    )
+    row = hosp_list.iloc[
+        hosp_list.apply(lambda r: f"{r['name']} — {r['city']}", axis=1).tolist()
+        .index(hosp_label)
+    ]
+
+    profile = row_to_profile(row)
+    # Attach data provenance for manual-review decision
+    profile.agency_rate_confidence = float(row.get("confidence", 0.85) or 0.85)
+    profile.agency_rate_source = str(row.get("data_source", "unspecified"))
+    cal = Calibration(
+        pricing_mode=PricingMode(pricing_mode),
+        target_offset_pct=target_offset_pct,
+        price_floor_monthly=price_floor_monthly,
+        price_ceiling_monthly=price_ceiling_monthly,
+        standard_monthly_fee=standard_monthly_fee,
+        term_months=term_months,
+        fica_eligible_months_default=fica_eligible_months,
+        immigration_addon_enabled=immigration_addon_enabled,
+        amn_partner_markup_pct=amn_partner_markup_pct,
+        direct_partner_markup_pct=direct_partner_markup_pct,
+        rn_share_of_contracted_labor=rn_share,
+        coverage_fill_factor=coverage,
+        agency_displacement_factor=agency_displacement_factor,
+    )
+    cohort = CohortMix(eta=eta)
+    result = price(profile, cohort, cal)
+
+    # Pull product-plan RN need from priced row (matched by ccn)
+    priced_row = priced[priced["ccn"] == row["ccn"]]
+    rn_need = float(priced_row["rn_need"].iloc[0]) if len(priced_row) else 0.0
+
+    if result.manual_review_flag:
+        st.warning(f"⚠ MANUAL REVIEW REQUIRED — {result.manual_review_reason}")
+
+    s1, s2, s3, s4 = st.columns(4)
+    s1.metric(
+        "Florence fee / nurse",
+        f"${result.f_total:,.0f}",
+        f"${result.monthly_fee:,.0f} / mo for {amortization_months} mo",
+    )
+    s2.metric(
+        "Hospital net saves / hr",
+        f"${result.net_savings_per_hr:.2f}",
+        f"${result.net_savings:,.0f} per nurse over commitment",
+    )
+    s3.metric(
+        "Partner revenue / nurse",
+        f"${result.partner_revenue:,.0f}",
+        f"{result.partner_share:.0%} split",
+    )
+    s4.metric(
+        "Florence net / nurse",
+        f"${result.florence_net_revenue:,.0f}",
+        f"${result.florence_net_monthly:,.0f} / mo",
+    )
+
+    st.text(render_evidence_pack(result))
+
+    st.markdown("**Hospital context (from CMS + HCRIS)**")
+    ctx_cols = st.columns(4)
+    ctx_cols[0].metric("CCN", row["ccn"])
+    ctx_cols[1].metric("Type", str(row["hospital_type"]).replace("Hospitals", "").strip())
+    ctx_cols[2].metric("Health system", str(row["health_system"]))
+    ctx_cols[3].metric("Data confidence", f"{float(row['confidence']):.2f}")
+
+    ctx_cols2 = st.columns(4)
+    ctx_cols2[0].metric("Estimated RN need (FTE)", f"{rn_need:,.0f}")
+    cl = row.get("contract_labor_intensity")
+    ctx_cols2[1].metric(
+        "Contract labor share (HCRIS)",
+        f"{float(cl)*100:.1f}%" if pd.notna(cl) else "—",
+    )
+    om = row.get("operating_margin")
+    ctx_cols2[2].metric(
+        "Operating margin (HCRIS)",
+        f"{float(om)*100:.1f}%" if pd.notna(om) else "—",
+    )
+    ctx_cols2[3].metric(
+        "Total FTE (HCRIS)",
+        f"{float(row['hcris_total_fte']):,.0f}" if pd.notna(row.get("hcris_total_fte")) else "—",
+    )
+
+    if result.feasible and rn_need:
+        gross = result.f_total * rn_need
+        monthly = result.monthly_fee * rn_need
+        fl_net = result.florence_net_revenue * rn_need
+        ptr = result.partner_revenue * rn_need
+        save = result.net_savings * rn_need
+        st.info(
+            f"**Account-level (at projected RN need of {rn_need:,.0f} FTE):**  \n"
+            f"Total Florence fee: **${gross:,.0f}** (${monthly:,.0f}/mo over {amortization_months} mo)  \n"
+            f"Florence net: **${fl_net:,.0f}** · Partner: ${ptr:,.0f}  \n"
+            f"Hospital net savings (after Florence fee): **${save:,.0f}**"
+        )
+
+    # ---- Per-hospital proposal generator
+    st.markdown("---")
+    st.subheader("Generate proposal for this hospital")
+    if st.button("Generate proposal", key="single_hospital_proposal"):
+        lines = [
+            f"# Florence Pricing Proposal — {row['name']}",
+            f"_{row['city']}, {row['state']} · CCN {row['ccn']} · "
+            f"Generated {date.today().isoformat()}_",
+            "",
+            "## Recommendation at a glance",
+            f"- **Florence fee per nurse:** ${result.f_total:,.0f}",
+            f"- **Monthly fee ({amortization_months}mo amort):** ${result.monthly_fee:,.0f}/mo",
+            f"- **Hospital effective premium over staff:** "
+            f"${result.hospital_premium_per_hr:.2f}/hr "
+            f"(${result.hospital_premium_per_hr * result.commitment_hours:,.0f} over commitment)",
+            f"- **Gross agency savings (premium otherwise paid):** "
+            f"${result.gross_agency_savings:,.0f} over commitment",
+            f"- **Net savings after Florence fee:** "
+            f"${result.net_savings:,.0f} (${result.net_savings_per_hr:.2f}/hr)",
+            f"- **Channel:** {result.channel.value}",
+            f"- **Partner revenue (if applicable):** ${result.partner_revenue:,.0f}",
+            f"- **Florence net revenue:** ${result.florence_net_revenue:,.0f} "
+            f"(${result.florence_net_monthly:,.0f}/mo)",
+            "",
+            "## Market inputs",
+            f"- Loaded staff cost (C): ${result.loaded_staff_cost_per_hr:.2f}/hr",
+            f"- All-in agency cost (A): "
+            f"${result.loaded_staff_cost_per_hr + result.agency_premium_per_hr:.2f}/hr",
+            f"- Agency premium (M = A − C): ${result.agency_premium_per_hr:.2f}/hr",
+            f"- Employer FICA per hour: ${result.employer_fica_per_hr:.2f}/hr",
+            f"- Health system: {row.get('health_system', 'Independent / Unknown')}",
+            f"- Estimated RN need: {rn_need:,.0f} FTE "
+            f"(contracted-labor FTE × {rn_share:.0%} × {coverage:.0%})",
+            "",
+            "## Pricing math (product plan formula)",
+            f"- Premium capture rate: {result.premium_capture_rate:.1%}",
+            f"- Premium raw = M × capture_rate = ${result.delta_raw:.2f}/hr",
+            f"- Premium floor / cap: ${result.premium_floor:.2f} / ${result.premium_cap:.2f}",
+            f"- Florence premium chosen (clamped): ${result.delta_chosen:.2f}/hr",
+            f"- F_base = H_c × premium = ${result.f_base:,.0f}",
+            f"- F_fica = η × T_emp × H_exempt = ${result.f_fica:,.0f}",
+            f"- F_total = ${result.f_total:,.0f}",
+            f"- Monthly fee = F_total / {amortization_months} = ${result.monthly_fee:,.0f}",
+            "",
+            "## Tax assumption",
+            "The FICA component assumes the cohort visa-exempt share η specified. "
+            "Florence does not provide tax, payroll, immigration, or legal advice. "
+            "The hospital's tax/payroll/immigration/legal teams must independently "
+            "verify visa status, work authorization, tax residency, and applicability "
+            "of IRC §3121(b)(19) to each placement.",
+            "",
+            f"_Calibration version: {result.calibration_version}_",
+        ]
+        proposal_md = "\n".join(lines)
+        st.markdown(proposal_md)
+        st.download_button(
+            "Download proposal (Markdown)",
+            proposal_md.encode("utf-8"),
+            file_name=f"florence_proposal_{row['ccn']}.md",
+            mime="text/markdown",
+        )
+
+    # ── Per-hospital download bundle ──
+    st.markdown("---")
+    st.subheader("Download proposal bundle for this hospital")
+    safe_h = str(row['ccn']) + "_" + str(row['name']).replace(' ', '_').replace('/', '_')[:32]
+
+    live_cal_h = Calibration(
+        pricing_mode=PricingMode(pricing_mode),
+        target_offset_pct=target_offset_pct,
+        price_floor_monthly=price_floor_monthly,
+        price_ceiling_monthly=price_ceiling_monthly,
+        standard_monthly_fee=standard_monthly_fee,
+        term_months=term_months,
+        fica_eligible_months_default=fica_eligible_months,
+        immigration_addon_enabled=immigration_addon_enabled,
+        amn_partner_markup_pct=amn_partner_markup_pct,
+        direct_partner_markup_pct=direct_partner_markup_pct,
+        rn_share_of_contracted_labor=rn_share,
+        coverage_fill_factor=coverage,
+        agency_displacement_factor=agency_displacement_factor,
+        placeholder_msp_markup_pct=placeholder_msp_markup_pct,
+    )
+    live_cohort_h = CohortMix(eta=eta, eligible_months=fica_eligible_months)
+
+    h_col1, h_col2, h_col3 = st.columns(3)
+    with h_col1:
+        if st.button(":material/table_view: Generate Excel", key="hosp_xlsx_btn"):
+            with tempfile.TemporaryDirectory() as tmp:
+                out = Path(tmp) / f"{safe_h}.xlsx"
+                write_hospital_workbook(row['ccn'], out, live_cal_h, live_cohort_h)
+                st.session_state[f"h_xlsx_{safe_h}"] = out.read_bytes()
+        if f"h_xlsx_{safe_h}" in st.session_state:
+            st.download_button(
+                ":material/download: Download .xlsx",
+                st.session_state[f"h_xlsx_{safe_h}"],
+                file_name=f"{safe_h}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            )
+    with h_col2:
+        if st.button(":material/description: Generate Exec Summary PDF", key="hosp_pdf_btn"):
+            with tempfile.TemporaryDirectory() as tmp:
+                hh, pp = build_hospital_exec_summary(row['ccn'], Path(tmp), live_cal_h, live_cohort_h)
+                st.session_state[f"h_pdf_{safe_h}"] = pp.read_bytes()
+        if f"h_pdf_{safe_h}" in st.session_state:
+            st.download_button(
+                ":material/download: Download .pdf",
+                st.session_state[f"h_pdf_{safe_h}"],
+                file_name=f"{safe_h}_exec.pdf",
+                mime="application/pdf",
+            )
+    with h_col3:
+        if st.button(":material/inventory_2: Generate bundle (.zip)", key="hosp_zip_btn"):
+            with tempfile.TemporaryDirectory() as tmp:
+                tmp = Path(tmp)
+                xlsx = write_hospital_workbook(row['ccn'], tmp / f"{safe_h}.xlsx", live_cal_h, live_cohort_h)
+                hh, pp = build_hospital_exec_summary(row['ccn'], tmp, live_cal_h, live_cohort_h)
+                buf = io.BytesIO()
+                with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+                    zf.write(xlsx, f"{safe_h}/{xlsx.name}")
+                    zf.write(pp, f"{safe_h}/{pp.name}")
+                    zf.write(hh, f"{safe_h}/{hh.name}")
+                st.session_state[f"h_zip_{safe_h}"] = buf.getvalue()
+        if f"h_zip_{safe_h}" in st.session_state:
+            st.download_button(
+                ":material/download: Download bundle.zip",
+                st.session_state[f"h_zip_{safe_h}"],
+                file_name=f"{safe_h}_bundle.zip",
+                mime="application/zip",
+            )
+
+# =====================================================================
+# HOSPITAL TABLE — full universe filterable
+# =====================================================================
+if view == "hospital_table":
+    st.subheader("Hospital pricing — full universe")
+    f1, f2, f3, f4, f5 = st.columns(5)
+    state_filter = f1.multiselect(
+        "State", sorted(priced["state"].unique()), default=[], key="tbl_state",
+    )
+    system_filter = f2.multiselect(
+        "Health system", sorted(priced["health_system"].unique()), default=[], key="tbl_system",
+    )
+    htype_filter = f3.multiselect(
+        "Hospital type", sorted(priced["hospital_type"].dropna().unique()),
+        default=[], key="tbl_htype",
+    )
+    feasible_only = f4.checkbox("Feasible only", value=True, key="tbl_feasible")
+    min_confidence = f5.slider("Min data confidence", 0.0, 1.0, 0.0, 0.05, key="tbl_minconf")
+
+    view = priced.copy()
+    if state_filter:
+        view = view[view["state"].isin(state_filter)]
+    if system_filter:
+        view = view[view["health_system"].isin(system_filter)]
+    if htype_filter:
+        view = view[view["hospital_type"].isin(htype_filter)]
+    if feasible_only:
+        view = view[view["feasible"]]
+    view = view[view["confidence"] >= min_confidence]
+
+    st.write(f"**{len(view):,}** hospitals match.")
+
+    display_cols = [
+        "ccn", "name", "city", "state", "health_system", "hospital_type",
+        "loaded_staff_cost_per_hr", "all_in_agency_per_hr", "agency_premium_per_hr",
+        "delta_chosen", "f_total", "monthly_fee_per_nurse",
+        "partner_revenue_per_nurse", "florence_net_per_nurse",
+        "net_savings_per_hr", "rn_need",
+        "total_florence_fee", "monthly_florence_fee",
+        "florence_net_total", "net_savings_total",
+        "contract_labor_intensity", "operating_margin",
+        "channel", "manual_review_flag", "confidence",
+    ]
+    st.dataframe(
+        view[display_cols].round(2).sort_values("florence_net_total", ascending=False),
+        column_config={
+            "loaded_staff_cost_per_hr": st.column_config.NumberColumn("Loaded staff $/hr", format="$%.2f"),
+            "all_in_agency_per_hr": st.column_config.NumberColumn("Agency $/hr", format="$%.2f"),
+            "agency_premium_per_hr": st.column_config.NumberColumn("Agency premium $/hr", format="$%.2f"),
+            "delta_chosen": st.column_config.NumberColumn("Florence prem $/hr", format="$%.2f"),
+            "f_total": st.column_config.NumberColumn("Fee / nurse", format="$%d"),
+            "monthly_fee_per_nurse": st.column_config.NumberColumn("Monthly / nurse", format="$%d"),
+            "partner_revenue_per_nurse": st.column_config.NumberColumn("Partner / nurse", format="$%d"),
+            "florence_net_per_nurse": st.column_config.NumberColumn("FL net / nurse", format="$%d"),
+            "net_savings_per_hr": st.column_config.NumberColumn("Hosp save $/hr", format="$%.2f"),
+            "rn_need": st.column_config.NumberColumn("RN need (FTE)", format="%d"),
+            "total_florence_fee": st.column_config.NumberColumn("Total fee", format="$%d"),
+            "monthly_florence_fee": st.column_config.NumberColumn("Total monthly", format="$%d"),
+            "florence_net_total": st.column_config.NumberColumn("Florence net total", format="$%d"),
+            "net_savings_total": st.column_config.NumberColumn("Hosp net savings", format="$%d"),
+            "contract_labor_intensity": st.column_config.NumberColumn("CL share", format="%.1f%%"),
+            "operating_margin": st.column_config.NumberColumn("Op margin", format="%.1f%%"),
+        },
+        height=600,
+        use_container_width=True,
+    )
+
+    csv_bytes = view[display_cols].to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Download filtered view (CSV)",
+        csv_bytes,
+        file_name="florence_pricing_view.csv",
+        mime="text/csv",
+    )
+
+# =====================================================================
+# MARKET VIEW — price dispersion across states
+# =====================================================================
+if view == "market_view":
+    st.subheader("How pricing varies across markets")
+    st.caption(
+        "Each row is a state. The engine quotes a different fee per hospital based "
+        "on local wages and agency premium; the median fee per state is shown here."
+    )
+    by_state = market_aggregate(priced, "state")
+    by_state["feasibility_rate"] = (
+        by_state["feasibility_rate"] * 100
+    ).round(1).astype(str) + "%"
+    cols = ["state", "hospitals_total", "hospitals_feasible", "feasibility_rate",
+            "median_loaded_staff_cost", "median_agency_rate", "median_agency_premium",
+            "median_fee_per_nurse", "median_monthly_fee_per_nurse",
+            "total_florence_net", "total_partner_revenue", "total_net_savings",
+            "total_rn_need"]
+    st.dataframe(
+        by_state[cols].sort_values("median_fee_per_nurse", ascending=False),
+        column_config={
+            "median_loaded_staff_cost": st.column_config.NumberColumn("Loaded staff $/hr", format="$%.2f"),
+            "median_agency_rate": st.column_config.NumberColumn("Agency $/hr", format="$%.2f"),
+            "median_agency_premium": st.column_config.NumberColumn("Agency premium $/hr", format="$%.2f"),
+            "median_fee_per_nurse": st.column_config.NumberColumn("Median fee / nurse", format="$%d"),
+            "median_monthly_fee_per_nurse": st.column_config.NumberColumn("Median monthly / nurse", format="$%d"),
+            "total_florence_net": st.column_config.NumberColumn("Florence net", format="$%d"),
+            "total_partner_revenue": st.column_config.NumberColumn("Partner revenue", format="$%d"),
+            "total_net_savings": st.column_config.NumberColumn("Hospital net savings", format="$%d"),
+            "total_rn_need": st.column_config.NumberColumn("RN need (FTE)", format="%d"),
+        },
+        height=600,
+        use_container_width=True,
+    )
+
+    st.markdown("---")
+    st.subheader("Median Florence fee by state")
+    states_sorted = by_state.sort_values("median_fee_per_nurse", ascending=False)
+    st.bar_chart(states_sorted.set_index("state")["median_fee_per_nurse"])
+
+# =====================================================================
+# PRICING ELASTICITY — contract labor bands
+# =====================================================================
+if view == "elasticity":
+    st.subheader("Pricing elasticity — by contract labor share")
+    st.caption(
+        "Hospitals with higher contract labor share have larger structural agency "
+        "premiums. The engine prices accordingly: δ scales with M, so high-CL "
+        "hospitals get a higher per-hour spread."
+    )
+    has_cl = priced[priced["contract_labor_intensity"].notna()].copy()
+
+    bins = [0, 0.05, 0.10, 0.15, 0.25, 0.50, 1.00]
+    labels = ["0-5%", "5-10%", "10-15%", "15-25%", "25-50%", "50%+"]
+    has_cl["cl_band"] = pd.cut(
+        has_cl["contract_labor_intensity"],
+        bins=bins, labels=labels, include_lowest=True,
+    )
+    band_agg = has_cl.groupby("cl_band", observed=True).agg(
+        hospitals=("ccn", "count"),
+        median_agency_premium=("agency_premium_per_hr", "median"),
+        median_delta_chosen=("delta_chosen", "median"),
+        median_fee=("f_total", "median"),
+        median_florence_net=("florence_net_per_nurse", "median"),
+        median_hospital_savings=("net_savings_per_hr", "median"),
+    ).reset_index()
+    st.dataframe(
+        band_agg.round(2),
+        column_config={
+            "cl_band": "Contract labor share",
+            "hospitals": st.column_config.NumberColumn("Hospitals", format="%d"),
+            "median_agency_premium": st.column_config.NumberColumn("Agency premium $/hr", format="$%.2f"),
+            "median_delta_chosen": st.column_config.NumberColumn("Median δ $/hr", format="$%.2f"),
+            "median_fee": st.column_config.NumberColumn("Median fee / nurse", format="$%d"),
+            "median_florence_net": st.column_config.NumberColumn("Florence net / nurse", format="$%d"),
+            "median_hospital_savings": st.column_config.NumberColumn("Hospital save $/hr", format="$%.2f"),
+        },
+        use_container_width=True,
+    )
+    st.caption(
+        "Reading the bands: the engine's market-sensitive δ rises with agency premium. "
+        "High-CL-share hospitals see a higher fee — and at the same α, hospitals in those "
+        "bands still capture (1 − α) of their agency premium as savings."
+    )
+
+# =====================================================================
+# CALIBRATION SWEEP — α × η
+# =====================================================================
+if view == "calibration_sweep":
+    st.subheader("Calibration sweep — Target FICA offset % × η")
+    st.caption(
+        "Pre-computed sweep over target_offset_pct (the v2 FICA-offset target) "
+        "and η (FICA-exempt cohort share). Use this to size the tradeoff between "
+        "Florence net revenue and hospital savings at different target offsets."
+    )
+    sweep = cached_sweep()
+
+    chart_net = sweep.pivot(
+        index="target_offset_pct", columns="eta", values="total_term_florence_net"
+    )
+    st.markdown("**Total Florence net revenue (term) by target offset × η**")
+    st.line_chart(chart_net)
+
+    chart_save = sweep.pivot(
+        index="target_offset_pct", columns="eta", values="total_term_net_savings"
+    )
+    st.markdown("**Total hospital net savings (term) by target offset × η**")
+    st.line_chart(chart_save)
+
+    chart_monthly = sweep.pivot(
+        index="target_offset_pct", columns="eta", values="total_monthly_florence_fee"
+    )
+    st.markdown("**Total monthly Florence fee by target offset × η**")
+    st.line_chart(chart_monthly)
+
+    st.markdown("**Full sweep data**")
+    st.dataframe(sweep.round(2), use_container_width=True, height=400)
+
+    sweep_csv = sweep.to_csv(index=False).encode("utf-8")
+    st.download_button(
+        "Download sweep (CSV)", sweep_csv,
+        file_name="florence_calibration_sweep.csv", mime="text/csv",
+    )
+
+# =====================================================================
+# DATA QUALITY
+# =====================================================================
+if view == "data_quality":
+    st.subheader("Data confidence breakdown")
+    conf_summary = priced.groupby("data_source").agg(
+        n_hospitals=("ccn", "count"),
+        median_confidence=("confidence", "median"),
+        median_loaded_staff_cost=("loaded_staff_cost_per_hr", "median"),
+        median_agency_rate=("all_in_agency_per_hr", "median"),
+        median_fee=("f_total", "median"),
+    ).round(2).reset_index()
+    st.dataframe(conf_summary, use_container_width=True)
+
+    st.markdown("""
+**Confidence tiers:**
+- `commonspirit_demo` (1.00): direct match to FlorenceOS demo dataset (real customer/HCRIS-derived rates).
+- `hcris_derived_with_state_agency` (0.85): HCRIS gives per-hospital salaries, FTE, contract labor; state-level agency rate imputed.
+- `state_imputed_with_commonspirit_anchor` (0.60): state has CS data; this hospital imputed from state median.
+- `national_imputed` (0.40): no state CS data; uses national median × state wage.
+
+**Geocoding:** 100% of hospitals geocoded (exact ZIP centroid + 3-digit ZIP prefix fallback).
+**Health system inference:** 15% of hospitals matched by name keyword; production version needs AHA parent-system mapping.
+
+**To increase confidence further** — see [HCRIS_NMRC_NEXT.md](HCRIS_NMRC_NEXT.md) for the agency-hours ingest scope.
+""")
+
+# =====================================================================
+# DATA PROVENANCE — per-source tracking (v2 §3)
+# =====================================================================
+if view == "data_provenance":
+    st.subheader("Per-rate source provenance (v2 §3 source governance)")
+    st.caption(
+        "Every rate observation tracked with source, as_of_date, and confidence tier. "
+        "This is the audit trail that backs the pricing engine."
+    )
+
+    # market_rate_observations table
+    obs_path = DATA_DIR / "market_rate_observations.csv"
+    if obs_path.exists():
+        obs = pd.read_csv(obs_path)
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Total observations", f"{len(obs):,}")
+        c2.metric("High confidence", f"{(obs['confidence_tier']=='High').sum():,}")
+        c3.metric("Medium confidence", f"{(obs['confidence_tier']=='Medium').sum():,}")
+        c4.metric("Low confidence", f"{(obs['confidence_tier']=='Low').sum():,}")
+
+        st.markdown("**By source type:**")
+        src_summary = obs.groupby(["source_type", "rate_type"]).agg(
+            n=("observation_id", "count"),
+            median_hourly=("hourly_pay", "median"),
+            median_confidence=("confidence_score", "median"),
+        ).reset_index()
+        st.dataframe(src_summary.round(2), use_container_width=True)
+
+        st.markdown("**Sample observations (first 50):**")
+        st.dataframe(
+            obs[["as_of_date", "source_type", "geography_type", "geography",
+                 "rate_type", "hourly_pay", "confidence_tier"]].head(50),
+            use_container_width=True, height=400,
+        )
+
+        csv_obs = obs.to_csv(index=False).encode("utf-8")
+        st.download_button(
+            "Download all observations (CSV)", csv_obs,
+            file_name="florence_market_rate_observations.csv", mime="text/csv",
+        )
+
+    # System overlays — split into real-disclosed and placeholder
+    st.markdown("---")
+    st.subheader("Documented system-level MSP overlays (v2 §5.2)")
+
+    st.markdown("**Real-disclosed (verified data):**")
+    overlays_path = DATA_DIR / "system_level_overlays.csv"
+    if overlays_path.exists():
+        overlays = pd.read_csv(overlays_path, dtype={"ccn": str})
+        st.markdown(f"_{overlays['health_system_id'].nunique()} system(s) with disclosed overlays "
+                    f"applied to {len(overlays):,} facilities._")
+        ov_summary = overlays.groupby("health_system_name").agg(
+            n_facilities=("ccn", "count"),
+            overlay_per_hour=("overlay_per_hour", "first"),
+            total_allocated=("additional_agency_fee_allocated", "sum"),
+            source=("overlay_source", "first"),
+        ).reset_index()
+        st.dataframe(ov_summary, use_container_width=True)
+
+    st.markdown(f"**Placeholder ({placeholder_msp_markup_pct:.0%} markup, slider-controlled):**")
+    placeholder_priced = priced[priced.get("is_placeholder_system", False) == True]
+    if len(placeholder_priced):
+        ph_summary = placeholder_priced.groupby("health_system").agg(
+            n_facilities=("ccn", "count"),
+            median_overlay_per_hour=("placeholder_msp_overlay_per_hour", "median"),
+            median_base_agency=("all_in_agency_per_hour_pre_overlay", "median"),
+            total_24mo_fee=("term_florence_fee_account", "sum"),
+        ).reset_index().sort_values("total_24mo_fee", ascending=False)
+        ph_summary["markup_pct_applied"] = f"{placeholder_msp_markup_pct:.0%}"
+        st.dataframe(
+            ph_summary.round(2),
+            column_config={
+                "median_overlay_per_hour": st.column_config.NumberColumn(
+                    "Median overlay $/hr", format="$%.2f"),
+                "median_base_agency": st.column_config.NumberColumn(
+                    "Median base HCRIS $/hr", format="$%.2f"),
+                "total_24mo_fee": st.column_config.NumberColumn(
+                    "Total 24-mo Florence fee", format="$%d"),
+            },
+            use_container_width=True,
+        )
+        st.caption(
+            f"As you adjust the sidebar slider, the overlay rate scales linearly. "
+            f"Current setting: {placeholder_msp_markup_pct:.0%} of base HCRIS agency rate. "
+            f"Industry-standard MSP markups are 15-30%; Kaiser's actual is 17.6%."
+        )
+    else:
+        st.info("No placeholder-system hospitals in current filtered view.")
+
+    # Snapshots
+    st.markdown("---")
+    st.subheader("Pricing snapshots — point-in-time reproducibility")
+    st.caption(
+        "Each pricing batch run is archived as a daily snapshot. Use to reproduce "
+        "historical proposals, compare pricing across dates, audit calibration changes."
+    )
+    try:
+        from snapshots import list_snapshots
+        snapshots_avail = list_snapshots()
+        if snapshots_avail:
+            st.write(f"**{len(snapshots_avail)} snapshot(s) available:** "
+                     f"{', '.join(d.isoformat() for d in snapshots_avail)}")
+        else:
+            st.info("No snapshots yet — run `python3 snapshots.py` to generate today's snapshot.")
+    except Exception as e:
+        st.warning(f"Snapshot listing unavailable: {e}")
+
+
+# =====================================================================
+# Bottom-of-page: collapsed national aggregates + methodology footer
+# (Internal numbers. Behind an expander so they don't dominate the tabs.)
+# =====================================================================
+st.markdown("<div style='height:60px;'></div>", unsafe_allow_html=True)
+
+with st.expander(":material/bar_chart: National calibration aggregates · Florence internal", expanded=False):
+    st.caption(
+        f"Five primary v2 buyer-facing numbers (median across {len(feas):,} quotable hospitals "
+        f"of {total:,} total; {manual_review_count} flagged for manual review)."
+    )
+    k1, k2, k3, k4, k5 = st.columns(5)
+    k1.metric(
+        "①  Florence Monthly Fee / RN",
+        f"${median_monthly_fee:,.0f}/mo",
+        f"Target: {target_offset_pct:.0%} FICA offset",
+    )
+    k2.metric(
+        "②  Employer FICA Savings / RN",
+        f"${median_fica:,.0f}/mo",
+        help="What the hospital saves in employer payroll tax for the F-1 cohort.",
+    )
+    k3.metric(
+        "③  FICA-Adjusted Effective Cost",
+        f"${median_effective:,.0f}/mo",
+        help="Florence fee minus the FICA offset; the CFO's net Florence cost.",
+    )
+    k4.metric(
+        "④  Actual FICA Offset %",
+        f"{median_offset_pct:.1%}",
+        f"vs {target_offset_pct:.0%} target",
+    )
+    k5.metric(
+        "⑤  Net Monthly Savings / RN",
+        f"${median_net:,.0f}/mo",
+        "= agency avoided + FICA − fee",
+    )
+
+    st.markdown("**National aggregates at current calibration**")
+    a1, a2, a3, a4, a5 = st.columns(5)
+    a1.metric(
+        "Total RN need (FTE)",
+        f"{addressable_rn:,.0f}",
+        help="Contracted Labor FTE × RN share × coverage",
+    )
+    a2.metric(
+        "Total monthly Florence billings",
+        f"${total_monthly_fee/1e6:,.0f}M/mo",
+        f"${term_florence_fee/1e9:.2f}B over {term_months} mo",
+    )
+    a3.metric(
+        "Total monthly FICA offset",
+        f"${total_monthly_fica/1e6:,.0f}M/mo",
+        "to hospitals",
+    )
+    a4.metric(
+        "Total monthly net savings",
+        f"${total_monthly_net_savings/1e6:,.0f}M/mo",
+        f"${term_net_savings/1e9:.2f}B over {term_months} mo",
+    )
+    a5.metric(
+        "Savings : Fee ratio",
+        f"{term_net_savings/term_florence_fee:.1f}×" if term_florence_fee > 0 else "—",
+        help="Hospital net savings ÷ Florence fee (term basis).",
+    )
+    st.info(REQUIRED_COMPLIANCE_SENTENCE, icon=":material/balance:")
+
+st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+st.markdown(
+    """
+    <div style="font-family:'Inter',sans-serif; font-size:0.78rem; color:#5B6675;
+                line-height:1.55; padding-top:10px; border-top:1px solid #E5E8EE;">
+      <strong style="color:#0F1B2D;">Cohort assumption.</strong>
+      All quotes assume Florence's confirmed F-1 student pipeline (η = 1.0) with 24 FICA-exempt
+      months per nurse. The F-1 student FICA exemption applies during the nonresident-alien
+      period under
+      <a href="https://www.irs.gov/individuals/international-taxpayers/foreign-student-liability-for-social-security-and-medicare-taxes"
+         style="color:#089478; text-decoration:none; border-bottom:1px solid #0BC5A0;"
+         target="_blank">
+        IRC §3121(b)(19) (IRS — Foreign Student Liability for SS/Medicare Taxes)
+      </a>
+      · IRS Pub 519. Eligibility must be confirmed by payroll, tax counsel, and immigration counsel
+      per the compliance disclosure above.
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+st.markdown("<div style='height:16px;'></div>", unsafe_allow_html=True)
+st.caption(
+    f"Calibration version: {Calibration().version} · "
+    f"Universe: {total:,} CMS-registered hospitals · "
+    "Wage data: BLS OEWS May 2024 MSA-level (top 60 MSAs) + HCRIS-derived per-hospital + state fallback · "
+    "Agency rates: HCRIS NMRC per-hospital (3,011 hospitals) + Kaiser MSP overlay (+$17.39/hr) · "
+    "Geocoding: Census 2024 ZCTA centroids · "
+    "ZIP→CBSA: Census 2023 delineation."
+)

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Florence Pricing Proposal — KAISER FOUNDATION HOSPITAL - SOUTH SAN FRANCISCO</title>
+<style>
+:root {
+  --navy: #0b2545;
+  --teal: #1e6091;
+  --accent: #2db8a3;
+  --warn: #c97a3b;
+  --bg: #f7f8fb;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --border: #e2e6ee;
+  --text: #1a2230;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+.deck { max-width: 1100px; margin: 0 auto; padding: 24px; }
+.slide {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 48px 56px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  page-break-after: always;
+  min-height: 600px;
+}
+.slide-number { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 36px; margin: 0 0 8px 0; color: var(--navy); letter-spacing: -0.02em; }
+h1.cover { font-size: 48px; line-height: 1.1; }
+h2 { font-size: 26px; margin: 0 0 12px 0; color: var(--navy); letter-spacing: -0.01em; }
+h3 { font-size: 18px; margin: 24px 0 8px 0; color: var(--teal); }
+.subtitle { font-size: 17px; color: var(--muted); margin-top: 4px; margin-bottom: 32px; }
+.headline-box {
+  background: linear-gradient(135deg, var(--navy), var(--teal));
+  color: white;
+  border-radius: 8px;
+  padding: 24px 32px;
+  margin: 32px 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }
+.kpi {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 18px 20px;
+  border-left: 4px solid var(--teal);
+}
+.kpi.accent { border-left-color: var(--accent); }
+.kpi.warn { border-left-color: var(--warn); }
+.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.kpi-value { font-size: 26px; font-weight: 600; color: var(--navy); }
+.kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.split-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 16px 0 32px; }
+.split-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: left;
+}
+.split-card.hospital { border-top: 4px solid var(--teal); }
+.split-card.savings { border-top: 4px solid var(--accent); }
+.split-card.partner { border-top: 4px solid var(--warn); }
+.split-card.florence { border-top: 4px solid var(--navy); background: #f0f5fa; }
+.split-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.split-amount { font-size: 28px; font-weight: 700; color: var(--navy); margin-top: 6px; }
+.split-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--bg); font-weight: 600; color: var(--navy); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); font-size: 12px; }
+.formula {
+  background: #f0f5fa;
+  border-radius: 6px;
+  padding: 18px 20px;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
+  font-size: 14px;
+  margin: 16px 0;
+  color: var(--navy);
+}
+.calibration-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 28px;
+  margin: 16px 0; font-size: 14px;
+}
+.calibration-grid div span:first-child { color: var(--muted); }
+.disclaimer {
+  background: #fff8e6;
+  border-left: 4px solid var(--warn);
+  border-radius: 6px;
+  padding: 16px 20px;
+  font-size: 12px;
+  color: #6b5824;
+  line-height: 1.6;
+  margin-top: 16px;
+}
+.footer {
+  font-size: 11px; color: var(--muted); margin-top: 32px;
+  padding-top: 16px; border-top: 1px solid var(--border);
+}
+.cover-meta { margin-top: 64px; font-size: 14px; color: var(--muted); }
+.cover-meta div { margin: 4px 0; }
+@media print {
+  body { background: white; }
+  .deck { padding: 0; max-width: none; }
+  .slide { box-shadow: none; border: none; margin: 0; }
+}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- Slide 1: Cover -->
+<section class="slide">
+  <div class="slide-number">01 — Cover</div>
+  <h1 class="cover">KAISER FOUNDATION HOSPITAL - SOUTH SAN FRANCISCO</h1>
+  <div class="subtitle">SOUTH SAN FRANCISCO, CA · CCN 050070 · Kaiser Permanente</div>
+  <div class="headline-box">Florence pricing for KAISER FOUNDATION HOSPITAL - SOUTH SAN FRANCISCO: $8,323,247 Florence revenue, $35,661,817 hospital savings vs agency labor.</div>
+  <div class="cover-meta">
+    <div><strong>Type:</strong> Hospital</div>
+    <div><strong>Generated:</strong> 2026-05-20</div>
+    <div><strong>Pricing engine:</strong> Florence Labor Economics Agent</div>
+    <div><strong>Calibration version:</strong> v0.3-2026-05</div>
+  </div>
+</section>
+
+<!-- Slide 2: Executive Summary -->
+<section class="slide">
+  <div class="slide-number">02 — Executive Summary</div>
+  <h1>The financial picture</h1>
+  <div class="subtitle">What each party gets at full RN-need conversion under the current calibration.</div>
+
+  <div class="split-grid">
+    <div class="split-card hospital">
+      <div class="split-label">Hospital pays (gross)</div>
+      <div class="split-amount">$8.3M</div>
+      <div class="split-note">across 141 FTE of RN need</div>
+    </div>
+    <div class="split-card savings">
+      <div class="split-label">Hospital saves vs agency</div>
+      <div class="split-amount">$35.7M</div>
+      <div class="split-note">vs all-in agency labor over commitment</div>
+    </div>
+    <div class="split-card partner">
+      <div class="split-label">Partner channel revenue</div>
+      <div class="split-amount">$0</div>
+      <div class="split-note">at 20% share when routed to AMN</div>
+    </div>
+    <div class="split-card florence">
+      <div class="split-label">Florence net revenue</div>
+      <div class="split-amount">$8.3M</div>
+      <div class="split-note">after partner split</div>
+    </div>
+  </div>
+
+  <h3>Market posture</h3>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Hospitals in scope</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">1 feasible at current calibration</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Median loaded staff cost</div>
+      <div class="kpi-value">$87/hr</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Median all-in agency rate</div>
+      <div class="kpi-value">$143/hr</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-label">Median agency premium</div>
+      <div class="kpi-value">$56/hr</div>
+      <div class="kpi-sub">spread the engine is converting into pricing</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 3: Pricing methodology -->
+<section class="slide">
+  <div class="slide-number">03 — Methodology</div>
+  <h1>Market-sensitive pricing</h1>
+  <div class="subtitle">Every hospital gets a price reflecting its local labor economics, not a flat fee.</div>
+
+  <h3>The formula</h3>
+  <div class="formula">
+    δ<sub>per_hospital</sub> = clamp(α × (M − ζ), δ<sub>floor</sub>, δ<sub>cap</sub>)<br/>
+    F<sub>total</sub> = H<sub>c</sub> × δ<sub>chosen</sub> + η × T<sub>emp</sub> × H<sub>exempt</sub><br/><br/>
+    Florence net = F<sub>total</sub> × (1 − partner_share)
+  </div>
+  <p style="font-size: 14px; color: var(--text);">
+    <strong>M</strong> = local agency premium (all-in agency hourly rate minus loaded staff cost).
+    <strong>α</strong> is Florence's share of that premium; the hospital captures (1 − α).
+    <strong>ζ</strong> is the required hospital savings buffer vs agency.
+    <strong>η</strong> is the FICA-exempt share of the placed cohort (F-1/J-1 only).
+  </p>
+
+  <h3>Calibration values used</h3>
+  <div class="calibration-grid">
+    <div><span>α (Florence share of M − ζ):</span> <strong>0.20</strong></div>
+    <div><span>ζ (hospital savings buffer):</span> <strong>$3.00/hr</strong></div>
+    <div><span>δ floor:</span> <strong>$1.00/hr</strong></div>
+    <div><span>δ cap:</span> <strong>$15.00/hr</strong></div>
+    <div><span>Commitment:</span> <strong>3 years × 1,872 hrs/yr</strong></div>
+    <div><span>Cohort visa-exempt share (η):</span> <strong>0.00</strong></div>
+    <div><span>Direct enterprise partner share:</span> <strong>0%</strong></div>
+    <div><span>AMN wholesale partner share:</span> <strong>20%</strong></div>
+  </div>
+</section>
+
+<!-- Slide 4+: Per-hospital pricing table -->
+<section class="slide">
+  <div class="slide-number">04 — Per-hospital pricing</div>
+  <h1>Hospital-level breakdown</h1>
+  <div class="subtitle">
+    Top 1 hospitals by Florence net revenue. Each price is
+    calibrated to that hospital's local labor economics.
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Hospital</th>
+        <th class="num">RN need (FTE)</th>
+        <th class="num">Loaded staff $/hr</th>
+        <th class="num">Agency $/hr</th>
+        <th class="num">δ chosen $/hr</th>
+        <th class="num">Fee / nurse</th>
+        <th class="num">Florence net / nurse</th>
+        <th class="num">CL share</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - SOUTH SAN FRANCISCO</strong><br/><span class="muted">SOUTH SAN FRANCISCO, CA</span></td>
+              <td class="num">141</td>
+              <td class="num">$87.19</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.54</strong></td>
+              <td class="num">$59,198</td>
+              <td class="num">$59,198</td>
+              <td class="num">37.8%</td>
+            </tr>
+        
+    </tbody>
+  </table>
+</section>
+
+<!-- Slide 5: Market context -->
+<section class="slide">
+  <div class="slide-number">05 — Market context</div>
+  <h1>Why the pricing works</h1>
+  <div class="subtitle">Contract labor share is the empirical signal that an agency premium exists to compete against.</div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">States covered</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">CA</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Median contract labor share</div>
+      <div class="kpi-value">37.8%</div>
+      <div class="kpi-sub">of total comp paid to agency (HCRIS)</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-label">Hospitals with high CL share</div>
+      <div class="kpi-value">1</div>
+      <div class="kpi-sub">CL ≥ 15% — prime market sensitivity</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Aggregate workforce (HCRIS)</div>
+      <div class="kpi-value">521</div>
+      <div class="kpi-sub">total FTE across in-scope hospitals</div>
+    </div>
+  </div>
+
+  <h3>Why this matters</h3>
+  <p style="font-size: 14px;">
+    Hospitals with a high contract-labor share have a real, durable agency premium.
+    Florence's market-sensitive engine sets δ as a function of that premium, so each
+    hospital is quoted a price the local market can support — without breaking the
+    savings story the CFO needs to approve.
+  </p>
+</section>
+
+<!-- Slide 6: Tax assumption -->
+<section class="slide">
+  <div class="slide-number">06 — Tax assumption</div>
+  <h1>FICA / visa disclaimer</h1>
+  <div class="subtitle">Required reading before relying on the FICA component of this pricing.</div>
+  <div class="disclaimer">
+    FICA capture under IRC §3121(b)(19) applies only to F-1, J-1, M-1, Q-1, and Q-2 nonresident aliens during their nonresident-alien tax period. EB-3 / H-1B / TN / U.S. citizen placements carry no FICA component (η = 0). Florence does not provide tax, payroll, immigration, or legal advice. The hospital's tax, payroll, immigration, and legal teams must independently verify visa status, work authorization, tax residency, and per-placement applicability before relying on the projected FICA component of this pricing.
+  </div>
+  <div class="footer">
+    References: IRC §3121(b)(19); IRS Publication 519; IRS Publication 15 (Circular E).<br/>
+    Calibration version: v0.3-2026-05 · Generated 2026-05-20
+  </div>
+</section>
+
+</div>
+</body>
+</html>

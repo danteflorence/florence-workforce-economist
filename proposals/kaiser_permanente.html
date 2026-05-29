@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<title>Florence Pricing Proposal — Kaiser Permanente</title>
+<style>
+:root {
+  --navy: #0b2545;
+  --teal: #1e6091;
+  --accent: #2db8a3;
+  --warn: #c97a3b;
+  --bg: #f7f8fb;
+  --card: #ffffff;
+  --muted: #6b7280;
+  --border: #e2e6ee;
+  --text: #1a2230;
+}
+* { box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.5;
+}
+.deck { max-width: 1100px; margin: 0 auto; padding: 24px; }
+.slide {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 48px 56px;
+  margin-bottom: 24px;
+  border: 1px solid var(--border);
+  page-break-after: always;
+  min-height: 600px;
+}
+.slide-number { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; }
+h1 { font-size: 36px; margin: 0 0 8px 0; color: var(--navy); letter-spacing: -0.02em; }
+h1.cover { font-size: 48px; line-height: 1.1; }
+h2 { font-size: 26px; margin: 0 0 12px 0; color: var(--navy); letter-spacing: -0.01em; }
+h3 { font-size: 18px; margin: 24px 0 8px 0; color: var(--teal); }
+.subtitle { font-size: 17px; color: var(--muted); margin-top: 4px; margin-bottom: 32px; }
+.headline-box {
+  background: linear-gradient(135deg, var(--navy), var(--teal));
+  color: white;
+  border-radius: 8px;
+  padding: 24px 32px;
+  margin: 32px 0;
+  font-size: 18px;
+  line-height: 1.4;
+}
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 24px 0; }
+.kpi {
+  background: var(--bg);
+  border-radius: 8px;
+  padding: 18px 20px;
+  border-left: 4px solid var(--teal);
+}
+.kpi.accent { border-left-color: var(--accent); }
+.kpi.warn { border-left-color: var(--warn); }
+.kpi-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+.kpi-value { font-size: 26px; font-weight: 600; color: var(--navy); }
+.kpi-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.split-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 16px 0 32px; }
+.split-card {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 20px;
+  text-align: left;
+}
+.split-card.hospital { border-top: 4px solid var(--teal); }
+.split-card.savings { border-top: 4px solid var(--accent); }
+.split-card.partner { border-top: 4px solid var(--warn); }
+.split-card.florence { border-top: 4px solid var(--navy); background: #f0f5fa; }
+.split-label { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.split-amount { font-size: 28px; font-weight: 700; color: var(--navy); margin-top: 6px; }
+.split-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 13px; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { background: var(--bg); font-weight: 600; color: var(--navy); font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); font-size: 12px; }
+.formula {
+  background: #f0f5fa;
+  border-radius: 6px;
+  padding: 18px 20px;
+  font-family: "SF Mono", Monaco, "Courier New", monospace;
+  font-size: 14px;
+  margin: 16px 0;
+  color: var(--navy);
+}
+.calibration-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 28px;
+  margin: 16px 0; font-size: 14px;
+}
+.calibration-grid div span:first-child { color: var(--muted); }
+.disclaimer {
+  background: #fff8e6;
+  border-left: 4px solid var(--warn);
+  border-radius: 6px;
+  padding: 16px 20px;
+  font-size: 12px;
+  color: #6b5824;
+  line-height: 1.6;
+  margin-top: 16px;
+}
+.footer {
+  font-size: 11px; color: var(--muted); margin-top: 32px;
+  padding-top: 16px; border-top: 1px solid var(--border);
+}
+.cover-meta { margin-top: 64px; font-size: 14px; color: var(--muted); }
+.cover-meta div { margin: 4px 0; }
+@media print {
+  body { background: white; }
+  .deck { padding: 0; max-width: none; }
+  .slide { box-shadow: none; border: none; margin: 0; }
+}
+</style>
+</head>
+<body>
+<div class="deck">
+
+<!-- Slide 1: Cover -->
+<section class="slide">
+  <div class="slide-number">01 — Cover</div>
+  <h1 class="cover">Kaiser Permanente</h1>
+  <div class="subtitle">38 hospitals across 5 states · CA, HI, OR, TX + 1 more</div>
+  <div class="headline-box">Florence pricing for Kaiser Permanente: $728.3M Florence revenue across 38 hospitals, $3166M in hospital savings vs all-in agency labor.</div>
+  <div class="cover-meta">
+    <div><strong>Type:</strong> Health System</div>
+    <div><strong>Generated:</strong> 2026-05-20</div>
+    <div><strong>Pricing engine:</strong> Florence Labor Economics Agent</div>
+    <div><strong>Calibration version:</strong> v0.3-2026-05</div>
+  </div>
+</section>
+
+<!-- Slide 2: Executive Summary -->
+<section class="slide">
+  <div class="slide-number">02 — Executive Summary</div>
+  <h1>The financial picture</h1>
+  <div class="subtitle">What each party gets at full RN-need conversion under the current calibration.</div>
+
+  <div class="split-grid">
+    <div class="split-card hospital">
+      <div class="split-label">Hospital pays (gross)</div>
+      <div class="split-amount">$728.3M</div>
+      <div class="split-note">across 12,023 FTE of RN need</div>
+    </div>
+    <div class="split-card savings">
+      <div class="split-label">Hospital saves vs agency</div>
+      <div class="split-amount">$3.17B</div>
+      <div class="split-note">vs all-in agency labor over commitment</div>
+    </div>
+    <div class="split-card partner">
+      <div class="split-label">Partner channel revenue</div>
+      <div class="split-amount">$0</div>
+      <div class="split-note">at 20% share when routed to AMN</div>
+    </div>
+    <div class="split-card florence">
+      <div class="split-label">Florence net revenue</div>
+      <div class="split-amount">$728.3M</div>
+      <div class="split-note">after partner split</div>
+    </div>
+  </div>
+
+  <h3>Market posture</h3>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Hospitals in scope</div>
+      <div class="kpi-value">38</div>
+      <div class="kpi-sub">38 feasible at current calibration</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Median loaded staff cost</div>
+      <div class="kpi-value">$87/hr</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Median all-in agency rate</div>
+      <div class="kpi-value">$143/hr</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-label">Median agency premium</div>
+      <div class="kpi-value">$55/hr</div>
+      <div class="kpi-sub">spread the engine is converting into pricing</div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 3: Pricing methodology -->
+<section class="slide">
+  <div class="slide-number">03 — Methodology</div>
+  <h1>Market-sensitive pricing</h1>
+  <div class="subtitle">Every hospital gets a price reflecting its local labor economics, not a flat fee.</div>
+
+  <h3>The formula</h3>
+  <div class="formula">
+    δ<sub>per_hospital</sub> = clamp(α × (M − ζ), δ<sub>floor</sub>, δ<sub>cap</sub>)<br/>
+    F<sub>total</sub> = H<sub>c</sub> × δ<sub>chosen</sub> + η × T<sub>emp</sub> × H<sub>exempt</sub><br/><br/>
+    Florence net = F<sub>total</sub> × (1 − partner_share)
+  </div>
+  <p style="font-size: 14px; color: var(--text);">
+    <strong>M</strong> = local agency premium (all-in agency hourly rate minus loaded staff cost).
+    <strong>α</strong> is Florence's share of that premium; the hospital captures (1 − α).
+    <strong>ζ</strong> is the required hospital savings buffer vs agency.
+    <strong>η</strong> is the FICA-exempt share of the placed cohort (F-1/J-1 only).
+  </p>
+
+  <h3>Calibration values used</h3>
+  <div class="calibration-grid">
+    <div><span>α (Florence share of M − ζ):</span> <strong>0.20</strong></div>
+    <div><span>ζ (hospital savings buffer):</span> <strong>$3.00/hr</strong></div>
+    <div><span>δ floor:</span> <strong>$1.00/hr</strong></div>
+    <div><span>δ cap:</span> <strong>$15.00/hr</strong></div>
+    <div><span>Commitment:</span> <strong>3 years × 1,872 hrs/yr</strong></div>
+    <div><span>Cohort visa-exempt share (η):</span> <strong>0.00</strong></div>
+    <div><span>Direct enterprise partner share:</span> <strong>0%</strong></div>
+    <div><span>AMN wholesale partner share:</span> <strong>20%</strong></div>
+  </div>
+</section>
+
+<!-- Slide 4+: Per-hospital pricing table -->
+<section class="slide">
+  <div class="slide-number">04 — Per-hospital pricing</div>
+  <h1>Hospital-level breakdown</h1>
+  <div class="subtitle">
+    Top 38 hospitals by Florence net revenue. Each price is
+    calibrated to that hospital's local labor economics.
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th>Hospital</th>
+        <th class="num">RN need (FTE)</th>
+        <th class="num">Loaded staff $/hr</th>
+        <th class="num">Agency $/hr</th>
+        <th class="num">δ chosen $/hr</th>
+        <th class="num">Fee / nurse</th>
+        <th class="num">Florence net / nurse</th>
+        <th class="num">CL share</th>
+      </tr>
+    </thead>
+    <tbody>
+      
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL FONTANA/ONTARIO</strong><br/><span class="muted">FONTANA, CA</span></td>
+              <td class="num">788</td>
+              <td class="num">$88.37</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.30</strong></td>
+              <td class="num">$57,873</td>
+              <td class="num">$57,873</td>
+              <td class="num">35.0%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - OAKLAND/RICHMOND</strong><br/><span class="muted">OAKLAND, CA</span></td>
+              <td class="num">674</td>
+              <td class="num">$87.78</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.42</strong></td>
+              <td class="num">$58,535</td>
+              <td class="num">$58,535</td>
+              <td class="num">31.0%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER SUNNYSIDE MEDICAL CENTER</strong><br/><span class="muted">CLACKAMAS, OR</span></td>
+              <td class="num">464</td>
+              <td class="num">$72.24</td>
+              <td class="num">$161.78</td>
+              <td class="num"><strong>$15.00</strong></td>
+              <td class="num">$84,240</td>
+              <td class="num">$84,240</td>
+              <td class="num">45.1%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - SAN DIEGO</strong><br/><span class="muted">SAN DIEGO, CA</span></td>
+              <td class="num">642</td>
+              <td class="num">$87.07</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.56</strong></td>
+              <td class="num">$59,333</td>
+              <td class="num">$59,333</td>
+              <td class="num">34.2%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - LOS ANGELES</strong><br/><span class="muted">LOS ANGELES, CA</span></td>
+              <td class="num">625</td>
+              <td class="num">$87.04</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.57</strong></td>
+              <td class="num">$59,367</td>
+              <td class="num">$59,367</td>
+              <td class="num">36.0%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL-SANTA CLARA</strong><br/><span class="muted">SANTA CLARA, CA</span></td>
+              <td class="num">544</td>
+              <td class="num">$87.44</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.49</strong></td>
+              <td class="num">$58,917</td>
+              <td class="num">$58,917</td>
+              <td class="num">33.7%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - ROSEVILLE</strong><br/><span class="muted">ROSEVILLE, CA</span></td>
+              <td class="num">550</td>
+              <td class="num">$88.00</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.38</strong></td>
+              <td class="num">$58,288</td>
+              <td class="num">$58,288</td>
+              <td class="num">32.0%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - ORANGE COUNTY - ANAHEIM</strong><br/><span class="muted">ANAHEIM, CA</span></td>
+              <td class="num">547</td>
+              <td class="num">$88.23</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.33</strong></td>
+              <td class="num">$58,030</td>
+              <td class="num">$58,030</td>
+              <td class="num">32.4%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - DOWNEY</strong><br/><span class="muted">DOWNEY, CA</span></td>
+              <td class="num">451</td>
+              <td class="num">$88.27</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.32</strong></td>
+              <td class="num">$57,985</td>
+              <td class="num">$57,985</td>
+              <td class="num">33.9%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL</strong><br/><span class="muted">HONOLULU, HI</span></td>
+              <td class="num">368</td>
+              <td class="num">$80.91</td>
+              <td class="num">$141.48</td>
+              <td class="num"><strong>$11.51</strong></td>
+              <td class="num">$64,658</td>
+              <td class="num">$64,658</td>
+              <td class="num">5.2%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSP SO SACRAMENTO</strong><br/><span class="muted">SACRAMENTO, CA</span></td>
+              <td class="num">392</td>
+              <td class="num">$87.76</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.43</strong></td>
+              <td class="num">$58,558</td>
+              <td class="num">$58,558</td>
+              <td class="num">35.1%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - WALNUT CREEK</strong><br/><span class="muted">WALNUT CREEK, CA</span></td>
+              <td class="num">366</td>
+              <td class="num">$86.23</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.73</strong></td>
+              <td class="num">$60,276</td>
+              <td class="num">$60,276</td>
+              <td class="num">26.9%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - SAN FRANCISCO</strong><br/><span class="muted">SAN FRANCISCO, CA</span></td>
+              <td class="num">359</td>
+              <td class="num">$86.99</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.58</strong></td>
+              <td class="num">$59,423</td>
+              <td class="num">$59,423</td>
+              <td class="num">28.7%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL MANTECA</strong><br/><span class="muted">MANTECA, CA</span></td>
+              <td class="num">352</td>
+              <td class="num">$88.51</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.28</strong></td>
+              <td class="num">$57,715</td>
+              <td class="num">$57,715</td>
+              <td class="num">32.4%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL, RIVERSIDE</strong><br/><span class="muted">RIVERSIDE, CA</span></td>
+              <td class="num">331</td>
+              <td class="num">$86.43</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.69</strong></td>
+              <td class="num">$60,052</td>
+              <td class="num">$60,052</td>
+              <td class="num">27.5%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - SACRAMENTO</strong><br/><span class="muted">SACRAMENTO, CA</span></td>
+              <td class="num">332</td>
+              <td class="num">$86.96</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.59</strong></td>
+              <td class="num">$59,456</td>
+              <td class="num">$59,456</td>
+              <td class="num">36.2%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL AND REHAB CENTER</strong><br/><span class="muted">VALLEJO, CA</span></td>
+              <td class="num">314</td>
+              <td class="num">$84.82</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$11.01</strong></td>
+              <td class="num">$61,860</td>
+              <td class="num">$61,860</td>
+              <td class="num">31.6%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - SAN LEANDRO</strong><br/><span class="muted">SAN LEANDRO, CA</span></td>
+              <td class="num">300</td>
+              <td class="num">$86.94</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.59</strong></td>
+              <td class="num">$59,479</td>
+              <td class="num">$59,479</td>
+              <td class="num">30.8%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - BALDWIN PARK</strong><br/><span class="muted">BALDWIN PARK, CA</span></td>
+              <td class="num">303</td>
+              <td class="num">$87.76</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.43</strong></td>
+              <td class="num">$58,558</td>
+              <td class="num">$58,558</td>
+              <td class="num">37.3%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL WESTSIDE</strong><br/><span class="muted">HILLSBORO, OR</span></td>
+              <td class="num">199</td>
+              <td class="num">$72.25</td>
+              <td class="num">$161.78</td>
+              <td class="num"><strong>$15.00</strong></td>
+              <td class="num">$84,240</td>
+              <td class="num">$84,240</td>
+              <td class="num">45.4%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - SOUTH BAY</strong><br/><span class="muted">HARBOR CITY, CA</span></td>
+              <td class="num">280</td>
+              <td class="num">$87.60</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.46</strong></td>
+              <td class="num">$58,738</td>
+              <td class="num">$58,738</td>
+              <td class="num">37.2%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL-SAN JOSE</strong><br/><span class="muted">SAN JOSE, CA</span></td>
+              <td class="num">276</td>
+              <td class="num">$87.28</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.52</strong></td>
+              <td class="num">$59,097</td>
+              <td class="num">$59,097</td>
+              <td class="num">34.0%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - PANORAMA CITY</strong><br/><span class="muted">PANORAMA CITY, CA</span></td>
+              <td class="num">247</td>
+              <td class="num">$85.35</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.91</strong></td>
+              <td class="num">$61,265</td>
+              <td class="num">$61,265</td>
+              <td class="num">35.4%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - WOODLAND HILLS</strong><br/><span class="muted">WOODLAND HILLS, CA</span></td>
+              <td class="num">256</td>
+              <td class="num">$88.38</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.30</strong></td>
+              <td class="num">$57,861</td>
+              <td class="num">$57,861</td>
+              <td class="num">36.0%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL-SANTA ROSA</strong><br/><span class="muted">SANTA ROSA, CA</span></td>
+              <td class="num">239</td>
+              <td class="num">$87.09</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.56</strong></td>
+              <td class="num">$59,310</td>
+              <td class="num">$59,310</td>
+              <td class="num">31.1%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - WEST LA</strong><br/><span class="muted">LOS ANGELES, CA</span></td>
+              <td class="num">237</td>
+              <td class="num">$87.71</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.44</strong></td>
+              <td class="num">$58,614</td>
+              <td class="num">$58,614</td>
+              <td class="num">37.2%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - FRESNO</strong><br/><span class="muted">FRESNO, CA</span></td>
+              <td class="num">233</td>
+              <td class="num">$88.33</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.31</strong></td>
+              <td class="num">$57,918</td>
+              <td class="num">$57,918</td>
+              <td class="num">30.8%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - ANTIOCH</strong><br/><span class="muted">ANTIOCH, CA</span></td>
+              <td class="num">220</td>
+              <td class="num">$88.64</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.25</strong></td>
+              <td class="num">$57,569</td>
+              <td class="num">$57,569</td>
+              <td class="num">32.8%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - VACAVILLE</strong><br/><span class="muted">VACAVILLE, CA</span></td>
+              <td class="num">214</td>
+              <td class="num">$88.69</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.24</strong></td>
+              <td class="num">$57,513</td>
+              <td class="num">$57,513</td>
+              <td class="num">28.6%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - REDWOOD CITY</strong><br/><span class="muted">REDWOOD CITY, CA</span></td>
+              <td class="num">192</td>
+              <td class="num">$87.17</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.54</strong></td>
+              <td class="num">$59,221</td>
+              <td class="num">$59,221</td>
+              <td class="num">35.0%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER PERMANENTE CENTRAL HOSPITAL</strong><br/><span class="muted">SEATTLE, WA</span></td>
+              <td class="num">106</td>
+              <td class="num">$69.77</td>
+              <td class="num">$160.20</td>
+              <td class="num"><strong>$15.00</strong></td>
+              <td class="num">$84,240</td>
+              <td class="num">$84,240</td>
+              <td class="num">nan%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - FREMONT</strong><br/><span class="muted">FREMONT, CA</span></td>
+              <td class="num">152</td>
+              <td class="num">$88.93</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.19</strong></td>
+              <td class="num">$57,244</td>
+              <td class="num">$57,244</td>
+              <td class="num">38.0%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - SOUTH SAN FRANCISCO</strong><br/><span class="muted">SOUTH SAN FRANCISCO, CA</span></td>
+              <td class="num">141</td>
+              <td class="num">$87.19</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.54</strong></td>
+              <td class="num">$59,198</td>
+              <td class="num">$59,198</td>
+              <td class="num">37.8%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL</strong><br/><span class="muted">SAN RAFAEL, CA</span></td>
+              <td class="num">132</td>
+              <td class="num">$86.47</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$10.68</strong></td>
+              <td class="num">$60,007</td>
+              <td class="num">$60,007</td>
+              <td class="num">35.8%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL-MORENO VALLEY</strong><br/><span class="muted">MORENO VALLEY, CA</span></td>
+              <td class="num">118</td>
+              <td class="num">$91.36</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$9.71</strong></td>
+              <td class="num">$54,514</td>
+              <td class="num">$54,514</td>
+              <td class="num">44.6%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>OTTO KAISER MEMORIAL HOSPITAL</strong><br/><span class="muted">KENEDY, TX</span></td>
+              <td class="num">40</td>
+              <td class="num">$60.63</td>
+              <td class="num">$108.21</td>
+              <td class="num"><strong>$8.92</strong></td>
+              <td class="num">$50,072</td>
+              <td class="num">$50,072</td>
+              <td class="num">nan%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER FOUNDATION HOSPITAL - SAN MARCOS</strong><br/><span class="muted">SAN MARCOS, CA</span></td>
+              <td class="num">30</td>
+              <td class="num">$90.79</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$9.82</strong></td>
+              <td class="num">$55,155</td>
+              <td class="num">$55,155</td>
+              <td class="num">nan%</td>
+            </tr>
+        
+
+            <tr>
+              <td><strong>KAISER PERMANENTE PSYCHIATRIC HEALTH FACILITY-SANT</strong><br/><span class="muted">SANTA CLARA, CA</span></td>
+              <td class="num">12</td>
+              <td class="num">$90.79</td>
+              <td class="num">$142.89</td>
+              <td class="num"><strong>$9.82</strong></td>
+              <td class="num">$55,155</td>
+              <td class="num">$55,155</td>
+              <td class="num">nan%</td>
+            </tr>
+        
+    </tbody>
+  </table>
+</section>
+
+<!-- Slide 5: Market context -->
+<section class="slide">
+  <div class="slide-number">05 — Market context</div>
+  <h1>Why the pricing works</h1>
+  <div class="subtitle">Contract labor share is the empirical signal that an agency premium exists to compete against.</div>
+
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">States covered</div>
+      <div class="kpi-value">5</div>
+      <div class="kpi-sub">CA, HI, OR, TX, WA</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Median contract labor share</div>
+      <div class="kpi-value">34.1%</div>
+      <div class="kpi-sub">of total comp paid to agency (HCRIS)</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-label">Hospitals with high CL share</div>
+      <div class="kpi-value">33</div>
+      <div class="kpi-sub">CL ≥ 15% — prime market sensitivity</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Aggregate workforce (HCRIS)</div>
+      <div class="kpi-value">44,372</div>
+      <div class="kpi-sub">total FTE across in-scope hospitals</div>
+    </div>
+  </div>
+
+  <h3>Why this matters</h3>
+  <p style="font-size: 14px;">
+    Hospitals with a high contract-labor share have a real, durable agency premium.
+    Florence's market-sensitive engine sets δ as a function of that premium, so each
+    hospital is quoted a price the local market can support — without breaking the
+    savings story the CFO needs to approve.
+  </p>
+</section>
+
+<!-- Slide 6: Tax assumption -->
+<section class="slide">
+  <div class="slide-number">06 — Tax assumption</div>
+  <h1>FICA / visa disclaimer</h1>
+  <div class="subtitle">Required reading before relying on the FICA component of this pricing.</div>
+  <div class="disclaimer">
+    FICA capture under IRC §3121(b)(19) applies only to F-1, J-1, M-1, Q-1, and Q-2 nonresident aliens during their nonresident-alien tax period. EB-3 / H-1B / TN / U.S. citizen placements carry no FICA component (η = 0). Florence does not provide tax, payroll, immigration, or legal advice. The hospital's tax, payroll, immigration, and legal teams must independently verify visa status, work authorization, tax residency, and per-placement applicability before relying on the projected FICA component of this pricing.
+  </div>
+  <div class="footer">
+    References: IRC §3121(b)(19); IRS Publication 519; IRS Publication 15 (Circular E).<br/>
+    Calibration version: v0.3-2026-05 · Generated 2026-05-20
+  </div>
+</section>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,4 @@
+placement_id,nurse_id,facility_ccn,facility_name,health_system_id,placement_date,annual_salary,specialty,contract_term_months,status,departed_date,departure_reason,customer_satisfaction_score,notes
+P0001,N0001,050070,KFH - SOUTH SAN FRANCISCO,kaiser_permanente,2025-02-15,145000.0,Med/Surg,36,active,,,5,
+P0002,N0002,450291,MEMORIAL HERMANN - HOUSTON,memorial_hermann,2025-03-01,138000.0,ICU,36,active,,,5,
+P0003,N0003,100024,CLEVELAND CLINIC FLORIDA,cleveland_clinic,2025-03-10,132000.0,OR Circulating,36,active,,,4,

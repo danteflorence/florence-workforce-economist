@@ -1,0 +1,76 @@
+{
+  "as_of": "2026-05-28",
+  "headline": "**Healthcare labor market is TIGHT.** As of March 2026, healthcare has 700K job openings against 463K quits (ratio: 1.51). Operators are competing for talent \u2014 Florence positioning is strongest in tight markets.",
+  "insights": [
+    {
+      "category": "Labor market",
+      "metric": "Healthcare job openings",
+      "current": 700.0,
+      "previous": 625.0,
+      "delta_pct": 12.0,
+      "period": "March 2026",
+      "prior_period": "February 2026",
+      "severity": "high",
+      "interpretation": "Openings rose 12.0% \u2014 demand intensifying. Florence pricing power increases."
+    },
+    {
+      "category": "Labor market",
+      "metric": "Healthcare quits",
+      "current": 463.0,
+      "previous": 426.0,
+      "delta_pct": 8.685446009389672,
+      "period": "March 2026",
+      "prior_period": "February 2026",
+      "severity": "high",
+      "interpretation": "Quits rose 8.7% \u2014 workers have more leverage. Wage pressure on operators."
+    },
+    {
+      "category": "Labor market",
+      "metric": "Healthcare layoffs",
+      "current": 157.0,
+      "previous": 162.0,
+      "delta_pct": -3.0864197530864197,
+      "period": "March 2026",
+      "prior_period": "February 2026",
+      "severity": "info",
+      "interpretation": "Layoffs fell 3.1% \u2014 stable headcount."
+    },
+    {
+      "category": "Employment & wages",
+      "metric": "Hospital sector employees",
+      "current": 23808.5,
+      "previous": 23754.6,
+      "delta_pct": 0.22690342081113324,
+      "period": "April 2026",
+      "prior_period": "March 2026",
+      "severity": "info",
+      "interpretation": "Hospital employment rose 0.23% \u2014 capacity growing."
+    },
+    {
+      "category": "Employment & wages",
+      "metric": "Nursing & residential care employees",
+      "current": 708.0,
+      "previous": 705.4,
+      "delta_pct": 0.3685851998865924,
+      "period": "April 2026",
+      "prior_period": "March 2026",
+      "severity": "info",
+      "interpretation": "rose 0.37%"
+    },
+    {
+      "category": "Employment & wages",
+      "metric": "Healthcare avg hourly earnings",
+      "current": 36.23,
+      "previous": 36.18,
+      "delta_pct": 0.1381978993919214,
+      "period": "April 2026",
+      "prior_period": "March 2026",
+      "severity": "info",
+      "interpretation": "Wages stable (rose 0.14%)."
+    }
+  ],
+  "feeds_status": {
+    "jolts_healthcare": "current",
+    "ces_rn": "current"
+  }
+}

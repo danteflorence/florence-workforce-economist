@@ -1,0 +1,119 @@
+{
+  "version": "2026.05",
+  "maintainer": "Florence sales leadership",
+  "last_reviewed": "2026-05-29",
+  "_comment": "Editing rules — to change a section's text, edit the corresponding .md file. To re-order or hide a section, edit this file. To add a new section, drop a new .md file in /playbook/ and add an entry here.",
+  "sections": [
+    {
+      "id": "pitch",
+      "file": "01_pitch.md",
+      "title": "The pitch",
+      "eyebrow": "Start here",
+      "icon": "campaign",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "60-second pitch + 5-minute explainer. Read this first."
+    },
+    {
+      "id": "value_operators",
+      "file": "02_value_operators.md",
+      "title": "Value to health system operators",
+      "eyebrow": "Buyer story",
+      "icon": "business",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "Why hospitals, ASCs, HHAs, and SNFs buy from us."
+    },
+    {
+      "id": "value_nurses",
+      "file": "03_value_nurses.md",
+      "title": "Value to nurses",
+      "eyebrow": "Talent story",
+      "icon": "groups",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "Why international RNs join Florence — and stay."
+    },
+    {
+      "id": "pricing",
+      "file": "04_pricing_methodology.md",
+      "title": "How our pricing works",
+      "eyebrow": "Methodology",
+      "icon": "payments",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "The pricing engine in plain English. Defends every number."
+    },
+    {
+      "id": "deal_flow",
+      "file": "05_deal_flow.md",
+      "title": "The deal flow",
+      "eyebrow": "Process",
+      "icon": "route",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "Five stages from cold list to signed agreement."
+    },
+    {
+      "id": "personas",
+      "file": "06_personas.md",
+      "title": "Buyer personas",
+      "eyebrow": "Who you sell to",
+      "icon": "badge",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "CFO, CNO, Talent Acq, COO — what each cares about."
+    },
+    {
+      "id": "objections",
+      "file": "07_objections.md",
+      "title": "Top 10 objections",
+      "eyebrow": "Field guide",
+      "icon": "shield",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "What you'll hear, and what to say back."
+    },
+    {
+      "id": "glossary",
+      "file": "08_glossary.md",
+      "title": "Glossary",
+      "eyebrow": "Reference",
+      "icon": "menu_book",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "Every term used in the tool and on the page."
+    },
+    {
+      "id": "field_card",
+      "file": "09_field_card.md",
+      "title": "One-page field card",
+      "eyebrow": "Printable",
+      "icon": "description",
+      "visible_to": ["rep", "ops", "admin"],
+      "description": "Everything you need on one page. Print + carry."
+    }
+  ],
+  "coaching": {
+    "savings": {
+      "rep": "The gap between what the hospital pays an agency RN today and the all-in Florence rate, multiplied by their RN need. Say it like this: 'You'd reclaim about ${value} per year without changing a single hour of coverage.'",
+      "admin": "= (signal_agency_premium_per_hour) × (rn_need_hours) − (florence_fee). Agency rate from HCRIS Worksheet S-3 Part V (or HCRIS fallback per manual-review flag). RN need from HCRIS S-3 Part I worked hours."
+    },
+    "deal_score": {
+      "rep": "A 0–100 composite of size, agency premium, contract-labor intensity, and data confidence. Above 70 = lean in. Below 40 = qualify hard or pass. Don't promise the customer this number — it's an internal prioritization signal.",
+      "admin": "25% size + 20% agency premium + 15% CL intensity + 30% deal score + 10% data confidence (per lead_scoring.florence_fit_score). Computed after RBAC territory filter."
+    },
+    "agency_premium": {
+      "rep": "How much MORE the hospital pays for an agency RN than a permanent RN at the same hospital. This is the gap Florence closes. In the field, framed as: 'Today you pay $X/hr for agency; the prevailing permanent wage in your MSA is $Y/hr.'",
+      "admin": "HCRIS NMRC line 01700 (total contract labor cost) ÷ contract labor hours, minus BLS OEWS MSA mean hourly RN wage. Manual-review flag flips on if HCRIS confidence is low."
+    },
+    "contract_labor_intensity": {
+      "rep": "What share of total nursing payroll is going to agencies right now. Higher = more pain = better fit for us. Above 18% is a hot lead.",
+      "admin": "HCRIS S-3 Part V contract labor hours ÷ total nursing hours. From most recent fiscal year cost report."
+    },
+    "fica_offset": {
+      "rep": "INTERNAL ONLY. Do not say 'FICA' to the customer. The customer-facing story is 'permanent capacity at the cost of agency.' The FICA offset is how WE think about pricing; the customer thinks about savings and capacity.",
+      "admin": "Per IRC §3121(b)(19), F-1 non-resident-alien wages are FICA-exempt for the first 5 years. Engine targets a 40% offset by default. See pricing_engine.FICA_OFFSET_TARGET mode."
+    },
+    "florence_fee": {
+      "rep": "The all-in monthly amount the hospital pays Florence per placed RN. Default is $50K per RN amortized over 36 months ≈ $1,389/month per RN. Excel proposal shows the full schedule.",
+      "admin": "FLAT_PLACEMENT_FEE mode: $50K × n_rns ÷ 36mo. Locally calibrated by MSA wage + system overlay if configured."
+    },
+    "next_best_move": {
+      "rep": "What this rep should do next on this deal, based on the stage. Click the action to log it and advance the stage.",
+      "admin": "Computed from sales_pipeline.csv stage + last_touched_at. Heuristics live in workbench.next_best_move()."
+    }
+  }
+}

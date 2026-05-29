@@ -1,0 +1,6 @@
+nurse_id,full_name,cohort_id,origin_country,nclex_status,nclex_date,specialty,license_state,license_date,onboarded_at,notes
+N0001,Maria S.,2024-Q3-PHI,Philippines,passed,2025-01-15,Med/Surg,CA,2025-02-10,2025-02-15,
+N0002,James K.,2024-Q3-PHI,Philippines,passed,2025-01-20,ICU,TX,2025-02-25,2025-03-01,
+N0003,Priya R.,2024-Q3-PHI,Philippines,passed,2025-01-22,OR Circulating,FL,2025-03-05,2025-03-10,
+N0004,Anjali D.,2024-Q4-IND,India,not_taken,,Med/Surg,CA,,,
+N0005,Roberto M.,2025-Q1-PHI,Philippines,not_taken,,ER,TX,,,

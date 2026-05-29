@@ -1,0 +1,79 @@
+# Render.com production deployment manifest.
+#
+# Three Streamlit apps + one scheduled cron for surveillance feeds.
+# After authorizing Florence's Render account, link this repo and Render
+# will spin up everything automatically on push.
+
+services:
+  # ─── Internal Florence Workforce Economist (sales + ops) ──────────
+  - type: web
+    name: florence-economist
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port $PORT --server.headless true --server.enableCORS false
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      - key: STREAMLIT_SERVER_RUN_ON_SAVE
+        value: "false"
+      # Set these in the Render dashboard, not in this file:
+      # - key: ANTHROPIC_API_KEY
+      #   sync: false
+      # - key: BLS_REGISTRATION_KEY
+      #   sync: false
+
+  # ─── Public Customer Calculator (lead funnel) ─────────────────────
+  - type: web
+    name: florence-calculator
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run customer_calculator.py --server.port $PORT --server.headless true --server.enableCORS false
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11"
+      # Stripe Payment Link URLs (set in dashboard):
+      # - key: STRIPE_SUBSCRIPTION_URL
+      # - key: STRIPE_PLACEMENT_URL
+
+  # ─── Public Market Intelligence (educational) ─────────────────────
+  - type: web
+    name: florence-market-intel
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run public_market_intel.py --server.port $PORT --server.headless true --server.enableCORS false
+
+  # ─── Nurse Portal (login-gated) ───────────────────────────────────
+  - type: web
+    name: florence-nurses
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run nurse_portal.py --server.port $PORT --server.headless true --server.enableCORS false
+
+  # ─── Surveillance Cron (monthly briefing refresh) ─────────────────
+  - type: cron
+    name: florence-surveillance-monthly
+    runtime: python
+    plan: starter
+    schedule: "5 0 5 * *"   # 00:05 UTC on the 5th of each month
+    buildCommand: pip install -r requirements.txt
+    startCommand: |
+      python -m surveillance.jolts_healthcare && \
+      python -m surveillance.ces_rn && \
+      python -m surveillance.cms_care_compare && \
+      python -m surveillance.ownership_changes && \
+      python -m surveillance.pricing_alerts && \
+      python -m surveillance.forecast && \
+      python -m surveillance.briefing
+
+  # ─── News Surveillance Cron (daily) ───────────────────────────────
+  - type: cron
+    name: florence-surveillance-daily
+    runtime: python
+    plan: starter
+    schedule: "0 6 * * *"   # 06:00 UTC daily
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m surveillance.news_feeds

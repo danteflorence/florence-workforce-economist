@@ -1,0 +1,7 @@
+milestone_id,nurse_id,event_type,event_date,detail,impact_dollars
+M0001,N0001,nclex_passed,2025-01-15,First-attempt pass,
+M0002,N0001,first_start,2025-02-15,Kaiser SF onboarded,
+M0003,N0002,nclex_passed,2025-01-20,First-attempt pass,
+M0004,N0002,first_start,2025-03-01,Memorial Hermann onboarded,
+M0005,N0003,nclex_passed,2025-01-22,,
+M0006,N0003,first_start,2025-03-10,,

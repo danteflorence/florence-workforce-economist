@@ -1,0 +1,59 @@
+# ─── Secrets (NEVER commit) ─────────────────────────────────────────
+data/.auth_secret
+data/auth_otp_outbox.log
+data/auth_users.csv
+data/auth_sessions.csv
+data/auth_otp_codes.csv
+.env
+.env.*
+secrets.toml
+.streamlit/secrets.toml
+
+# ─── Raw source data (large, public — re-downloadable) ──────────────
+# CMS HCRIS raw zips
+data/hcris_raw/
+
+# CMS PECOS raw enrollment files
+data/raw_cms_pecos/
+
+# CMS non-hospital provider raw files
+data/raw_cms_non_hospital/
+
+# Geo source files (can re-download from Census)
+data/geo/
+
+# Large Gazetteer files (Census, re-downloadable)
+data/2024_Gaz_zcta_national.txt
+
+# ─── Backups + working files ────────────────────────────────────────
+data/*.bak_*
+data/*.bak.*
+*.swp
+*.swo
+*~
+
+# ─── Python ─────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ─── Streamlit ──────────────────────────────────────────────────────
+.streamlit/credentials.toml
+
+# ─── OS ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Output bundles (regenerated on demand) ─────────────────────────
+data/output/*.xlsx
+data/output/*.pdf
+data/output/*.pptx
+
+# Skipped for demo deploy (PAT lacks workflow scope)
+.github/workflows/

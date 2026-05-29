@@ -1,0 +1,11 @@
+source,title,link,posted_at,state,wage_low,wage_high,description_snippet
+demo_seed,RN — Med/Surg,https://example.com/1,2026-05-01,CA,118000,142000,"Acute care, 36hr"
+demo_seed,RN — ICU,https://example.com/2,2026-05-03,CA,135000,168000,ICU stepdown
+demo_seed,RN — Med/Surg,https://example.com/3,2026-05-05,TX,78000,92000,Acute care
+demo_seed,RN — ER,https://example.com/4,2026-05-07,TX,88000,108000,Level II trauma
+demo_seed,RN — Med/Surg,https://example.com/5,2026-05-10,FL,72000,88000,Med/Surg float
+demo_seed,RN — Telemetry,https://example.com/6,2026-05-11,FL,78000,96000,Tele float
+demo_seed,RN — Med/Surg,https://example.com/7,2026-05-12,NY,102000,124000,Acute care
+demo_seed,RN — OR,https://example.com/8,2026-05-13,NY,118000,145000,Surgical services
+demo_seed,RN — ICU,https://example.com/9,2026-05-15,WA,125000,152000,ICU
+demo_seed,RN — Med/Surg,https://example.com/10,2026-05-18,IL,84000,104000,Acute care

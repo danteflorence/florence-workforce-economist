@@ -1,0 +1,539 @@
+health_system_id,health_system,n_facilities,monthly_fee_sum,median_target_fee,median_stretch_fee,median_reference_fee,total_term_savings
+adena_health_system,Adena Health System,4,235836.38,1200.86,1200.86,750.0,18847945.05
+adventhealth,AdventHealth,38,1609446.11,1367.935,1331.385,841.8050000000001,227203746.07
+adventist_health,Adventist Health,22,1379399.8599999999,1725.54,1512.97,1210.84,113233730.89
+adventist_healthcare,Adventist Healthcare,4,426412.14999999997,1497.72,1331.3,921.67,10442092.67
+advocate_health,Advocate Health,40,2220414.2600000002,1357.49,1253.0700000000002,835.38,158834354.96
+alameda_health_system,Alameda Health System,2,205782.55,1884.38,1449.52,1449.52,1124529.4200000002
+albany_medical_center,Albany Medical Center,2,1738083.7400000002,1592.8899999999999,1592.8899999999999,980.24,186484575.31
+allegheny_health_network,Allegheny Health Network,10,605309.2899999999,1461.7649999999999,1380.915,899.5450000000001,37314807.83
+allegiance_health_management,Allegiance Health Management,9,624997.89,1169.53,1169.53,750.0,100166344.00999999
+allina_health,Allina Health,8,1169246.4,1426.11,1332.7150000000001,877.61,46711040.92
+alomere_health,Alomere Health,1,8816.25,1575.59,1575.59,969.59,471998.18
+altru_health_system,Altru Health System,1,97329.16,1836.17,1412.43,1412.43,-992344.05
+american_healthcare_systems,American Healthcare Systems,3,42507.840000000004,1193.4,1193.4,750.0,5012439.32
+anderson_medical_group,Anderson Medical Group,1,25386.76,1124.78,1124.78,750.0,3669140.39
+antelope_valley_medical_center,Antelope Valley Medical Center,1,110447.76,1772.86,1772.86,1227.37,6592869.95
+appalachian_regional_healthcare,Appalachian Regional Healthcare,8,227676.75,1142.68,1142.68,750.0,24130204.799999997
+archbold_medical_center,Archbold Medical Center,4,180589.55,1288.725,1232.19,793.06,9525555.51
+ardent_health,Ardent Health,16,535284.48,1546.66,1342.525,1013.565,31441747.35
+armstrong_county_memorial_hospital,Armstrong County Memorial Hospital,1,12314.0,1505.47,1505.47,926.45,775384.77
+arnot_health,Arnot Health,1,108158.27,1622.49,1216.87,1123.26,960739.47
+asante_health_system,Asante Health System,2,313512.52,1849.81,1972.885,1347.99,35538553.9
+ascension,Ascension,86,4170784.75,1231.44,1206.13,757.81,398072542.31
+aspirus,Aspirus,14,845631.9,1244.12,1244.12,765.61,63462315.17
+astria_health_system,Astria Health System,1,115247.38,1546.94,1546.94,951.97,23118581.19
+atlantic_general_health_system,Atlantic General Health System,1,3867.9,1364.95,1364.95,839.97,491646.79
+atlantic_health_system,Atlantic Health System,4,408143.74,1673.74,1402.915,1132.4450000000002,10792816.26
+atlanticare,AtlantiCare,1,51084.07,1768.62,1768.62,1088.38,29457677.92
+auburn_community_hospital,Auburn Community Hospital,1,146053.0,1697.01,1697.01,1044.32,10318226.91
+augusta_university_health_system,Augusta University Health System,2,123014.0,1159.8400000000001,1159.8400000000001,754.135,13445877.83
+aultman_health_foundation,Aultman Health Foundation,2,96551.14,1311.1,1311.1,812.335,10051000.07
+avera_health,Avera Health,32,1251901.22,1035.27,1035.27,750.0,129450484.61
+ballad_health,Ballad Health,15,581147.75,1540.98,1165.84,952.52,19020239.97
+banner_health,Banner Health,31,2611066.42,1460.42,1460.42,898.72,421483671.33
+baptist_health,Baptist Health,1,5164.28,1145.66,1145.66,750.0,549438.75
+baptist_health_ar,Baptist Health AR,5,169754.83000000002,1145.66,1145.66,750.0,9219748.76
+baptist_health_care,Baptist Health Care,2,13999.12,1414.775,1414.775,870.63,1659326.3199999998
+baptist_health_fl,Baptist Health FL,3,217835.99,1175.5,1175.5,750.0,20461864.11
+baptist_health_south_florida,Baptist Health South Florida,9,483521.0,1202.35,1202.35,750.0,58821486.57
+baptist_healthcare_system,Baptist Healthcare System,10,632782.33,1564.25,1375.0900000000001,962.615,40938057.260000005
+baptist_memorial_health_care_corporation,Baptist Memorial Health Care Corporation,16,646769.08,1078.24,1062.13,750.0,90493609.67
+barton_health,Barton Health,2,171935.82,1668.67,1466.3899999999999,1161.73,18262840.64
+bassett_healthcare_network,Bassett Healthcare Network,5,286451.39,1576.78,1576.78,970.33,27380222.0
+baton_rouge_general_health_system,Baton Rouge General Health System,2,50162.01,1454.605,1224.495,895.14,1949031.1099999999
+baxter_regional_medical_center,Baxter Regional Medical Center,1,38406.6,1573.8,1398.93,968.49,1512279.97
+bayhealth,Bayhealth,2,220150.31,1724.595,1747.0149999999999,1193.955,14686967.65
+baylor_scott_white,Baylor Scott & White,22,723065.42,1348.54,1348.54,829.87,66829992.92
+baystate_health,Baystate Health,4,592764.74,1673.15,1673.15,1029.625,27189582.46
+beacon_health_system,Beacon Health System,4,142233.82,1532.38,1162.42,1116.195,7510960.930000001
+beebe_healthcare,Beebe Healthcare,1,738201.44,1297.82,1297.82,798.66,78199772.98
+bellin_health_systems,Bellin Health Systems,1,52253.02,1244.12,1244.12,765.61,5568918.26
+benefis_health_system,Benefis Health System,3,828353.26,1187.43,1187.43,750.0,97361002.25
+berkshire_health_systems,Berkshire Health Systems,2,250022.32,1604.06,1354.69,1049.455,16851523.09
+beth_israel_lahey_health,Beth Israel Lahey Health,10,5538243.21,1699.1,1699.1,1045.6,763146590.86
+billings_clinic,Billings Clinic,7,364678.57999999996,1187.43,1187.43,750.0,38866583.15
+bitterroot_health,Bitterroot Health,1,171465.33,1187.43,1187.43,750.0,18272469.57
+bjc_healthcare,BJC Healthcare,11,1941734.0599999998,1124.78,1124.78,750.0,175481123.76999998
+blanchard_valley_health_system,Blanchard Valley Health System,2,155397.28,1444.61,1214.38,894.495,2674061.16
+blessing_health_system,Blessing Health System,2,156293.41999999998,1366.175,1247.25,950.495,6872179.15
+bmh,BMH,2,256547.68,1307.22,1307.22,804.44,27343380.62
+bon_secours_mercy_health,Bon Secours Mercy Health,30,1832456.05,1237.405,1193.4,764.23,73321347.76
+boone_hospital_center,Boone Hospital Center,1,76687.28,1765.93,1765.93,1086.73,6316475.42
+boston_medical_center,Boston Medical Center,1,371714.4,1699.1,1699.1,1045.6,32941949.85
+bristol_hospital,Bristol Hospital,1,315580.31,1408.21,1408.21,866.59,40275976.29
+broadlawns_medical_center,Broadlawns Medical Center,1,32089.38,1473.85,1228.21,1133.73,-631.75
+bronson_healthcare_group,Bronson Healthcare Group,1,64804.6,1211.3,1211.3,750.0,7660676.56
+bronxcare_health_system,BronxCare Health System,1,416343.61,1673.74,1673.74,1030.0,33826350.49
+brookdale_university_hospital_and_medical_center,Brookdale University Hospital And Medical Center,1,313670.22,1673.74,1673.74,1030.0,21527220.81
+broward_health,Broward Health,4,249616.88,1202.35,1202.35,750.0,25158146.75
+bryan_health,Bryan Health,6,266948.55,1147.16,1147.16,750.0,25663983.93
+butler_health_system,Butler Health System,2,20282.18,1498.4650000000001,1346.545,922.13,367652.33
+cabell_huntington_hospital,Cabell Huntington Hospital,1,30602.37,1329.45,1181.73,818.12,310076.41
+calverthealth,CalvertHealth,1,18895.89,1640.33,1312.26,1009.43,529415.38
+cambridge_health_alliance,Cambridge Health Alliance,1,315154.19,1699.1,1699.1,1045.6,16200278.6
+camc_health_system,CAMC Health System,3,214761.13,1144.17,1144.17,750.0,22888408.91
+cape_fear_valley_health_system,Cape Fear Valley Health System,4,466525.42,1667.63,1667.63,1026.2350000000001,40043219.48
+cape_regional_health_system,Cape Regional Health System,1,27042.66,1557.52,1168.14,1078.28,474275.33
+capital_health_system,Capital Health System,1,83697.32,1669.09,1283.91,1283.91,386887.49
+capital_region_health_care,Capital Region Health Care,3,113687.39,1598.68,1307.05,1229.75,4204084.51
+care_new_england_health_system,Care New England Health System,2,23567.88,1418.65,1339.8400000000001,873.02,1151690.13
+carepoint_health,Carepoint Health,2,631336.05,1673.74,1673.74,1030.0,39611070.9
+carilion_clinic,Carilion Clinic,4,242948.19,1265.0,1265.0,778.46,19262057.29
+carolinaeast_health_system,CarolinaEast Health System,1,43909.75,1510.37,1161.82,1161.82,1514942.46
+caromont_health_system,Caromont Health System,1,164411.31,1191.91,1191.91,750.0,5623868.18
+carson_tahoe_health,Carson Tahoe Health,1,4794.97,1517.29,1167.15,1167.15,172317.05
+catholic_health,Catholic Health,5,104118.2,1673.74,1673.74,1030.0,9311139.41
+catholic_health_systems,Catholic Health Systems,3,235203.16,1575.29,1429.91,1209.92,181205.4500000002
+catholic_medical_center,Catholic Medical Center,1,119415.48,1332.13,1332.13,819.77,5944076.38
+cayuga_medical_center,Cayuga Medical Center,1,88930.38,1576.78,1576.78,970.33,9479558.93
+cedars_sinai_health_system,Cedars Sinai Health System,2,273332.95,1714.6799999999998,1318.985,1318.985,816878.5499999998
+centra_health,Centra Health,3,367298.82,1553.81,1553.81,956.19,22569561.79
+centracare,CentraCare,8,481871.54000000004,1397.77,1397.77,860.17,47931101.94
+central_maine_healthcare_corporation,Central Maine Healthcare Corporation,3,285944.02,1288.87,1288.87,793.15,16276283.52
+centrastate_healthcare_system,Centrastate Healthcare System,1,222170.38,1673.74,1673.74,1030.0,5506899.51
+cgh_medical_center,CGH Medical Center,1,27242.98,1633.76,1361.47,1256.74,-254272.5
+chesapeake_regional_healthcare,Chesapeake Regional Healthcare,1,547667.67,1185.94,1185.94,750.0,53214197.63
+cheyenne_regional_medical_center,Cheyenne Regional Medical Center,1,61461.56,1539.49,1184.22,1184.22,964327.11
+christianacare,ChristianaCare,1,157097.35,1850.96,1423.82,1423.82,-354356.3
+christus_health,CHRISTUS Health,18,664199.85,1488.17,1306.565,915.795,66911149.279999994
+citizens_memorial_healthcare,Citizens Memorial Healthcare,1,14345.9,1490.56,1146.58,1146.58,225039.14
+city_of_hope,City of Hope,1,5966.05,1460.42,1460.42,898.72,416757.34
+cleveland_clinic,Cleveland Clinic,16,1410143.3499999999,1630.6,1402.63,1012.645,49272470.9
+colquitt_regional_medical_center,Colquitt Regional Medical Center,1,412166.05,1232.19,1232.19,758.27,49107071.29
+columbia_memorial_health,Columbia Memorial Health,1,67939.39,1606.05,1445.45,1111.88,1872802.16
+comanche_county_memorial_hospital,Comanche County Memorial Hospital,1,55848.53,1499.39,1363.08,1153.38,-404622.7
+commonspirit,CommonSpirit,1,37424.9,1693.43,1693.43,1042.11,1949795.7
+commonspirit,CommonSpirit Health,105,5310376.65,1456.21,1314.23,898.72,335307101.91
+commonwealth_health_corporation,Commonwealth Health Corporation,3,93242.73000000001,1142.68,1142.68,750.0,9936763.95
+community_foundation_of_northwest_indiana,Community Foundation of Northwest Indiana,3,168473.38,1357.49,1357.49,835.38,7413622.17
+community_health_network,Community Health Network,6,88458.45,1147.16,1147.16,750.0,23519293.400000002
+community_health_systems,Community Health Systems,53,1706601.29,1488.17,1188.63,931.95,34938608.84
+community_hospital_corporation,Community Hospital Corporation,10,440086.02999999997,1330.64,1277.845,818.86,43435872.02
+community_medical_centers,Community Medical Centers,2,202980.11,1734.3249999999998,1632.31,1130.06,12966914.75
+community_memorial_health_system,Community Memorial Health System,2,99393.41,1726.585,1821.26,1260.87,9832989.4
+conejos_county_hospital_corporation,Conejos County Hospital Corporation,1,22088.64,1330.64,1330.64,818.86,3644514.99
+confluence_health,Confluence Health,1,120905.7,1646.89,1646.89,1140.16,5800449.89
+conway_regional_health_system,Conway Regional Health System,2,59480.04,1323.345,1135.7150000000001,894.59,3666749.7199999997
+cook_county_health_and_hospital_system,Cook County Health and Hospital System,2,1600212.1600000001,1357.49,1357.49,835.38,155613233.88
+cookeville_regional_health_system,Cookeville Regional Health System,1,39164.36,1410.9,1410.9,868.24,2015760.39
+cooper_university_health_care,Cooper University Health Care,1,213531.73,1411.2,1411.2,868.43,20204104.84
+corewell_health,Corewell Health,17,1105947.13,1218.76,1218.76,750.01,58667780.89
+cottage_health_system,Cottage Health System,2,53463.86,1832.795,1611.65,1342.5749999999998,4462885.54
+covenant_health,Covenant Health,7,416587.25,1351.53,1351.53,831.71,22338639.67
+covenant_health_systems,Covenant Health Systems,2,147105.9,1489.27,1352.0700000000002,1043.12,2663490.38
+coxhealth,CoxHealth,4,386540.77999999997,1309.335,1185.8400000000001,855.115,20065064.939999998
+cullman_regional_medical_center,Cullman Regional Medical Center,1,3174.43,1097.93,1097.93,750.0,404119.33
+cuyuna_regional_medical_center,Cuyuna Regional Medical Center,1,314777.75,1397.77,1397.77,860.17,33540406.57
+dartmouth_hitchcock,Dartmouth-Hitchcock,7,1226729.2,1332.13,1332.13,819.77,45349636.28
+davis_health_system,Davis Health System,3,109323.65,1144.17,1144.17,750.0,11722739.15
+day_kimball_healthcare,Day Kimball Healthcare,1,234935.59,1578.87,1578.87,971.61,13331046.04
+deaconess_health_system,Deaconess Health System,6,507958.0,1563.3400000000001,1178.085,1021.73,22883349.830000002
+delta_health_system,Delta Health System,3,51641.41,1526.36,1275.03,939.3,3685551.7100000004
+denver_health_and_hospital_authority,Denver Health and Hospital Authority,1,412322.26,1378.38,1102.7,848.23,4227029.38
+dhr_health,DHR Health,1,1039.47,1265.3,1265.3,778.65,211118.38
+doylestown_health,Doylestown Health,1,670317.86,1411.2,1411.2,868.43,29723955.3
+duke_university_health_system,Duke University Health System,2,299541.52,1561.565,1419.605,1201.1999999999998,-1880850.0
+east_alabama_medical_center,East Alabama Medical Center,1,16855.13,1526.36,1526.36,939.3,2083139.04
+ecu_health,ECU Health,8,750817.55,1566.335,1183.31,963.9000000000001,23614784.55
+eisenhower_health,Eisenhower Health,1,483153.9,1646.89,1482.2,1140.16,9416489.73
+el_camino_health,El Camino Health,1,158563.19,1944.29,1495.61,1495.61,2295093.4
+ellis_medicine,Ellis Medicine,1,119418.7,1576.78,1576.78,970.33,15048949.36
+emanate_health,Emanate Health,2,176710.47999999998,1595.58,1338.945,1227.37,526474.6299999999
+emerson_hospital_health_system,Emerson Hospital Health System,1,97783.92,1699.1,1359.28,1045.6,2925696.77
+emory_healthcare,Emory Healthcare,7,1349993.79,1278.43,1278.43,786.73,56828748.04
+englewood_health,Englewood Health,1,128273.9,1673.74,1338.99,1030.0,3463570.21
+enloe_medical_center,Enloe Medical Center,1,9232.98,1786.28,1786.28,1374.06,1072676.72
+ephraim_mcdowell_health,Ephraim Mcdowell Health,3,139182.72999999998,1142.68,1142.68,750.0,9901148.84
+episcopal_health_services,Episcopal Health Services,1,155346.52,1673.74,1673.74,1030.0,13194686.24
+erlanger_health_system,Erlanger Health System,2,142901.3,1112.8449999999998,1112.8449999999998,750.0,15228806.3
+essentia_health,Essentia Health,14,489930.04,1397.77,1397.77,860.17,42608342.56
+evangelical_community_hospital,Evangelical Community Hospital,1,63580.73,1451.77,1451.77,893.4,2512632.67
+evergreenhealth,EvergreenHealth,2,253522.44999999998,1732.915,1630.98,1129.14,11792354.84
+excela_health,Excela Health,3,65427.72,1415.07,1331.04,870.81,2723387.5999999996
+exeter_health_resources,Exeter Health Resources,1,48326.66,1699.1,1359.28,1045.6,1359678.78
+fairfield_medical_center,Fairfield Medical Center,1,29697.76,1179.97,1179.97,750.0,3890366.33
+fairview_health_services,Fairview Health Services,9,414034.06999999995,1426.11,1426.11,877.61,31428877.07
+faith_regional_health_services,Faith Regional Health Services,4,80614.01999999999,1147.16,1147.16,750.0,4463898.37
+finger_lakes_regional_health_system,Finger Lakes Regional Health System,2,141920.24,1576.78,1576.78,970.33,16401582.53
+firelands_regional_health_system,Firelands Regional Health System,1,6981.23,1478.62,1478.62,909.92,442839.92
+firsthealth_of_the_carolinas,FirstHealth of the Carolinas,2,244666.0,1335.415,1259.755,898.81,2519437.63
+fisher_titus_medical_center,Fisher Titus Medical Center,1,11154.74,1556.19,1244.95,957.66,402134.2
+florida_health_sciences_center,Florida Health Sciences Center,1,493846.41,1209.81,967.85,750.0,-1169442.04
+forrest_health,Forrest Health,7,372726.92,1057.65,1057.65,750.0,18480343.759999998
+foundation_health_partners,Foundation Health Partners,1,114061.23,1947.36,2000.0,1348.17,13882825.89
+franciscan_health,Franciscan Health,11,589933.38,1357.49,1357.49,835.38,46340328.19
+franciscan_missionaries_of_our_lady_health_system,Franciscan Missionaries of Our Lady Health System,3,115318.34,1169.53,1169.53,750.0,14877129.61
+frederick_regional_health_system,Frederick Regional Health System,1,103969.14,1497.72,1089.25,921.67,1772340.43
+freeman_health_system,Freeman Health System,2,99989.65,1347.645,1167.81,974.455,4731733.5600000005
+froedtert_and_the_medical_college_of_wisconsin,Froedtert and the Medical College of Wisconsin,4,116442.11,1273.95,1273.95,783.97,5614772.6899999995
+garnet_health,Garnet Health,3,108899.97,1583.77,1254.91,1096.46,1515101.3800000001
+gbmc_healthcare,GBMC Healthcare,1,90437.26,1441.03,1441.03,886.79,6657280.84
+geisinger,Geisinger,6,205687.76,1498.745,1281.775,977.6700000000001,18221924.61
+genesis_healthcare_system,Genesis Healthcare System,1,61512.94,1200.86,1200.86,750.0,6666801.17
+gerald_champion_regional_medical_center,Gerald Champion Regional Medical Center,1,88460.77,1480.41,1184.33,911.02,382599.4
+glens_falls_hospital,Glens Falls Hospital,1,71971.97,1650.07,1350.06,1142.36,2245848.85
+golden_valley_memorial_healthcare,Golden Valley Memorial Healthcare,1,10290.79,1560.17,1404.15,1080.12,412135.27
+goshen_health,Goshen Health,1,27089.53,1697.91,1697.91,1044.87,2192599.51
+grand_view_hospital,Grand View Hospital,1,39833.06,1411.2,1411.2,868.43,3612547.76
+grande_ronde_hospital_and_clinics,Grande Ronde Hospital and Clinics,1,261074.9,1606.61,1606.61,988.69,49570112.47
+great_river_health_systems,Great River Health Systems,1,120265.25,1635.67,1258.21,1258.21,851975.82
+gundersen_health_system,Gundersen Health System,6,285727.27,1244.12,1244.12,765.61,30085058.04
+guthrie_healthcare_system,Guthrie Healthcare System,4,1030992.2899999999,1422.385,1422.385,875.315,119593192.16
+hackensack_meridian_health,Hackensack Meridian Health,9,1052546.8,1673.74,1338.99,1030.0,47340242.120000005
+halifax_health,Halifax Health,2,115569.14,1625.8600000000001,1262.435,1059.375,3870006.41
+hamilton_health_care_system,Hamilton Health Care System,1,25462.3,1521.45,1141.09,1053.31,791186.09
+hancock_regional_hospital,Hancock Regional Hospital,1,15563.19,1147.16,1147.16,750.0,1593225.63
+hannibal_regional_healthcare_system,Hannibal Regional Healthcare System,1,73517.1,1613.72,1241.32,1241.32,1742465.07
+harris_health_system,Harris Health System,1,306996.55,1397.77,1397.77,860.17,21412808.54
+hartford_healthcare,Hartford Healthcare,5,560250.41,1671.0,1350.19,1240.4,5395732.0600000005
+hawaii_health_systems_corporation,Hawaii Health Systems Corporation,6,315797.36,1803.53,1803.53,1109.86,33654995.55
+hawaii_pacific_health,Hawaii Pacific Health,1,23573.11,1622.07,1247.75,1247.75,318417.25
+hays_medical_center,Hays Medical Center,2,75171.42,1330.76,1199.4650000000001,980.97,3017797.63
+hca,HCA,130,16722851.68,1265.0,1209.81,778.46,2953806641.16
+health_first,Health First,4,94503.96999999999,1582.295,1265.8400000000001,975.745,2048101.1700000002
+healthcare_authority_for_baptist_health,Healthcare Authority for Baptist Health,1,554140.15,1591.1,1414.31,979.14,8528603.32
+healthpartners,HealthPartners,7,742472.6799999999,1426.11,1397.77,877.61,44406944.0
+hendrick_health_system,Hendrick Health System,2,93600.66,1454.01,1247.255,958.3899999999999,5746972.9399999995
+hendricks_regional_health,Hendricks Regional Health,1,26476.64,1147.16,1147.16,750.0,3044002.42
+hennepin_healthcare,Hennepin Healthcare,1,349772.42,1426.11,1140.89,877.61,-3904228.11
+henry_community_health,Henry Community Health,1,16664.93,1126.27,1126.27,750.0,2035349.94
+henry_ford_health,Henry Ford Health,5,317506.01,1218.76,1218.76,750.01,19305701.58
+heritage_valley_health_system,Heritage Valley Health System,1,1385.43,1523.31,1370.98,1054.6,-5192.13
+heywood_healthcare,Heywood Healthcare,2,100507.64000000001,1662.405,1565.87,1023.02,8515763.01
+hoag_memorial_hospital_presbyterian,Hoag Memorial Hospital Presbyterian,2,2641032.52,1772.86,1883.665,1227.37,328919128.58
+holland_hospital,Holland Hospital,1,771.17,1736.4,1736.4,1068.55,103191.19
+holy_name_medical_center,Holy Name Medical Center,1,75640.9,1673.74,1673.74,1030.0,3769952.21
+holy_redeemer_health_system,Holy Redeemer Health System,1,40402.33,1411.2,1254.4,868.43,1641497.08
+holzer_health_system,Holzer Health System,2,90861.78,1173.86,1110.145,750.0,6494691.83
+honorhealth,HonorHealth,6,75148.37,1460.42,1314.38,898.72,4493115.09
+hospital_sisters_health_system,Hospital Sisters Health System,12,741604.1,1305.28,1253.475,803.25,45972242.82
+houston_healthcare,Houston Healthcare,1,66741.23,1400.16,1400.16,861.63,5763467.61
+houston_methodist,Houston Methodist,6,110797.10999999999,1397.77,1397.77,860.17,7196465.65
+hshs,HSHS,1,24278.23,1305.28,1305.28,803.25,2587958.8
+hunterdon_healthcare_system,Hunterdon Healthcare System,1,47465.91,1673.74,1487.77,1030.0,2260592.26
+huntsville_hospital_health_system,Huntsville Hospital Health System,3,387807.76999999996,1097.93,1097.93,750.0,46810863.839999996
+independent,Independent / Unknown,1942,206449008.54,1273.95,1235.17,783.97,22364740114.28
+indiana_regional_medical_center,Indiana Regional Medical Center,1,39640.69,1513.83,1513.83,931.59,3967258.77
+indiana_university_health,Indiana University Health,12,916792.76,1147.16,1147.16,750.0,157573333.39000002
+infirmary_health_system,Infirmary Health System,4,37228.15,1214.135,1097.93,784.335,4232801.989999999
+inova_health_system,Inova Health System,5,563319.9400000001,1497.72,1331.3,921.67,27288064.57
+inspira_health_network,Inspira Health Network,1,90342.62,1411.2,1411.2,868.43,4646029.38
+integris_health,Integris Health,7,246162.21,1492.05,1234.17,1034.04,8508772.8
+intermountain_health,Intermountain Health,25,630835.13,1464.0,1235.17,900.93,56307525.75
+iredell_health_system,Iredell Health System,1,54029.6,1191.91,1191.91,750.0,5323940.74
+island_hospital,Island Hospital,1,57446.86,2000.0,2000.0,1300.62,8376276.49
+jackson_health_system,Jackson Health System,1,190679.65,1202.35,1202.35,750.0,14293300.98
+jefferson_health,Jefferson Health,7,260937.50999999998,1411.2,1411.2,868.43,22324679.84
+jefferson_healthcare,Jefferson Healthcare,1,247820.55,1546.94,1546.94,951.97,49706709.58
+john_muir_health,John Muir Health,1,137203.17,1884.38,1449.52,1449.52,-1046621.23
+johns_hopkins,Johns Hopkins,1,920180.92,1209.81,1209.81,750.0,91054238.7
+johns_hopkins_health_system,Johns Hopkins Health System,3,103739.82,1497.72,1280.92,921.67,3564437.76
+jps_health_network,JPS Health Network,1,215709.64,1348.54,1348.54,829.87,24425682.45
+jupiter_medical_center,Jupiter Medical Center,1,96221.79,1202.35,1202.35,750.0,6484673.81
+kaiser_permanente,Kaiser Permanente,37,20662127.26,1852.75,1967.62,1227.37,860935835.82
+kaleida_health,Kaleida Health,2,104714.63,1408.6599999999999,1408.6599999999999,866.87,9374238.89
+katherine_shaw_bethea_hospital,Katherine Shaw Bethea Hospital,1,24666.22,1628.75,1357.29,1252.89,-154831.92
+kaweah_delta_health_care_district,Kaweah Delta Health Care District,1,114042.2,1666.28,1666.28,1025.41,9306413.7
+kettering_health,Kettering Health,7,307100.49,1732.22,1719.69,1074.24,19092238.41
+knox_community_hospital,Knox Community Hospital,1,31390.4,1565.21,1280.63,1083.61,950335.76
+kootenai_health,Kootenai Health,1,48912.69,1235.17,1235.17,760.1,5213239.57
+lake_region_healthcare,Lake Region Healthcare,2,59653.41,1522.9299999999998,1522.9299999999998,937.19,4576698.67
+lakeland_regional_health,Lakeland Regional Health,1,28398.03,1577.67,1262.14,970.88,1090175.56
+larkin_health_system,Larkin Health System,2,482743.73,1202.35,1202.35,750.0,60690602.93
+lawrence_general_hospital,Lawrence General Hospital,1,220115.46,1699.1,1699.1,1045.6,9360217.69
+lcmc_health_system,LCMC Health System,2,99712.63,1103.15,908.6800000000001,813.8050000000001,5356953.26
+lecom_health,Lecom Health,2,184400.86000000002,1279.775,1279.775,787.55,13249852.120000001
+lee_health,Lee Health,3,440584.51,1746.24,1746.24,1074.61,35316459.87
+legacy_health,Legacy Health,5,345507.03,1559.38,1403.44,1079.57,21634825.34
+lehigh_valley_health_network,Lehigh Valley Health Network,4,183378.55000000002,1532.855,1272.8200000000002,1045.875,311376.73
+lexington_medical_center,Lexington Medical Center,1,21395.59,1715.63,1559.67,1319.72,1023116.78
+licking_memorial_health_systems,Licking Memorial Health Systems,1,500781.07,1179.97,1179.97,750.0,56401596.3
+lifebridge_health,LifeBridge Health,3,358877.4,1441.03,1441.03,886.79,19037583.72
+lifepoint_health,Lifepoint Health,48,2128637.66,1544.645,1222.915,1022.38,142844922.73000002
+lifespan,Lifespan,3,235746.94,1418.65,1418.65,873.02,47651822.699999996
+lmh_health,LMH Health,1,47421.28,1604.17,1233.98,1233.98,1556885.33
+logan_health,Logan Health,5,239838.47,1187.43,1187.43,750.0,19396586.92
+loma_linda_university_health,Loma Linda University Health,3,208042.32,1482.2,1235.17,1140.16,79920.41999999998
+lsu_healthcare_services_division,LSU Healthcare Services Division,1,123502.58,1169.53,1169.53,750.0,17551500.6
+luminis_health,Luminis Health,2,192558.44,1469.375,1469.375,904.23,10816197.36
+main_line_health,Main Line Health,4,45801.53,1411.2,1218.76,868.43,2430217.37
+mainegeneral_health,MaineGeneral Health,1,35356.14,1673.68,1673.68,1158.7,2005068.64
+mainehealth,MaineHealth,8,1347547.45,1535.22,1341.5300000000002,1078.4650000000001,76128859.8
+major_health_partners,Major Health Partners,1,2359.6,1147.16,1147.16,750.0,247562.23
+margaret_mary_health,Margaret Mary Health,1,150582.47,1126.27,1126.27,750.0,16043514.67
+marshfield_clinic_health_system,Marshfield Clinic Health System,8,237060.44,1628.065,1340.58,1127.12,13510866.43
+mary_lanning_healthcare,Mary Lanning Healthcare,1,274514.37,1147.16,1147.16,750.0,25109983.99
+mary_washington_healthcare,Mary Washington Healthcare,2,217553.69,1497.72,1497.72,921.67,17423927.57
+mass_general_brigham,Mass General Brigham,9,1433531.5,1699.1,1510.31,1045.6,63504662.36
+maury_regional_medical_center,Maury Regional Medical Center,2,67558.34,1083.755,1083.755,750.0,7165117.84
+mayo_clinic,Mayo Clinic,17,879442.68,1397.77,1244.12,860.17,71715396.77
+mclaren_health_care_corporation,McLaren Health Care Corporation,9,206930.59999999998,1218.76,1218.76,750.01,26222653.97
+mcleod_health,McLeod Health,5,210865.83,1480.53,1233.78,1021.18,19052069.58
+meadville_medical_center,Meadville Medical Center,2,538133.9,1267.99,1267.99,780.3,60362489.3
+medical_university_of_south_carolina_medical_center,Medical University of South Carolina Medical Center,2,7935.93,1335.865,1335.865,830.3299999999999,423573.64
+medisys_health_network,Medisys Health Network,2,194751.50999999998,1673.74,1673.74,1030.0,21391881.97
+medstar_health,MedStar Health,9,1315912.11,1497.72,1441.03,921.67,55180755.2
+memorial_health_system_il,Memorial Health System IL,5,636752.73,1305.28,1305.28,803.25,61114075.0
+memorial_health_system_oh,Memorial Health System OH,3,230378.32,1200.86,1200.86,750.0,18196270.63
+memorial_healthcare,Memorial Healthcare,1,8742.83,1554.76,1413.42,1195.97,-85401.83
+memorial_healthcare_system,Memorial Healthcare System,2,272613.89,1202.35,1015.3199999999999,750.0,4745451.73
+memorial_hermann,Memorial Hermann,2,34581.64,1397.77,1257.995,860.17,1695654.46
+memorial_hermann_healthcare_system,Memorial Hermann Healthcare System,6,117552.62000000001,1397.77,1397.77,860.17,5103341.01
+memorial_hospital_at_gulfport,Memorial Hospital at Gulfport,1,26520.79,1688.66,1688.66,1039.18,2348206.22
+mercy_health,Mercy,34,1750546.85,1176.99,1161.325,750.0,118729685.5
+mercyhealth,Mercyhealth,4,200002.22999999998,1542.17,1374.5900000000001,949.03,17535859.28
+meritus_health,Meritus Health,1,143490.04,1563.09,1172.32,1082.14,2368131.34
+methodist_health_system_ne,Methodist Health System NE,3,191825.78,1667.31,1500.58,1141.26,6602482.34
+methodist_health_system_tx,Methodist Health System TX,6,255719.05,1348.54,1348.54,829.87,13404142.36
+methodist_le_bonheur_healthcare,Methodist Le Bonheur Healthcare,2,215957.1,1062.13,1062.13,750.0,29531999.14
+midland_county_hospital_district,Midland County Hospital District,1,130422.76,1546.35,1546.35,951.6,9879910.62
+missouri_delta_medical_center,Missouri Delta Medical Center,1,25660.08,1449.09,1449.09,891.75,3057723.81
+mlk_community_healthcare,MLK Community Healthcare,1,255174.72,1772.86,1329.65,1227.37,-907756.93
+mohawk_valley_health_system,Mohawk Valley Health System,1,149218.04,1682.96,1514.66,1165.13,3652139.21
+montage_health,Montage Health,1,113486.63,1697.01,1414.18,1305.4,-623013.8
+montefiore_medical_center,Montefiore Medical Center,5,388062.34,1673.74,1338.99,1030.0,16279379.799999999
+monument_health,Monument Health,7,225716.40000000002,1035.27,1035.27,750.0,24102745.18
+mosaic_life_care,Mosaic Life Care,2,101849.53,1136.71,1136.71,750.0,9055262.36
+mount_sinai_health_system,Mount Sinai Health System,5,1086311.11,1673.74,1487.77,1030.0,39933468.0
+mount_sinai_medical_center_of_florida,Mount Sinai Medical Center of Florida,1,100719.2,1202.35,1202.35,750.0,10554459.22
+mountain_view_hospital,Mountain View Hospital,1,117349.77,1318.71,1318.71,811.51,6445814.45
+multicare_health_system,Multicare Health System,5,847712.49,1630.98,1546.94,1129.14,15045456.78
+munson_healthcare,Munson Healthcare,8,1539442.43,1211.3,1211.3,750.0,178884546.89
+national_jewish_health,National Jewish Health,1,529158.93,1378.38,1378.38,848.23,93043935.78
+natividad_medical_center,Natividad Medical Center,1,46827.43,1697.01,1697.01,1305.4,2215183.81
+nch_healthcare_system,NCH Healthcare System,1,69811.63,1505.12,1157.78,1157.78,1938334.04
+new_liberty_hospital_district_of_clay_county,New Liberty Hospital District of Clay County,1,23315.68,1142.68,1142.68,750.0,3328112.67
+new_york_city_health_and_hospitals_corporation,New York City Health and Hospitals Corporation,6,2590289.56,1673.74,1413.38,1030.0,49014935.84
+new_york_presbyterian_healthcare_system,New York Presbyterian Healthcare System,3,957206.13,1673.74,1673.74,1030.0,85963488.35
+niagara_falls_memorial_medical_center,Niagara Falls Memorial Medical Center,1,331439.1,1576.78,1576.78,970.33,39894380.56
+norman_regional_health_system,Norman Regional Health System,1,33205.94,1685.8,1296.77,1296.77,58526.63
+north_country_healthcare,North Country Healthcare,2,148799.22999999998,1332.13,1332.13,819.77,15858613.530000001
+north_kansas_city_hospital,North Kansas City Hospital,1,68833.18,1142.68,1142.68,750.0,6052189.01
+north_memorial_health,North Memorial Health,2,134365.64,1426.11,1426.11,877.61,10442245.54
+north_mississippi_health_services,North Mississippi Health Services,5,174586.49,1097.93,1097.93,750.0,10489039.07
+north_oaks_health_system,North Oaks Health System,1,85987.62,1553.81,1165.36,1075.71,1667840.23
+northeast_georgia_health_system,Northeast Georgia Health System,3,366477.44,1278.43,1278.43,786.73,10059801.73
+northeastern_health_system,Northeastern Health System,1,24474.54,1535.91,1228.72,945.17,671444.48
+northern_light_health,Northern Light Health,8,512789.77,1288.87,1288.87,793.15,42765111.83
+northfield_hospital_and_clinics,Northfield Hospital and Clinics,1,6157.57,1884.25,2000.0,1304.48,1564031.57
+northshore_edward_elmhurst_health,NorthShore  Edward-Elmhurst Health,4,2611006.4299999997,1357.49,1357.49,835.38,288160717.18
+northside_hospital,Northside Hospital,5,966449.5599999999,1278.43,1278.43,786.73,51466838.68
+northwell_health,Northwell Health,15,394531.27,1673.74,1487.77,1030.0,27879781.259999998
+northwestern_medicine,Northwestern Medicine,7,322430.2,1357.49,1357.49,835.38,28660655.98
+norton_healthcare,Norton Healthcare,4,420300.49,1123.2849999999999,1123.2849999999999,750.0,44720887.29
+novant_health,Novant Health,3,259051.36,1157.6,1157.6,750.0,11592521.19
+nuvance_health,Nuvance Health,6,346235.98,1635.78,1338.915,1216.63,9072541.39
+nyc_health_hospitals,NYC Health + Hospitals,2,12074.27,1096.71,952.365,819.13,1204885.51
+nyu_langone_health,NYU Langone Health,2,252621.49,1580.755,1394.7849999999999,1030.0,9344887.33
+oaklawn_hospital,Oaklawn Hospital,1,21466.71,1512.75,1260.63,1163.66,36811.09
+ochsner,Ochsner,17,1521437.64,1327.06,1169.53,816.65,123208163.53
+ohiohealth,Ohiohealth,13,944136.29,1179.97,1179.97,750.0,60929650.54
+oneida_health,Oneida Health,1,9988.76,1689.56,1689.56,1039.73,668901.99
+oregon_health_and_science_university,Oregon Health and Science University,1,472077.73,1559.38,1169.53,1079.57,8403323.67
+orlando_health,Orlando Health,6,37494.31,1191.91,1191.91,750.0,9726006.85
+orohealth_corporation,OroHealth Corporation,1,25942.76,1506.07,1158.52,1158.52,694302.66
+osf_healthcare_system,OSF Healthcare System,13,910272.97,1305.28,1305.28,803.25,67861038.63
+overlake_medical_center_and_clinics,Overlake Medical Center and Clinics,1,126662.67,1630.98,1334.44,1129.14,3848219.21
+owensboro_health,Owensboro Health,3,191424.16,1459.93,1312.74,908.82,69537571.12
+ozarks_healthcare,Ozarks Healthcare,1,34372.43,1547.84,1547.84,952.52,4067132.76
+palomar_health,Palomar Health,2,79050.41,1556.19,1305.895,1197.07,372581.57000000007
+parkland_health_and_hospital_system,Parkland Health and Hospital System,1,456330.6,1348.54,1348.54,829.87,63011156.01
+parkland_health_texas,Parkland Health (Texas),1,17050.7,1136.71,1136.71,750.0,1515947.94
+parkview_health_system,Parkview Health System,7,435454.89999999997,1483.99,1200.86,913.23,18955912.95
+parkview_medical_center,Parkview Medical Center,1,157194.46,1635.67,1258.21,1258.21,1441016.94
+parrish_medical_center,Parrish Medical Center,1,83999.39,1547.84,1125.7,952.52,-4480.17
+peacehealth,Peacehealth,6,596705.28,1582.995,1576.775,988.69,93535513.67
+pella_regional_health_center,Pella Regional Health Center,1,166793.61,1102.4,1102.4,750.0,16259485.06
+penn_highlands_healthcare,Penn Highlands Healthcare,7,653079.7,1267.99,1267.99,780.3,38100903.71
+penn_state_health_milton_s_hershey_medical_center,Penn State Health Milton S Hershey Medical Center,5,439742.04,1579.0,1185.44,1094.26,4026351.25
+peterson_health,Peterson Health,1,63580.24,1601.54,1601.54,985.56,4037461.09
+phoebe_putney_health_systems,Phoebe Putney Health Systems,2,44364.53,1226.815,1104.675,754.9649999999999,3967719.62
+piedmont_healthcare,Piedmont Healthcare,10,980536.21,1278.43,1022.74,786.73,3584881.96
+pih_health,PIH Health,3,104614.09,1595.58,1227.37,1227.37,807891.21
+pikeville_medical_center,Pikeville Medical Center,1,161922.2,1606.58,1314.48,1112.25,-773030.48
+pipeline_health,Pipeline Health,7,509398.69,1595.58,1357.49,1227.37,36210380.92
+premier_health,Premier Health,2,806054.45,1395.53,1395.53,877.145,30202724.63
+presbyterian_healthcare_services,Presbyterian Healthcare Services,6,558285.96,1470.455,1302.815,968.95,18273264.32
+prime_healthcare,Prime Healthcare,36,1685221.08,1411.2,1219.205,868.43,70319777.89
+prisma_health,Prisma Health,11,998664.75,1518.96,1224.21,1036.97,6179036.85
+prohealth_care,Prohealth Care,2,161018.07,1273.95,1273.95,783.97,10143240.620000001
+promedica,ProMedica,9,2656161.77,1211.3,1200.86,750.0,290129629.78999996
+prospect_medical_holdings,Prospect Medical Holdings,7,415228.96,1609.23,1418.65,1114.08,24961405.03
+providence,Providence,21,1432209.33,1606.61,1397.17,1011.64,203779111.65
+public_hospital_district_1a_of_whitman_county,Public Hospital District 1A of Whitman County,1,203732.62,1546.94,1546.94,951.97,40868686.47
+quorum_health,Quorum Health,25,929768.63,1314.23,1275.45,808.76,103482547.12
+redington_fairview_general_hospital,Redington Fairview General Hospital,1,240503.52,1288.87,1288.87,793.15,25631352.12
+redlands_community_hospital,Redlands Community Hospital,1,43083.88,1646.89,1482.2,1140.16,1742748.32
+regional_west_health_services,Regional West Health Services,2,70383.36,1297.23,1297.23,820.3199999999999,4267034.93
+reid_health,Reid Health,1,92431.18,1592.59,1274.07,980.06,-864600.48
+renown_health,Renown Health,2,496111.25,1563.35,1407.0149999999999,962.06,18128484.11
+ridgeview_medical_center,Ridgeview Medical Center,3,77518.93,1426.11,1426.11,877.61,6964139.819999999
+riverside_health_care_system,Riverside Health Care System,1,28506.09,1673.74,1673.74,1030.0,2664808.55
+riverside_health_system,Riverside Health System,4,105907.41999999998,1185.94,1185.94,750.0,12127238.92
+riverside_healthcare,Riverside Healthcare,1,57755.73,1537.82,1398.01,1182.93,-245762.7
+riverside_university_health_system,Riverside University Health System,1,1735000.72,1646.89,1852.75,1140.16,147962675.95
+riverview_hospital,Riverview Hospital,1,19911.14,1147.16,1147.16,750.0,3333471.92
+rochester_regional_health_system,Rochester Regional Health System,5,1285214.54,1750.0,1750.0,1193.4,60055215.07
+rush_system_for_health,Rush System for Health,3,123244.34000000001,1357.49,1357.49,835.38,17006077.47
+rwjbarnabas_health,RWJBarnabas Health,13,3045920.73,1673.74,1673.74,1030.0,175698175.04999998
+saint_bernards_healthcare,Saint Bernards Healthcare,2,93009.79000000001,1334.22,1334.22,843.5450000000001,7102645.98
+saint_charles_health_system,Saint Charles Health System,2,141703.41999999998,1606.61,1606.61,988.69,26906674.34
+saint_clair_hospital,Saint Clair Hospital,1,126598.56,1556.19,1383.28,957.66,2754740.91
+saint_claire_regional_medical_center,Saint Claire Regional Medical Center,1,28696.48,1747.93,1966.42,1210.11,3835845.12
+saint_elizabeth_healthcare,Saint Elizabeth Healthcare,5,159121.68,1159.09,1159.09,750.0,17913053.58
+saint_francis_health_system,Saint Francis Health System,4,102696.49999999999,1678.52,1417.575,1032.935,2140612.31
+saint_francis_healthcare_system,Saint Francis Healthcare System,1,46497.85,1549.93,1127.22,953.8,910304.46
+saint_joseph_medical_center,Saint Joseph Medical Center,1,744481.11,1673.74,1673.74,1030.0,68879555.6
+saint_josephs_health,Saint Josephs Health,1,106102.7,1673.74,1673.74,1030.0,7526301.14
+saint_lawrence_health_system,Saint Lawrence Health System,2,115551.6,1711.365,1498.37,1195.145,8709855.07
+saint_lukes,Saint Lukes,8,818329.1599999999,1235.17,1235.17,760.1,75264556.3
+saint_lukes_episcopal_presbyterian_hospital,Saint Lukes Episcopal Presbyterian Hospital,2,16228.980000000001,1124.78,1124.78,750.0,2013850.04
+saint_lukes_health_system_mo,Saint Lukes Health System MO,8,478199.57,1139.6950000000002,1139.6950000000002,750.0,32301156.119999997
+saint_lukes_hospital_of_duluth,Saint Lukes Hospital of Duluth,1,41513.76,1397.77,1397.77,860.17,4424513.72
+saint_lukes_university_health_network,Saint Lukes University Health Network,6,16622.51,1555.265,1367.18,1077.6399999999999,344649.04
+saint_marys_healthcare,Saint Marys Healthcare,1,38179.17,1576.78,1576.78,970.33,4856603.51
+saint_peters_health,Saint Peters Health,1,40946.97,1187.43,1187.43,750.0,4904534.86
+saint_peters_healthcare_system,Saint Peters Healthcare System,1,100112.8,1673.74,1487.77,1030.0,4593257.01
+salem_health_hospitals_and_clinics,Salem Health Hospitals and Clinics,1,107000.54,1606.61,1606.61,988.69,20318613.45
+salem_regional_medical_center,Salem Regional Medical Center,1,26141.42,1694.63,1355.7,1042.85,800890.38
+salina_regional_health_center,Salina Regional Health Center,4,83758.76,1338.245,1085.99,864.385,8662272.69
+samaritan_health,Samaritan Health,1,85026.69,1573.96,1416.57,1089.67,2471643.6
+samaritan_health_services,Samaritan Health Services,4,571069.74,1606.61,1606.61,988.69,101806704.85
+samaritan_healthcare,Samaritan Healthcare,1,72377.46,1573.8,1573.8,968.49,6563890.99
+san_antonio_regional_hospital,San Antonio Regional Hospital,1,89022.63,1646.89,1140.16,1140.16,2030495.09
+sanford_health,Sanford Health,32,1209351.51,1292.6,1225.3000000000002,805.085,134975864.89
+santa_clara_valley_health_and_hospital_system,Santa Clara Valley Health and Hospital System,1,183041.49,1944.29,1495.61,1495.61,-1654286.23
+sarah_bush_lincoln_health_system,Sarah Bush Lincoln Health System,1,818150.29,1305.28,1305.28,803.25,96809592.2
+sarasota_memorial_health_care_system,Sarasota Memorial Health Care System,2,183076.15,1567.335,1341.77,1020.45,2333661.66
+sbh_health_system,SBH Health System,1,112949.52,1673.74,1487.77,1030.0,5316124.39
+scionhealth,ScionHealth,12,349436.95999999996,1502.965,1349.255,1013.105,35532667.42
+scripps_health,Scripps Health,4,250515.1,1556.19,1197.07,1197.07,5322439.68
+self_regional_healthcare,Self Regional Healthcare,2,141495.05,1342.875,1342.875,842.4449999999999,8014160.040000001
+sentara_healthcare,Sentara Healthcare,11,381688.2,1185.94,1185.94,750.0,9995598.28
+shannon_health_system,Shannon Health System,1,287820.57,1439.24,1439.24,885.69,6442134.32
+sharp_healthcare,Sharp Healthcare,4,210600.21000000002,1642.645,1679.98,1197.07,15996422.1
+signature_healthcare,Signature Healthcare,1,51018.29,1510.31,1132.74,1045.6,1291089.73
+silver_cross_hospital,Silver Cross Hospital,1,45287.97,1357.49,1357.49,835.38,4382696.79
+sinai_health_system,Sinai Health System,2,76001.74,1357.49,1357.49,835.38,10584103.219999999
+singing_river_health_system,Singing River Health System,1,33303.25,1590.93,1301.67,1101.42,-170721.32
+skagit_regional_health,Skagit Regional Health,2,145856.7,1917.425,1780.0549999999998,1360.845,7161134.5200000005
+sky_lakes_medical_center,Sky Lakes Medical Center,1,38604.58,1704.89,1311.45,1311.45,616431.27
+slidell_memorial_hospital,Slidell Memorial Hospital,1,121748.31,1619.74,1295.79,996.76,-1554264.75
+solutionhealth,Solutionhealth,1,63083.04,1332.13,1065.71,819.77,-682470.86
+south_central_regional_medical_center_health_system,South Central Regional Medical Center Health System,1,3650.51,1132.24,905.79,750.0,92490.52
+south_county_health,South County Health,1,9241.84,1418.65,1418.65,873.02,1060151.71
+south_georgia_medical_center,South Georgia Medical Center,2,25595.29,1381.365,1172.655,850.0699999999999,2718684.5300000003
+south_shore_health_system,South Shore Health System,1,50973.1,1699.1,1510.31,1045.6,2068744.86
+southcoast_health_system,Southcoast Health System,1,163949.58,1418.65,1418.65,873.02,14086446.76
+southeast_alaska_regional_health_consortium,Southeast Alaska Regional Health Consortium,3,787760.96,1643.91,1643.91,1011.64,83950911.91
+southeast_health_al,Southeast Health AL,1,174755.2,1507.66,1356.9,1043.77,-2102378.51
+southeast_health_mo,Southeast Health MO,2,107257.62,1569.0549999999998,1228.24,1086.27,-281524.18
+southern_illinois_healthcare,Southern Illinois Healthcare,4,313492.12,1586.625,1356.745,976.385,17232191.89
+spartanburg_regional_healthcare_system,Spartanburg Regional Healthcare System,4,296918.38,1552.965,1202.53,967.115,8359657.470000001
+ssm_health,SSM Health,23,2257806.48,1289.47,1244.12,793.52,94959384.97
+stanford_health,Stanford Health,1,2847992.01,1944.29,1767.53,1495.61,134509164.1
+stanford_health_care,Stanford Health Care,1,61118.2,1884.38,1449.52,1449.52,1456065.77
+steward_health_care,Steward Health Care,23,1264630.79,1418.65,1397.77,873.02,143747673.79000002
+stillwater_medical_center_authority,Stillwater Medical Center Authority,3,49308.46,1176.99,1176.99,750.0,3225950.0
+stony_brook_medicine,Stony Brook Medicine,1,205463.37,1673.74,1673.74,1030.0,11421496.69
+stormont_vail_health,Stormont Vail Health,2,1541459.11,1392.935,1392.935,1028.8,192321132.76
+sturdy_memorial_hospital,Sturdy Memorial Hospital,1,38335.54,1418.65,1418.65,873.02,1912766.25
+summa_health_system,Summa Health System,1,143744.11,1596.47,1064.31,982.44,2712416.61
+summit_healthcare,Summit Healthcare,1,50392.61,1487.69,1239.74,1144.38,464608.25
+suny_downstate_medical_center,SUNY Downstate Medical Center,1,113979.16,1487.77,1338.99,1030.0,-948547.56
+suny_upstate_medical_university,SUNY Upstate Medical University,1,1019241.19,1817.25,1817.25,1118.31,62137998.04
+sutter_health,Sutter Health,25,10218482.65,1884.38,2000.0,1348.54,1560899239.42
+t_j_regional_health,T J Regional Health,2,47828.25,1635.555,1490.6100000000001,1067.815,-1068.4800000000105
+tahoe_forest_hospital_district,Tahoe Forest Hospital District,2,274094.8,1656.17,1656.17,1086.4499999999998,27464493.89
+tallahassee_memorial_healthcare,Tallahassee Memorial Healthcare,2,119202.29000000001,1411.495,1137.4099999999999,881.0,4752889.35
+tanner_health_system,Tanner Health System,4,130298.82999999999,1278.43,1278.43,786.73,13429864.74
+temple_university_health_system,Temple University Health System,2,83255.54,1411.2,1270.08,868.43,3488785.96
+tenet_healthcare,Tenet Healthcare,40,753118.92,1348.54,1143.7800000000002,829.87,35594866.88
+texas_health_resources,Texas Health Resources,16,445524.67,1348.54,1138.7649999999999,829.87,39045135.449999996
+the_brooklyn_hospital_center,The Brooklyn Hospital Center,1,24990.64,1673.74,1673.74,1030.0,4712553.73
+the_carle_foundation,The Carle Foundation,7,786585.53,1492.05,1305.28,918.18,26512610.39
+the_christ_hospital_health_network,The Christ Hospital Health Network,1,111837.71,1159.09,1159.09,750.0,6180953.36
+the_methodist_hospitals,The Methodist Hospitals,1,92343.43,1357.49,1357.49,835.38,8725051.17
+the_morris_hospital_and_healthcare_centers,The Morris Hospital and Healthcare Centers,1,16703.99,1357.49,1206.66,835.38,683593.15
+the_nebraska_medical_center,The Nebraska Medical Center,2,125069.94,1343.3200000000002,1343.3200000000002,862.46,8788172.22
+the_ohio_state_university_wexner_medical_center,The Ohio State University Wexner Medical Center,5,854131.81,1179.97,1153.69,750.0,31584646.95
+the_queens_health_systems,The Queens Health Systems,2,177922.41,1901.7649999999999,1671.3249999999998,1324.4899999999998,4234968.529999999
+the_university_of_chicago_medicine,The University of Chicago Medicine,2,4023064.78,1357.49,1221.74,835.38,209358838.73
+the_university_of_kansas_health_system,The University of Kansas Health System,5,232702.18999999997,1142.68,1142.68,750.0,32177290.659999996
+the_university_of_mississippi_medical_center,The University of Mississippi Medical Center,1,24008.67,1057.65,1057.65,750.0,2558178.82
+the_university_of_texas_system,The University of Texas System,2,575706.46,1373.155,1098.525,845.02,10795582.74
+the_university_of_toledo_medical_center,The University of Toledo Medical Center,1,48556.46,1618.55,1294.84,996.03,1238292.9
+thedacare,ThedaCare,7,553920.9,1244.12,1244.12,765.61,39907238.15
+tidalhealth_peninsula_regional,TidalHealth Peninsula Regional,2,28009.739999999998,1469.1950000000002,1130.15,1130.15,601236.96
+tift_regional_medical_center,Tift Regional Medical Center,1,50273.17,1232.19,1232.19,758.27,6854335.86
+tmc_healthcare,TMC Healthcare,3,302626.77,1408.21,1408.21,866.59,39520887.89
+tower_health,Tower Health,2,53764.44,1411.2,1411.2,868.43,4281825.45
+tri_city_healthcare_district,Tri City Healthcare District,1,73304.45,1729.1,1556.19,1197.07,2497695.05
+tri_state_memorial_hospital,Tri State Memorial Hospital,1,229875.99,1546.94,1546.94,951.97,46113035.76
+trihealth,TriHealth,2,40054.950000000004,1159.09,1159.09,750.0,5264346.050000001
+trinity_health,Trinity Health,70,2607832.56,1209.81,1192.1,750.0,196755146.45
+trinity_health_nd,Trinity Health ND,1,8947.96,1162.07,1162.07,750.0,2289606.72
+uab_health_system,UAB Health System,5,211548.16,1083.01,1083.01,750.0,27894894.3
+uc_health_oh,UC Health OH,2,147414.33000000002,1159.09,1159.09,750.0,14680388.26
+ucla_health,UCLA Health,1,174095.05,1772.86,1772.86,1227.37,16407047.03
+ucsf_health,UCSF Health,2,1171499.47,1816.685,1816.685,1330.1799999999998,67333810.9
+uf_health,UF Health,4,138196.9,1183.705,1183.705,750.0,18809069.19
+ui_health,UI Health,1,131319.33,1357.49,1357.49,835.38,10064363.59
+umass_memorial_health_care,UMass Memorial Health Care,4,285195.95,1674.34,1509.38,1122.895,11690997.94
+unc_health_care_system,UNC Health Care System,14,947220.5,1527.7849999999999,1257.01,1026.78,36882769.93
+union_health,Union Health,2,221686.35,1396.875,1304.2350000000001,888.07,7337810.01
+united_health_services,United Health Services,3,381861.37000000005,1509.52,1311.25,970.33,23549535.189999998
+united_regional_health_care_system,United Regional Health Care System,1,65548.31,1539.22,1154.42,1065.61,1488082.36
+unity_health,Unity Health,2,17219.71,1435.3600000000001,1435.3600000000001,905.79,1922486.3
+unitypoint_health,UnityPoint Health,28,1782730.6900000002,1102.4,1102.4,750.0,126152224.16
+universal_health_services,Universal Health Services,22,822142.56,1576.48,1490.705,989.145,69320266.39
+university_health_system,University Health System,1,232607.55,1272.46,1272.46,783.05,12869036.93
+university_hospital,University Hospital,1,303094.56,1673.74,1673.74,1030.0,17662305.54
+university_hospitals,University Hospitals,4,298751.46,1410.3,1200.86,873.38,11642404.25
+university_of_california_health,University of California Health,2,258732.21999999997,1674.34,1399.53,1287.955,4444339.1899999995
+university_of_colorado_health,University of Colorado Health,9,742569.88,1378.38,1323.18,848.23,3560802.51
+university_of_iowa_hospitals_and_clinics,University of Iowa Hospitals and Clinics,2,378900.66,1332.2800000000002,1245.495,855.665,17685527.92
+university_of_kentucky_healthcare,University of Kentucky Healthcare,3,1458587.17,1455.95,1455.95,895.97,43892130.3
+university_of_maryland_medical_system,University of Maryland Medical System,8,559059.38,1441.03,1280.92,886.79,19879431.05
+university_of_michigan_health_system,University of Michigan Health System,4,35544.72,1555.225,1297.905,1153.47,1010453.59
+university_of_missouri_health_care,University of Missouri Health Care,1,412121.84,1541.28,1370.02,948.48,9850930.0
+university_of_pennsylvania_health_system,University of Pennsylvania Health System,3,288422.31,1411.2,1128.96,868.43,5476056.99
+university_of_rochester_medical_center,University of Rochester Medical Center,5,1459595.88,1621.35,1247.19,1015.12,80803304.52
+university_of_south_alabama_hospitals,University of South Alabama Hospitals,2,420239.86,1477.425,1477.425,909.19,101681878.55999999
+university_of_southern_california,University of Southern California,2,315046.37,1595.58,1227.37,1227.37,1779209.32
+university_of_vermont_health_network,University of Vermont Health Network,4,619413.72,1539.04,1429.095,1062.585,34265094.42
+university_of_virginia_health_system,University of Virginia Health System,3,658396.39,1497.72,1089.25,921.67,21075336.55
+uofl_health,UofL Health,3,823422.87,1120.3,1120.3,750.0,27371037.09
+upmc,UPMC,22,3604241.83,1491.6,1267.99,917.905,234782747.97
+upper_peninsula_health_care_solutions,Upper Peninsula Health Care Solutions,3,86709.78,1263.51,1263.51,777.55,8191209.74
+uw_health,UW Health,2,427862.87,1466.0,1278.645,1027.06,26741245.18
+uw_medicine,UW Medicine,1,136349.71,1467.88,1129.14,1129.14,2935398.55
+va,VA,95,4689041.77,1750.0,1750.0,1750.0,367650653.31
+valley_health,Valley Health,5,227438.41999999998,1265.0,1265.0,778.46,23241055.54
+valley_health_system_nj,Valley Health System NJ,1,85173.58,1487.77,1115.83,1030.0,2296230.31
+valley_health_systems,Valley Health Systems,1,15191.81,1716.37,1716.37,1188.26,1442772.24
+valleywise_health,Valleywise Health,1,459750.98,1460.42,1168.34,898.72,1824897.1
+vanderbilt_health,Vanderbilt Health,4,213316.86000000002,1099.42,1099.42,750.0,22530742.560000002
+vcu_health_system,VCU Health System,2,341655.02,1336.46,1082.47,881.46,3050139.9499999997
+virtua_health,Virtua Health,4,254662.54,1411.2,1411.2,868.43,26945674.29
+wakemed_health_and_hospitals,WakeMed Health and Hospitals,2,269903.96,1172.52,938.01,750.0,6576543.63
+washington_health_system,Washington Health System,2,14358.189999999999,1477.58,1477.58,909.28,1486281.02
+washington_hospital_healthcare_system,Washington Hospital Healthcare System,1,3513.48,1884.38,1570.32,1449.52,189323.73
+washington_regional,Washington Regional,1,584403.21,1145.66,1145.66,750.0,58528172.1
+wayne_memorial_health_system,Wayne Memorial Health System,1,39652.92,1646.89,1235.17,1140.16,193182.61
+wellforce,Wellforce,3,457470.15,1699.1,1699.1,1045.6,23641825.36
+wellspan_health,Wellspan Health,6,410179.92,1580.325,1187.435,1096.0900000000001,2532599.03
+wellstar_health_system,WellStar Health System,8,395078.25,1278.43,1136.38,786.73,16118375.33
+west_tennessee_healthcare,West Tennessee Healthcare,3,61094.92,1068.09,1068.09,750.0,6674207.52
+west_virginia_university_health_system,West Virginia University Health System,20,1743346.15,1362.2649999999999,1263.65,838.3199999999999,130423367.67
+western_wisconsin_health,Western Wisconsin Health,1,86992.89,1426.11,1426.11,877.61,6010667.21
+white_river_health_system,White River Health System,2,90423.86,1371.2150000000001,1153.475,866.315,4618707.61
+williamson_county_hospital_district,Williamson County Hospital District,1,45102.2,1099.42,1099.42,750.0,3138269.37
+willis_knighton_health_system,Willis Knighton Health System,1,9229.35,1216.37,1216.37,750.0,456594.09
+winona_health,Winona Health,1,30360.51,1546.12,1159.59,1070.39,720418.14
+witham_health_services,Witham Health Services,1,26933.77,1147.16,1147.16,750.0,4022192.24
+wmc_health,WMC Health,5,342933.45,1673.74,1576.78,1030.0,21888726.95
+wooster_community_hospital_health_system,Wooster Community Hospital Health System,1,5788.78,1455.35,1293.65,895.6,236647.36
+yale_new_haven_health_system,Yale New Haven Health System,4,1715513.85,1495.775,1327.98,1041.47,117247895.88000001
+yuma_regional_medical_center,Yuma Regional Medical Center,1,218540.21,1718.97,1432.48,1322.29,-2246226.53
