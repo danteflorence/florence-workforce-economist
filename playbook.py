@@ -103,6 +103,99 @@ def search(query: str, role: str = "rep",
     return hits
 
 
+# ─── Visual: deal-flow diagram (shared between Playbook + Pipeline) ─
+DEAL_FLOW_STAGES = [
+    {"id": "prospect",   "name": "Prospect",  "icon": "contact_mail",  "gate": "Target identified"},
+    {"id": "discovery",  "name": "Discovery", "icon": "forum",         "gate": "Disco call booked"},
+    {"id": "proposal",   "name": "Proposal",  "icon": "description",   "gate": "Notes logged"},
+    {"id": "review",     "name": "Review",    "icon": "rate_review",   "gate": "Proposal sent"},
+    {"id": "closed",     "name": "Closed",    "icon": "check_circle",  "gate": "Terms agreed"},
+]
+
+
+# ─── Visual: persona cards (intro to the Personas playbook section) ─
+PERSONAS = [
+    {
+        "id": "cfo", "icon": "account_balance",
+        "name": "CFO",
+        "optimizes": "The nursing labor line. Specifically the contract-labor sub-line that's been ugly since 2020.",
+        "opener": "I'm not going to make you guess at the savings. The Excel has every facility broken out with the math shown.",
+        "donts": ["FICA mechanics", "Trust-me claims", "Other-hospital averages"],
+    },
+    {
+        "id": "cno", "icon": "vaccines",
+        "name": "CNO",
+        "optimizes": "Unit-level quality, retention, and credibility with nursing managers.",
+        "opener": "I want to show you the nurses, not just the numbers. Can I walk you through the portal first?",
+        "donts": ["Agency vocabulary", "We'll-handle-it", "NCLEX-ready (table stakes)"],
+    },
+    {
+        "id": "ta", "icon": "badge",
+        "name": "Talent / HR",
+        "optimizes": "Time-to-fill, regulatory compliance, not getting blamed when something goes wrong.",
+        "opener": "We'd own the visa, the credentialing, and the English documentation. You'd run our nurses through your standard orientation.",
+        "donts": ["Aggressive volume", "Surprise compliance work"],
+    },
+    {
+        "id": "coo", "icon": "factory",
+        "name": "COO / VP Ops",
+        "optimizes": "Operational continuity, service-line growth, operating margin.",
+        "opener": "What service line would you grow if you had 10 more permanent RNs?",
+        "donts": ["Staffing-agency framing", "Price-only positioning"],
+    },
+]
+
+
+def _render_persona_cards(st) -> None:
+    cards = []
+    for p in PERSONAS:
+        chips = "".join(f"<span class='chip'>{d}</span>" for d in p["donts"])
+        cards.append(f"""
+            <div class='fl-persona-card'>
+              <div class='head'>
+                <div class='icon'>{p['icon']}</div>
+                <div class='name'>{p['name']}</div>
+              </div>
+              <div class='optimizes'>{p['optimizes']}</div>
+              <div class='opener'>"{p['opener']}"</div>
+              <div class='donts'>{chips}</div>
+            </div>
+        """)
+    st.markdown(
+        f"<div class='fl-persona-grid'>{''.join(cards)}</div>",
+        unsafe_allow_html=True,
+    )
+
+
+def render_deal_flow_diagram(st, active_stage: Optional[str] = None,
+                             closed_state: Optional[str] = None) -> None:
+    """Render the 5-stage deal flow as a horizontal visual.
+
+    active_stage: one of the stage ids to highlight as current
+    closed_state: "won" or "lost" — only used when active_stage == "closed"
+    """
+    nodes_html = []
+    for stage in DEAL_FLOW_STAGES:
+        is_active = (active_stage == stage["id"])
+        css_class = "fl-flow-stage"
+        if is_active:
+            if stage["id"] == "closed":
+                css_class += f" closed-{closed_state or 'won'}"
+            else:
+                css_class += " active"
+        nodes_html.append(
+            f"<div class='{css_class}'>"
+            f"<div class='icon'>{stage['icon']}</div>"
+            f"<div class='stage-name'>{stage['name']}</div>"
+            f"<div class='gate'>{stage['gate']}</div>"
+            f"</div>"
+        )
+    st.markdown(
+        f"<div class='fl-flow'>{''.join(nodes_html)}</div>",
+        unsafe_allow_html=True,
+    )
+
+
 # ─── Coaching tips ──────────────────────────────────────────────────
 def coach_tip(key: str, role: str = "rep", value: Optional[str] = None) -> str:
     """Return the role-specific coaching tooltip for a metric key.
@@ -219,6 +312,12 @@ def streamlit_render(st, current_role: str = "admin",
                 f"{eyebrow}</div>",
                 unsafe_allow_html=True,
             )
+        # Visual intro for the Deal flow section
+        if sec["id"] == "deal_flow":
+            render_deal_flow_diagram(st, active_stage=None)
+        # Visual intro for the Personas section — handled via persona cards block
+        if sec["id"] == "personas":
+            _render_persona_cards(st)
         st.markdown(sec["body"])
 
         # Footer: copy-to-clipboard, jump-to-section signal

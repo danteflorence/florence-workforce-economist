@@ -314,6 +314,28 @@ def streamlit_deal_detail(st, deal_id: str,
         f"Last touched {deal['last_touched_at'][:10]}"
     )
 
+    # Visual deal flow — the current stage highlighted
+    try:
+        import playbook as _playbook_flow
+        # Map workbench stages to flow stage ids
+        _flow_stage_map = {
+            "prospect": "prospect", "discovery": "discovery",
+            "proposal": "proposal", "review": "review",
+            "closed_won": "closed", "closed_lost": "closed",
+        }
+        _closed_state = (
+            "won" if stage == "closed_won"
+            else "lost" if stage == "closed_lost"
+            else None
+        )
+        _playbook_flow.render_deal_flow_diagram(
+            st,
+            active_stage=_flow_stage_map.get(stage),
+            closed_state=_closed_state,
+        )
+    except Exception:
+        pass  # diagram is optional polish
+
     # Next-best-move
     nbm = next_best_move(deal)
     nbm_col_l, nbm_col_r = st.columns([3, 1])

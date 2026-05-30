@@ -317,6 +317,283 @@ hr { border-color: var(--f-border); margin: 28px 0 !important; }
 /* Hide Streamlit's default deploy/menu chrome for a cleaner brand presence */
 #MainMenu { visibility: hidden; }
 footer { visibility: hidden; }
+
+/* =================================================================
+   REDESIGN COMPONENTS — visual-first patterns to reduce prose
+   ================================================================= */
+
+/* === Timeline (horizontal payment schedule) === */
+.fl-timeline {
+    background: white;
+    border: 1px solid var(--f-border);
+    border-radius: 12px;
+    padding: 28px 24px 22px 24px;
+    margin: 12px 0 8px 0;
+}
+.fl-timeline-track {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 0;
+    margin: 32px 0 8px 0;
+}
+.fl-timeline-track::before {
+    content: "";
+    position: absolute;
+    top: 24px;
+    left: 4%;
+    right: 4%;
+    height: 2px;
+    background: linear-gradient(90deg, var(--f-teal) 0%, var(--f-teal) 100%);
+    z-index: 0;
+}
+.fl-timeline-node {
+    position: relative;
+    text-align: center;
+    z-index: 1;
+}
+.fl-timeline-node .dot {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: white;
+    border: 3px solid var(--f-teal);
+    margin: 0 auto 12px auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Newsreader', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--f-teal-dark);
+}
+.fl-timeline-node.start .dot { background: var(--f-teal); color: white; }
+.fl-timeline-node.end .dot { background: var(--f-navy); color: white; border-color: var(--f-navy); }
+.fl-timeline-node .amount {
+    font-family: 'Newsreader', serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    color: var(--f-navy);
+    margin-bottom: 4px;
+    line-height: 1.1;
+}
+.fl-timeline-node .label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--f-muted);
+    font-weight: 600;
+}
+.fl-timeline-node .caption {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    color: var(--f-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* === Delta diagram (Today → Florence — 4 icon row) === */
+.fl-delta-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin: 12px 0 4px 0;
+}
+.fl-delta-item {
+    text-align: center;
+    padding: 18px 12px 14px 12px;
+    border-radius: 10px;
+    background: var(--f-gray);
+    border: 1px solid var(--f-border);
+}
+.fl-delta-item.on-teal {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.22);
+}
+.fl-delta-item .icon {
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined';
+    font-size: 28px;
+    color: var(--f-teal-dark);
+    line-height: 1;
+    margin-bottom: 6px;
+    font-variation-settings: 'FILL' 0;
+}
+.fl-delta-item.on-teal .icon { color: white; }
+.fl-delta-item .metric {
+    font-family: 'Newsreader', serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--f-navy);
+    line-height: 1.1;
+    margin: 2px 0 4px 0;
+}
+.fl-delta-item.on-teal .metric { color: white; }
+.fl-delta-item .label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.06em;
+    color: var(--f-muted);
+    text-transform: uppercase;
+    font-weight: 600;
+}
+.fl-delta-item.on-teal .label { color: rgba(255,255,255,0.85); }
+
+/* === Deal flow (5-stage visual nodes) === */
+.fl-flow {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin: 16px 0;
+    position: relative;
+}
+.fl-flow-stage {
+    background: white;
+    border: 1.5px solid var(--f-border);
+    border-radius: 10px;
+    padding: 14px 10px 12px 10px;
+    text-align: center;
+    position: relative;
+    transition: all 0.15s ease;
+}
+.fl-flow-stage.active {
+    background: var(--f-teal);
+    border-color: var(--f-teal);
+}
+.fl-flow-stage.closed-won {
+    background: var(--f-navy);
+    border-color: var(--f-navy);
+}
+.fl-flow-stage.closed-lost {
+    background: #B33A3A;
+    border-color: #B33A3A;
+}
+.fl-flow-stage .icon {
+    font-family: 'Material Symbols Rounded', 'Material Symbols Outlined';
+    font-size: 22px;
+    color: var(--f-teal-dark);
+    line-height: 1;
+}
+.fl-flow-stage.active .icon,
+.fl-flow-stage.closed-won .icon,
+.fl-flow-stage.closed-lost .icon { color: white; }
+.fl-flow-stage .stage-name {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--f-navy);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+}
+.fl-flow-stage.active .stage-name,
+.fl-flow-stage.closed-won .stage-name,
+.fl-flow-stage.closed-lost .stage-name { color: white; }
+.fl-flow-stage .gate {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    color: var(--f-muted);
+    margin-top: 4px;
+    line-height: 1.3;
+}
+.fl-flow-stage.active .gate,
+.fl-flow-stage.closed-won .gate,
+.fl-flow-stage.closed-lost .gate { color: rgba(255,255,255,0.85); }
+.fl-flow-arrow {
+    color: var(--f-border);
+    text-align: center;
+    align-self: center;
+    font-family: 'Material Symbols Rounded';
+    font-size: 18px;
+}
+
+/* === Persona card === */
+.fl-persona-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    margin: 14px 0;
+}
+.fl-persona-card {
+    background: white;
+    border: 1px solid var(--f-border);
+    border-radius: 12px;
+    padding: 20px 22px;
+}
+.fl-persona-card .head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 10px;
+}
+.fl-persona-card .head .icon {
+    font-family: 'Material Symbols Rounded';
+    font-size: 28px;
+    color: var(--f-teal);
+    background: rgba(11,197,160,0.12);
+    border-radius: 9px;
+    width: 44px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+}
+.fl-persona-card .head .name {
+    font-family: 'Newsreader', serif;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--f-navy);
+}
+.fl-persona-card .optimizes {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: var(--f-muted);
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+.fl-persona-card .opener {
+    background: var(--f-gray);
+    border-left: 3px solid var(--f-teal);
+    padding: 10px 14px;
+    border-radius: 4px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    color: var(--f-navy);
+    margin-bottom: 12px;
+    font-style: italic;
+}
+.fl-persona-card .donts {
+    display: flex; flex-wrap: wrap; gap: 6px;
+}
+.fl-persona-card .donts .chip {
+    background: rgba(179,58,58,0.08);
+    color: #B33A3A;
+    border: 1px solid rgba(179,58,58,0.18);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+/* === Stat tile (compact number-led) === */
+.fl-stat {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: var(--f-gray);
+    border: 1px solid var(--f-border);
+}
+.fl-stat .icon {
+    font-family: 'Material Symbols Rounded';
+    font-size: 22px;
+    color: var(--f-teal-dark);
+}
+.fl-stat .value {
+    font-family: 'Newsreader', serif;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--f-navy);
+}
+.fl-stat .label {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    color: var(--f-muted);
+}
 </style>
 """
 
@@ -810,15 +1087,7 @@ if view == "inpatient":
     florence_eyebrow("Inpatient · Build a customer proposal")
     florence_headline(
         "Pick a hospital system. See the savings.",
-        subhead=(
-            "Florence converts premium agency RN labor at U.S. hospitals into "
-            "permanent international RN capacity. Every system below has a "
-            "customer-ready proposal one click away — same numbers, same "
-            "language, same brand as your customer-facing deck. "
-            "(For outpatient settings — ASCs, HHAs, SNFs, hospice, dialysis — "
-            "see the **Outpatient** tab. For pipeline management, see "
-            "**More tools → Pipeline**.)"
-        ),
+        subhead="Premium agency labor → permanent international RNs. One-click proposal.",
     )
 
     # ── Data load ─────────────────────────────────────────────────────
@@ -1048,7 +1317,7 @@ if view == "inpatient":
         unsafe_allow_html=True,
     )
 
-    # The two-card comparison — TODAY (white) vs WITH FLORENCE (teal)
+    # Two-card price comparison — TODAY (white) vs WITH FLORENCE (teal)
     card_l, card_arrow, card_r = st.columns([5, 0.6, 5])
     with card_l:
         st.markdown(
@@ -1060,10 +1329,6 @@ if view == "inpatient":
                 <div class="card-unit">/hour</div>
               </div>
               <div class="card-headline">Agency staffing premium.</div>
-              <div class="card-body">
-                Contingent labor. No continuity of unit, panel, or workforce planning.
-                Premium recurs every cycle.
-              </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -1071,7 +1336,7 @@ if view == "inpatient":
     with card_arrow:
         st.markdown(
             "<div style='font-family:Newsreader,serif; font-size:2rem; color:#0BC5A0;"
-            " text-align:center; padding-top:90px;'>→</div>",
+            " text-align:center; padding-top:75px;'>→</div>",
             unsafe_allow_html=True,
         )
     with card_r:
@@ -1083,16 +1348,41 @@ if view == "inpatient":
                 <div class="card-number">${florence_net_hourly:,.2f}</div>
                 <div class="card-unit">/hour</div>
               </div>
-              <div class="card-headline">Permanent RN capacity.</div>
-              <div class="card-body">
-                Full-time {selected_sys_name} employees on multi-year contracts.
-                Labor-partnership aligned. Fee payable on successful employment start;
-                replacement protection for early attrition.
-              </div>
+              <div class="card-headline">Permanent capacity.</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+
+    # Delta row — 4 icons showing what shifts between Today and With Florence
+    _hourly_delta = median_agency_premium - florence_net_hourly
+    st.markdown(
+        f"""
+        <div class="fl-delta-row">
+          <div class="fl-delta-item">
+            <div class="icon">savings</div>
+            <div class="metric">${_hourly_delta:,.0f}/hr</div>
+            <div class="label">Cost saved</div>
+          </div>
+          <div class="fl-delta-item">
+            <div class="icon">group_add</div>
+            <div class="metric">{int(total_rn_need):,} RNs</div>
+            <div class="label">Permanent capacity</div>
+          </div>
+          <div class="fl-delta-item">
+            <div class="icon">loyalty</div>
+            <div class="metric">24+ mo</div>
+            <div class="label">Median retention</div>
+          </div>
+          <div class="fl-delta-item">
+            <div class="icon">verified</div>
+            <div class="metric">Replacement</div>
+            <div class="label">Protection</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # Navy footer banner — the closing pitch number
     st.markdown(
@@ -1117,11 +1407,7 @@ if view == "inpatient":
     florence_eyebrow("02 · Channel pricing")
     florence_headline(
         "Two channels. Same Florence economics.",
-        subhead=(
-            "Florence collects its core rate regardless of channel. "
-            "Selling direct gives the customer the core price. Selling through AMN "
-            "adds AMN's distribution margin on top — Florence's net is identical."
-        ),
+        subhead="Direct = customer-friendly price. AMN = partner markup on top. Florence net is identical.",
     )
     core_monthly = sys_recs["target_monthly_fee"].median()
     core_per_rn_per_mo = sys_recs["target_monthly_florence_fee_account"].sum() / max(sys_recs["rn_need"].sum(), 1)
@@ -1177,11 +1463,7 @@ if view == "inpatient":
     florence_eyebrow("03 · Send this to the customer")
     florence_headline(
         "Customer-ready proposal in one click.",
-        subhead=(
-            f"Each file uses this system's recommended Target calibration "
-            f"({median_target_pct:.0%} FICA-offset). Reproducible — same system, same numbers, "
-            f"every time. Brand-aligned with the customer-facing deck."
-        ),
+        subhead=f"Recommended Target calibration · {median_target_pct:.0%} offset · reproducible.",
     )
     safe_sys = selected_sys_name.replace(" ", "_").replace("/", "_").replace("'", "")[:48]
     rc1, rc2, rc3, rc4 = st.columns(4)
@@ -1556,13 +1838,7 @@ if view == "pipeline":
     florence_eyebrow("Pipeline")
     florence_headline(
         "Your active deals. One next move per deal.",
-        subhead=(
-            "Every deal you open here is saved. The workbench tracks the "
-            "stage and suggests the next-best-move so you spend cycles on "
-            "selling, not on remembering. Generate proposals from the "
-            "**Inpatient** or **Outpatient** tabs; come back here to log "
-            "discovery notes, advance stages, and escalate to leadership."
-        ),
+        subhead="Stage, notes, and the next-best-move — auto-suggested.",
     )
 
     _pipe_rep_email = (
@@ -1619,11 +1895,7 @@ if view == "market_intel":
     florence_eyebrow("Market intelligence")
     florence_headline(
         "What changed in the U.S. RN labor market.",
-        subhead=(
-            "Live signals from BLS JOLTS (healthcare openings, hires, quits), "
-            "CES (employment + wages), and OEWS (state-level RN wages). "
-            "Refreshed manually via `python -m surveillance.briefing` — wire to cron monthly."
-        ),
+        subhead="Live BLS · JOLTS · CES · OEWS.",
     )
 
     # ─── Natural-language query box (AI Q&A if configured, else rule-based) ─
@@ -1936,11 +2208,7 @@ if view == "forecast":
     florence_eyebrow("Forecasting")
     florence_headline(
         "Where the RN labor market is going.",
-        subhead=(
-            "SARIMA projections of BLS JOLTS healthcare signals 6-24 months forward. "
-            "Use these for annual sales planning, pricing-power forecasts, and the "
-            "multi-year TAM story in fundraising decks."
-        ),
+        subhead="SARIMA projection · 6–24 months forward · 80% confidence band.",
     )
 
     # ─── Controls ─────────────────────────────────────────────────────
@@ -2182,14 +2450,7 @@ if view == "outpatient":
     florence_eyebrow("Outpatient · Build a customer proposal")
     florence_headline(
         "Monthly subscription. Credit card. Expand RN capacity.",
-        subhead=(
-            "Surgery centers, home health, skilled nursing, hospice, and dialysis "
-            "are all RN-constrained. Florence delivers permanent international RNs "
-            "on a **monthly credit-card subscription** — not the $50K placement "
-            "fee model used for hospitals. One-month deposit at signing, applied "
-            "to the final month. No long-term commitment beyond the 24-month "
-            "service term. (For hospital-level proposals, see the **Inpatient** tab.)"
-        ),
+        subhead="ASCs · HHAs · SNFs · hospice · dialysis. Monthly credit-card subscription with 1-month deposit.",
     )
 
     @st.cache_data
@@ -2340,12 +2601,6 @@ if view == "outpatient":
                 <div class="card-number" style="font-size:2.6rem;">Labor-capped</div>
               </div>
               <div class="card-headline">Revenue ceiling = staffing ceiling.</div>
-              <div class="card-body">
-                Every open RN seat is procedures not done, episodes not opened,
-                bed-days not billed. Operators in these settings turn business
-                away because they can't hire fast enough. The cost of inaction
-                isn't agency premium — it's foregone revenue.
-              </div>
             </div>
             """,
             unsafe_allow_html=True,
@@ -2353,7 +2608,7 @@ if view == "outpatient":
     with card_arrow:
         st.markdown(
             "<div style='font-family:Newsreader,serif; font-size:2rem; color:#0BC5A0;"
-            " text-align:center; padding-top:90px;'>→</div>",
+            " text-align:center; padding-top:75px;'>→</div>",
             unsafe_allow_html=True,
         )
     with card_r:
@@ -2365,17 +2620,40 @@ if view == "outpatient":
                 <div class="card-number">${median_fee:,.0f}</div>
                 <div class="card-unit">/RN/month</div>
               </div>
-              <div class="card-headline">Monthly subscription. Credit card.</div>
-              <div class="card-body">
-                Permanent international RNs delivered as a monthly subscription —
-                no $50K placement fee, no upfront capex. One-month deposit at
-                signing, applied to month 24. Each placed RN unlocks a median
-                <b>${median_rev_per_rn_mo:,.0f}/RN/mo</b> in incremental revenue.
-              </div>
+              <div class="card-headline">Monthly subscription.</div>
             </div>
             """,
             unsafe_allow_html=True,
         )
+
+    # Delta row — 4 icons showing what shifts in outpatient when Florence is in
+    st.markdown(
+        f"""
+        <div class="fl-delta-row">
+          <div class="fl-delta-item">
+            <div class="icon">trending_up</div>
+            <div class="metric">${median_rev_per_rn_mo:,.0f}/RN/mo</div>
+            <div class="label">Revenue unlocked</div>
+          </div>
+          <div class="fl-delta-item">
+            <div class="icon">credit_card</div>
+            <div class="metric">Monthly</div>
+            <div class="label">Credit card subscription</div>
+          </div>
+          <div class="fl-delta-item">
+            <div class="icon">savings</div>
+            <div class="metric">No $50K</div>
+            <div class="label">No upfront capex</div>
+          </div>
+          <div class="fl-delta-item">
+            <div class="icon">loyalty</div>
+            <div class="metric">Permanent</div>
+            <div class="label">FTEs, not agency</div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     st.markdown(
         f"""
@@ -2392,106 +2670,63 @@ if view == "outpatient":
         unsafe_allow_html=True,
     )
 
-    # ── How the customer pays (NEW) ──────────────────────────────────
+    # ── How the customer pays (NEW — timeline redesign) ─────────────
     st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
     florence_eyebrow("02 · How the customer pays")
-    florence_headline(
-        "Monthly subscription. Credit card on file. One-month deposit.",
-        subhead=(
-            "Outpatient operators don't buy on a $50K placement-fee model — "
-            "they buy on an opex line item. Florence charges the customer's "
-            "credit card on the same day each month, with a one-month deposit "
-            "at signing applied to month 24. No invoices, no collections, "
-            "no committee approvals."
-        ),
-    )
+    florence_headline("Monthly subscription. Credit card. 1-month deposit.")
 
     median_fee_per_rn = float(median_fee)
-    _ex_rn_count = 8  # typical outpatient cohort size
+    _ex_rn_count = 8
     _ex_monthly = median_fee_per_rn * _ex_rn_count
-    _ex_first_month = _ex_monthly * 2  # deposit + first month
+    _ex_first_month = _ex_monthly * 2
     _ex_term_total = _ex_monthly * 24
 
-    pay_cols = st.columns(3)
-    with pay_cols[0]:
-        st.markdown(
-            f"""
-            <div class="florence-card today" style="height:auto;">
-              <div class="card-label">Month 1 · at signing</div>
-              <div class="card-number" style="font-size:2.3rem;">
-                ${median_fee_per_rn * 2:,.0f}<span style="font-size:1rem;color:#5B6675;">/RN</span>
-              </div>
-              <div class="card-body" style="margin-top:8px;">
-                Deposit (1 month) + first month's subscription. Charged at
-                contract signing.
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with pay_cols[1]:
-        st.markdown(
-            f"""
-            <div class="florence-card today" style="height:auto;">
-              <div class="card-label">Months 2 – 23 · recurring</div>
-              <div class="card-number" style="font-size:2.3rem;">
-                ${median_fee_per_rn:,.0f}<span style="font-size:1rem;color:#5B6675;">/RN/mo</span>
-              </div>
-              <div class="card-body" style="margin-top:8px;">
-                Auto-charged to credit card on the same day each month.
-                No invoices. No chasing payment.
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    with pay_cols[2]:
-        st.markdown(
-            f"""
-            <div class="florence-card with-florence" style="height:auto;">
-              <div class="card-label">Month 24 · final</div>
-              <div class="card-number" style="font-size:2.3rem;">$0</div>
-              <div class="card-body" style="margin-top:8px;">
-                Deposit applied to the final month. Customer's 24-month total
-                per RN: <b>${median_fee_per_rn * 24:,.0f}</b>.
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-    # Worked example so the rep can quote a real cohort
     st.markdown(
         f"""
-        <div style="margin-top:14px; padding:14px 18px; background:#F4F6F8;
-                    border-left:3px solid #0BC5A0; border-radius:6px;">
-          <div style="font-family:Inter,sans-serif; font-size:0.72rem;
-                      font-weight:600; letter-spacing:0.18em; color:#5B6675;
-                      text-transform:uppercase;">WORKED EXAMPLE — 8 RN COHORT</div>
-          <div style="font-family:Inter,sans-serif; font-size:0.95rem;
-                      color:#0F1B2D; margin-top:6px; line-height:1.6;">
-            For a typical <b>8-RN outpatient cohort at ${median_fee_per_rn:,.0f}/RN/mo</b>:
-            <br>
-            <b>${_ex_first_month:,.0f}</b> charged at signing (deposit + month 1)
-            &nbsp;→&nbsp;
-            <b>${_ex_monthly:,.0f}/month</b> for months 2 – 23
-            &nbsp;→&nbsp;
-            <b>$0</b> in month 24
-            &nbsp;→&nbsp;
-            <b>${_ex_term_total:,.0f}</b> total over the 24-month term.
+        <div class="fl-timeline">
+          <div class="fl-timeline-track">
+            <div class="fl-timeline-node start">
+              <div class="dot">M1</div>
+              <div class="amount">${median_fee_per_rn * 2:,.0f}<span style="font-size:0.7rem; color:#5B6675; margin-left:3px;">/RN</span></div>
+              <div class="label">At signing</div>
+              <div class="caption">Deposit + first month</div>
+            </div>
+            <div class="fl-timeline-node">
+              <div class="dot">M2 – 23</div>
+              <div class="amount">${median_fee_per_rn:,.0f}<span style="font-size:0.7rem; color:#5B6675; margin-left:3px;">/RN/mo</span></div>
+              <div class="label">Recurring</div>
+              <div class="caption">Auto-charged monthly</div>
+            </div>
+            <div class="fl-timeline-node end">
+              <div class="dot">M24</div>
+              <div class="amount">$0</div>
+              <div class="label">Final</div>
+              <div class="caption">Deposit applied</div>
+            </div>
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
+    # Worked example — compact, single line
+    st.markdown(
+        f"""
+        <div style="margin-top:14px; padding:12px 18px; background:#F4F6F8;
+                    border-left:3px solid #0BC5A0; border-radius:6px;
+                    font-family:Inter,sans-serif; font-size:0.9rem; color:#0F1B2D;">
+          <b>Example · 8-RN cohort:</b>
+          <b>${_ex_first_month:,.0f}</b> at signing →
+          <b>${_ex_monthly:,.0f}/mo</b> for 22 months →
+          <b>${_ex_term_total:,.0f}</b> total.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
     st.caption(
-        f"Median per-RN monthly fee in this filter is **${median_fee_per_rn:,.0f}**. "
-        "Internally, this is sized to a 40% offset of the customer's payroll-side "
-        "tax savings on F-1 RN wages — the FICA_OFFSET_TARGET mode. To the "
-        "customer, it's just a monthly subscription. Lead with the subscription "
-        "number; the FICA mechanics are how WE size the fee, not how we "
-        "explain it to the buyer."
+        f"Median fee: **${median_fee_per_rn:,.0f}/RN/month** · sized to 40% offset of the "
+        "customer's payroll tax savings (internal mechanic — say *monthly subscription* to the customer)."
     )
 
     # ── By-type breakdown ─────────────────────────────────────────────
