@@ -137,22 +137,23 @@ def _tile_html(row: dict) -> str:
     term_savings = float(row.get("term_savings_target", 0) or 0)
 
     # ─── Multi-logo consortium variant ────────────────────────────────
+    # NOTE: all HTML is built as single-line strings to avoid Streamlit's
+    # markdown parser treating indented multi-line interpolation as code blocks.
     if child_domains:
         child_imgs = "".join(
             f"<img src='https://logo.clearbit.com/{d}' alt='{d} logo' "
             f"onerror=\"this.style.display='none';\">"
             for d in child_domains
         )
-        head_html = f"""
-        <div class='fl-tile-logo-strip'>{child_imgs}</div>
-        <div class='fl-tile-consortium-name'>{name}</div>
-        {rank_html}
-        <div class='fl-tile-consortium-tag' style='font-family:Inter,sans-serif;
-             font-size:0.7rem; color:#5B6675; letter-spacing:0.06em;
-             text-transform:uppercase; margin-top:2px; font-weight:600;'>
-          Multi-campus consortium
-        </div>
-        """
+        head_html = (
+            f"<div class='fl-tile-logo-strip'>{child_imgs}</div>"
+            f"<div class='fl-tile-consortium-name'>{name}</div>"
+            f"{rank_html}"
+            f"<div class='fl-tile-consortium-tag' "
+            f"style='font-family:Inter,sans-serif; font-size:0.7rem; "
+            f"color:#5B6675; letter-spacing:0.06em; text-transform:uppercase; "
+            f"margin-top:2px; font-weight:600;'>Multi-campus consortium</div>"
+        )
     else:
         # ─── Single-logo standard tile ────────────────────────────────
         if domain:
@@ -166,39 +167,25 @@ def _tile_html(row: dict) -> str:
             )
         else:
             logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
-        head_html = f"""
-        <div class='fl-tile-head'>
-          {logo_html}
-          <div>
-            <div class='fl-tile-name'>{name}</div>
-            {rank_html}
-          </div>
-        </div>
-        """
+        head_html = (
+            f"<div class='fl-tile-head'>{logo_html}"
+            f"<div><div class='fl-tile-name'>{name}</div>{rank_html}</div>"
+            f"</div>"
+        )
 
-    return f"""
-    <div class='fl-tile'>
-      {head_html}
-      <div class='fl-tile-stats'>
-        <div class='fl-tile-stat'>
-          <div class='v'>{n_fac:,}</div>
-          <div class='l'>Facilities</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>{rn_need:,}</div>
-          <div class='l'>RN need</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>{_fmt_big(monthly_fee)}/mo</div>
-          <div class='l'>Florence fee</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>{_fmt_big(term_savings)}</div>
-          <div class='l'>24-mo savings</div>
-        </div>
-      </div>
-    </div>
-    """
+    stats_html = (
+        f"<div class='fl-tile-stats'>"
+        f"<div class='fl-tile-stat'><div class='v'>{n_fac:,}</div>"
+        f"<div class='l'>Facilities</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>{rn_need:,}</div>"
+        f"<div class='l'>RN need</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(monthly_fee)}/mo</div>"
+        f"<div class='l'>Florence fee</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_savings)}</div>"
+        f"<div class='l'>24-mo savings</div></div>"
+        f"</div>"
+    )
+    return f"<div class='fl-tile'>{head_html}{stats_html}</div>"
 
 
 # ─── Streamlit grid renderer ────────────────────────────────────────
@@ -272,38 +259,26 @@ def _hospital_tile_html(row: dict, sys_logo_lookup: dict) -> str:
     else:
         logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
 
-    return f"""
-    <div class='fl-tile'>
-      <div class='fl-tile-head'>
-        {logo_html}
-        <div>
-          <div class='fl-tile-name'>{name}</div>
-          <div style='font-family:Inter,sans-serif; font-size:0.78rem;
-                      color:#5B6675; margin-top:3px;'>
-            {sys_name} · {city}, {state}
-          </div>
-        </div>
-      </div>
-      <div class='fl-tile-stats'>
-        <div class='fl-tile-stat'>
-          <div class='v'>{rn_need:,}</div>
-          <div class='l'>RN need</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>${agency_premium:,.0f}/hr</div>
-          <div class='l'>Agency rate</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>{_fmt_big(term_savings)}</div>
-          <div class='l'>24-mo savings</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>{deal_score:.0f}/100</div>
-          <div class='l'>Deal score</div>
-        </div>
-      </div>
-    </div>
-    """
+    # Single-line HTML to avoid Streamlit markdown parsing nested indentation
+    # as code blocks.
+    return (
+        f"<div class='fl-tile'>"
+        f"<div class='fl-tile-head'>{logo_html}"
+        f"<div><div class='fl-tile-name'>{name}</div>"
+        f"<div style='font-family:Inter,sans-serif; font-size:0.78rem; "
+        f"color:#5B6675; margin-top:3px;'>{sys_name} · {city}, {state}</div>"
+        f"</div></div>"
+        f"<div class='fl-tile-stats'>"
+        f"<div class='fl-tile-stat'><div class='v'>{rn_need:,}</div>"
+        f"<div class='l'>RN need</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>${agency_premium:,.0f}/hr</div>"
+        f"<div class='l'>Agency rate</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_savings)}</div>"
+        f"<div class='l'>24-mo savings</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>{deal_score:.0f}/100</div>"
+        f"<div class='l'>Deal score</div></div>"
+        f"</div></div>"
+    )
 
 
 def render_hospital_tile_grid(st, recs_df: pd.DataFrame,
@@ -382,35 +357,23 @@ def _outpatient_tile_html(row: dict) -> str:
     else:
         logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
 
-    return f"""
-    <div class='fl-tile'>
-      <div class='fl-tile-head'>
-        {logo_html}
-        <div>
-          <div class='fl-tile-name'>{name}</div>
-          <div class='fl-tile-rank'>{primary_state}</div>
-        </div>
-      </div>
-      <div class='fl-tile-stats'>
-        <div class='fl-tile-stat'>
-          <div class='v'>{n_facilities:,}</div>
-          <div class='l'>Facilities</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>{rn:,}</div>
-          <div class='l'>RNs placeable</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>{_fmt_big(term_rev)}</div>
-          <div class='l'>24-mo uplift</div>
-        </div>
-        <div class='fl-tile-stat'>
-          <div class='v'>{_fmt_big(term_rev/2)}/yr</div>
-          <div class='l'>Annual</div>
-        </div>
-      </div>
-    </div>
-    """
+    # Single-line HTML to avoid Streamlit markdown code-block treatment.
+    return (
+        f"<div class='fl-tile'>"
+        f"<div class='fl-tile-head'>{logo_html}"
+        f"<div><div class='fl-tile-name'>{name}</div>"
+        f"<div class='fl-tile-rank'>{primary_state}</div></div></div>"
+        f"<div class='fl-tile-stats'>"
+        f"<div class='fl-tile-stat'><div class='v'>{n_facilities:,}</div>"
+        f"<div class='l'>Facilities</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>{rn:,}</div>"
+        f"<div class='l'>RNs placeable</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_rev)}</div>"
+        f"<div class='l'>24-mo uplift</div></div>"
+        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_rev/2)}/yr</div>"
+        f"<div class='l'>Annual</div></div>"
+        f"</div></div>"
+    )
 
 
 def render_outpatient_tile_grid(st, nh_df: pd.DataFrame,
