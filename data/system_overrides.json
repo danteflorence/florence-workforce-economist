@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "updated_at": "2026-05-30T16:17:41",
+  "overrides": [
+    {
+      "ccn": "240020",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; CAMBRIDGE MEDICAL CENTER, CAMBRIDGE MN)",
+      "created_at": "2026-05-30T16:16:42"
+    },
+    {
+      "ccn": "240038",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; ALLINA UNITED HOSPITAL, SAINT PAUL MN)",
+      "created_at": "2026-05-30T16:16:42"
+    },
+    {
+      "ccn": "240057",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; ABBOTT NORTHWESTERN HOSPITAL, MINNEAPOLIS MN)",
+      "created_at": "2026-05-30T16:16:42"
+    },
+    {
+      "ccn": "240076",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; BUFFALO HOSPITAL, BUFFALO MN)",
+      "created_at": "2026-05-30T16:16:42"
+    },
+    {
+      "ccn": "240104",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; ST FRANCIS REGIONAL MEDICAL CENTER, SHAKOPEE MN)",
+      "created_at": "2026-05-30T16:16:42"
+    },
+    {
+      "ccn": "240115",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; MERCY HOSPITAL, COON RAPIDS MN)",
+      "created_at": "2026-05-30T16:16:42"
+    },
+    {
+      "ccn": "241378",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; NEW ULM MEDICAL CENTER, NEW ULM MN)",
+      "created_at": "2026-05-30T16:16:42"
+    },
+    {
+      "ccn": "521349",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; RIVER FALLS AREA HOSPITAL, RIVER FALLS WI)",
+      "created_at": "2026-05-30T16:16:42"
+    },
+    {
+      "ccn": "240069",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; OWATONNA HOSPITAL, OWATONNA MN)",
+      "created_at": "2026-05-30T16:17:41"
+    },
+    {
+      "ccn": "240071",
+      "new_system_id": "sutter_health",
+      "new_system_name": "Sutter Health",
+      "note": "Allina Health joined Sutter Health 2026 (was Allina; ALLINA HEALTH FARIBAULT MEDICAL CENTER, FARIBAULT MN)",
+      "created_at": "2026-05-30T16:17:41"
+    }
+  ]
+}
