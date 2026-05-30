@@ -70,6 +70,15 @@ def merged_systems(sys_agg: pd.DataFrame,
     )
     if "child_domains" not in merged.columns:
         merged["child_domains"] = ""
+    # Defensive: ensure stat columns the tiles will read exist
+    for col, default in [
+        ("rn_need", 0),
+        ("n_facilities", 0),
+        ("monthly_fee_target", 0),
+        ("term_savings_target", 0),
+    ]:
+        if col not in merged.columns:
+            merged[col] = default
     # Drop the "independent" bucket from the tiles — it's not a system
     merged = merged[merged["health_system_id"] != "independent"]
     # Sort: ranked systems first (by rank), then unranked by RN need desc

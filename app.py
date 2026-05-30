@@ -1317,6 +1317,7 @@ if view == "inpatient":
         fr.groupby(["health_system_id", "health_system"])
         .agg(
             n_facilities=("ccn", "count"),
+            rn_need=("rn_need", "sum"),
             monthly_fee_target=("target_monthly_florence_fee_account", "sum"),
             term_savings_target=("target_term_net_savings_account", "sum"),
             primary_state=("state", lambda s: s.mode().iat[0] if len(s.mode()) else ""),
