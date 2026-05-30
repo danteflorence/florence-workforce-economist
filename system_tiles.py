@@ -53,17 +53,23 @@ def merged_systems(sys_agg: pd.DataFrame,
                    directory: Optional[pd.DataFrame] = None) -> pd.DataFrame:
     """Join the Florence system aggregation with the Becker directory.
 
-    Adds: becker_rank_2026, display_name (override), domain.
+    Adds: becker_rank_2026, display_name (override), domain, child_domains.
     Sorts by Becker rank ASC, then by RN need DESC for unranked rows.
     """
     if directory is None:
         directory = load_directory()
+    # Backwards-compat: child_domains column may be missing in older CSVs
+    dir_cols = ["florence_system_id", "becker_rank_2026",
+                "display_name", "domain"]
+    if "child_domains" in directory.columns:
+        dir_cols.append("child_domains")
     merged = sys_agg.merge(
-        directory[["florence_system_id", "becker_rank_2026",
-                   "display_name", "domain"]],
+        directory[dir_cols],
         left_on="health_system_id", right_on="florence_system_id",
         how="left",
     )
+    if "child_domains" not in merged.columns:
+        merged["child_domains"] = ""
     # Drop the "independent" bucket from the tiles — it's not a system
     merged = merged[merged["health_system_id"] != "independent"]
     # Sort: ranked systems first (by rank), then unranked by RN need desc
@@ -97,10 +103,15 @@ def _fmt_big(v: float) -> str:
 
 
 def _tile_html(row: dict) -> str:
-    """Build the HTML for one tile (logo + name + stats). No button — the
-    button is rendered by Streamlit alongside the HTML for click handling."""
+    """Build the HTML for one tile. Renders multi-logo strip if child_domains
+    is populated (for consortium tiles like UC Health), otherwise single logo."""
     name = row.get("display_name") or row.get("health_system") or "Unknown"
     domain = (row.get("domain") or "").strip()
+    child_domains_raw = (row.get("child_domains") or "").strip()
+    child_domains = [
+        d.strip() for d in child_domains_raw.replace(",", ";").split(";")
+        if d.strip()
+    ]
     rank = row.get("becker_rank_2026")
     rank_html = ""
     if rank == rank and rank is not None:  # not NaN
@@ -110,32 +121,55 @@ def _tile_html(row: dict) -> str:
             pass
 
     inits = _initials(name)
-    if domain:
-        logo_html = (
-            f"<img class='fl-tile-logo-img' "
-            f"src='https://logo.clearbit.com/{domain}' "
-            f"alt='{name} logo' "
-            f"onerror=\"this.style.display='none'; "
-            f"this.nextElementSibling.style.display='flex';\">"
-            f"<div class='fl-tile-logo-fallback' style='display:none;'>{inits}</div>"
-        )
-    else:
-        logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
 
     n_fac = int(row.get("n_facilities", 0) or 0)
     rn_need = int(row.get("rn_need", 0) or 0)
     monthly_fee = float(row.get("monthly_fee_target", 0) or 0)
     term_savings = float(row.get("term_savings_target", 0) or 0)
 
+    # ─── Multi-logo consortium variant ────────────────────────────────
+    if child_domains:
+        child_imgs = "".join(
+            f"<img src='https://logo.clearbit.com/{d}' alt='{d} logo' "
+            f"onerror=\"this.style.display='none';\">"
+            for d in child_domains
+        )
+        head_html = f"""
+        <div class='fl-tile-logo-strip'>{child_imgs}</div>
+        <div class='fl-tile-consortium-name'>{name}</div>
+        {rank_html}
+        <div class='fl-tile-consortium-tag' style='font-family:Inter,sans-serif;
+             font-size:0.7rem; color:#5B6675; letter-spacing:0.06em;
+             text-transform:uppercase; margin-top:2px; font-weight:600;'>
+          Multi-campus consortium
+        </div>
+        """
+    else:
+        # ─── Single-logo standard tile ────────────────────────────────
+        if domain:
+            logo_html = (
+                f"<img class='fl-tile-logo-img' "
+                f"src='https://logo.clearbit.com/{domain}' "
+                f"alt='{name} logo' "
+                f"onerror=\"this.style.display='none'; "
+                f"this.nextElementSibling.style.display='flex';\">"
+                f"<div class='fl-tile-logo-fallback' style='display:none;'>{inits}</div>"
+            )
+        else:
+            logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
+        head_html = f"""
+        <div class='fl-tile-head'>
+          {logo_html}
+          <div>
+            <div class='fl-tile-name'>{name}</div>
+            {rank_html}
+          </div>
+        </div>
+        """
+
     return f"""
     <div class='fl-tile'>
-      <div class='fl-tile-head'>
-        {logo_html}
-        <div>
-          <div class='fl-tile-name'>{name}</div>
-          {rank_html}
-        </div>
-      </div>
+      {head_html}
       <div class='fl-tile-stats'>
         <div class='fl-tile-stat'>
           <div class='v'>{n_fac:,}</div>

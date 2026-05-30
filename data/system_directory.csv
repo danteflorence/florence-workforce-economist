@@ -1,41 +1,42 @@
-becker_rank_2026,florence_system_id,display_name,domain,notes
-1,hca,HCA Healthcare,hcahealthcare.com,Nashville TN · 190 hospitals
-2,va,Veterans Health Administration,va.gov,Federal · 170 hospitals
-3,commonspirit,CommonSpirit Health,commonspirit.org,Chicago · 158 hospitals
-4,lifepoint_health,Lifepoint Health,lifepointhealth.net,Brentwood TN · 135 hospitals
-5,ascension,Ascension,ascension.org,St. Louis · 119 hospitals
-6,scionhealth,ScionHealth,scionhealth.com,Louisville KY · 94 hospitals
-7,trinity_health,Trinity Health,trinity-health.org,Livonia MI · 92 hospitals
-8,advocate_health,Advocate Health,advocatehealth.org,Charlotte NC · 69 hospitals
-9,christus_health,Christus Health,christushealth.org,Irving TX · 66 hospitals
-10,community_health_systems,Community Health Systems,chs.net,Franklin TN · 65 hospitals
-11,adventhealth,AdventHealth,adventhealth.com,Altamonte Springs FL · 57 hospitals
-12,sanford_health,Sanford Health,sanfordhealth.org,Sioux Falls SD · 56 hospitals
-13,mercy_health,Mercy,mercy.net,St. Louis · 55 hospitals
-14,prime_healthcare,Prime Healthcare,primehealthcare.com,Ontario CA · 54 hospitals
-15,baylor_scott_white,Baylor Scott & White Health,bswhealth.com,Dallas · 53 hospitals
-16,providence,Providence,providence.org,Renton WA · 51 hospitals
-17,tenet_healthcare,Tenet Healthcare,tenethealth.com,Dallas · 50 hospitals
-18,bon_secours_mercy_health,Bon Secours Mercy Health,bsmhealth.com,Cincinnati · 47 hospitals
-19,ochsner,Ochsner Health,ochsner.org,New Orleans · 47 hospitals
-20,upmc,UPMC,upmc.com,Pittsburgh · 40+ hospitals
-21,kaiser_permanente,Kaiser Permanente,kp.org,Oakland CA · 40 hospitals
-22,avera_health,Avera Health,avera.org,Sioux Falls SD · 38 hospitals
-23,intermountain_health,Intermountain Healthcare,intermountainhealthcare.org,Salt Lake City · 34 hospitals
-24,,Great Plains Health Alliance,gpha.org,Wichita KS · 32 hospitals · NOT IN FLORENCE UNIVERSE
-25,banner_health,Banner Health,bannerhealth.com,Phoenix · 33 hospitals
-26,jefferson_health,Jefferson Health,jeffersonhealth.org,Philadelphia · 33 hospitals
-27,ardent_health,Ardent Health Services,ardenthealth.com,Nashville TN · 30 hospitals
-28,northwell_health,Northwell Health,northwell.edu,New Hyde Park NY · 28 hospitals
-29,texas_health_resources,Texas Health Resources,texashealth.org,Arlington TX · 29 hospitals
-30,universal_health_services,Universal Health Services,uhsinc.com,King of Prussia PA · 29 hospitals
-31,adventist_health,Adventist Health,adventisthealth.org,Roseville CA · 27 hospitals
-32,piedmont_healthcare,Piedmont Healthcare,piedmont.org,Atlanta · 27 hospitals
-33,orlando_health,Orlando Health,orlandohealth.com,Orlando FL · 25 hospitals
-34,west_virginia_university_health_system,WVU Health System,wvumedicine.org,Morgantown WV · 25 hospitals
-35,baptist_memorial_health_care_corporation,Baptist Memphis,baptistonline.org,Memphis TN · 24 hospitals
-36,community_hospital_corporation,Community Hospital Corp.,communityhospitalcorp.com,Plano TX · 23 hospitals
-37,ssm_health,SSM Health,ssmhealth.com,St. Louis · 23 hospitals
-38,cleveland_clinic,Cleveland Clinic,clevelandclinic.org,Cleveland · 23 hospitals
-39,sutter_health,Sutter Health,sutterhealth.org,Sacramento CA · 21 hospitals
-40,,Indian Health Service,ihs.gov,Rockville MD · 21 hospitals · NOT IN FLORENCE UNIVERSE
+becker_rank_2026,florence_system_id,display_name,domain,child_domains,notes
+1,hca,HCA Healthcare,hcahealthcare.com,,Nashville TN · 190 hospitals
+2,va,Veterans Health Administration,va.gov,,Federal · 170 hospitals
+3,commonspirit,CommonSpirit Health,commonspirit.org,,Chicago · 158 hospitals
+4,lifepoint_health,Lifepoint Health,lifepointhealth.net,,Brentwood TN · 135 hospitals
+5,ascension,Ascension,ascension.org,,St. Louis · 119 hospitals
+6,scionhealth,ScionHealth,scionhealth.com,,Louisville KY · 94 hospitals
+7,trinity_health,Trinity Health,trinity-health.org,,Livonia MI · 92 hospitals
+8,advocate_health,Advocate Health,advocatehealth.org,,Charlotte NC · 69 hospitals
+9,christus_health,Christus Health,christushealth.org,,Irving TX · 66 hospitals
+10,community_health_systems,Community Health Systems,chs.net,,Franklin TN · 65 hospitals
+11,adventhealth,AdventHealth,adventhealth.com,,Altamonte Springs FL · 57 hospitals
+12,sanford_health,Sanford Health,sanfordhealth.org,,Sioux Falls SD · 56 hospitals
+13,mercy_health,Mercy,mercy.net,,St. Louis · 55 hospitals
+14,prime_healthcare,Prime Healthcare,primehealthcare.com,,Ontario CA · 54 hospitals
+15,baylor_scott_white,Baylor Scott & White Health,bswhealth.com,,Dallas · 53 hospitals
+16,providence,Providence,providence.org,,Renton WA · 51 hospitals
+17,tenet_healthcare,Tenet Healthcare,tenethealth.com,,Dallas · 50 hospitals · 4 hospitals divested to UCI 2024
+18,bon_secours_mercy_health,Bon Secours Mercy Health,bsmhealth.com,,Cincinnati · 47 hospitals
+19,ochsner,Ochsner Health,ochsner.org,,New Orleans · 47 hospitals
+20,upmc,UPMC,upmc.com,,Pittsburgh · 40+ hospitals
+21,kaiser_permanente,Kaiser Permanente,kp.org,,Oakland CA · 40 hospitals
+22,avera_health,Avera Health,avera.org,,Sioux Falls SD · 38 hospitals
+23,intermountain_health,Intermountain Healthcare,intermountainhealthcare.org,,Salt Lake City · 34 hospitals
+24,,Great Plains Health Alliance,gpha.org,,Wichita KS · 32 hospitals · NOT IN FLORENCE UNIVERSE
+25,banner_health,Banner Health,bannerhealth.com,,Phoenix · 33 hospitals
+26,jefferson_health,Jefferson Health,jeffersonhealth.org,,Philadelphia · 33 hospitals
+27,ardent_health,Ardent Health Services,ardenthealth.com,,Nashville TN · 30 hospitals
+28,northwell_health,Northwell Health,northwell.edu,,New Hyde Park NY · 28 hospitals
+29,texas_health_resources,Texas Health Resources,texashealth.org,,Arlington TX · 29 hospitals
+30,universal_health_services,Universal Health Services,uhsinc.com,,King of Prussia PA · 29 hospitals
+31,adventist_health,Adventist Health,adventisthealth.org,,Roseville CA · 27 hospitals
+32,piedmont_healthcare,Piedmont Healthcare,piedmont.org,,Atlanta · 27 hospitals
+33,orlando_health,Orlando Health,orlandohealth.com,,Orlando FL · 25 hospitals
+34,west_virginia_university_health_system,WVU Health System,wvumedicine.org,,Morgantown WV · 25 hospitals
+35,baptist_memorial_health_care_corporation,Baptist Memphis,baptistonline.org,,Memphis TN · 24 hospitals
+36,community_hospital_corporation,Community Hospital Corp.,communityhospitalcorp.com,,Plano TX · 23 hospitals
+37,ssm_health,SSM Health,ssmhealth.com,,St. Louis · 23 hospitals
+38,cleveland_clinic,Cleveland Clinic,clevelandclinic.org,,Cleveland · 23 hospitals
+39,sutter_health,Sutter Health,sutterhealth.org,,Sacramento CA · 21 hospitals · Allina merged 2026 → 33 hospitals (CA/MN/WI)
+40,,Indian Health Service,ihs.gov,,Rockville MD · 21 hospitals · NOT IN FLORENCE UNIVERSE
+41,university_of_california_health,University of California Health,universityofcalifornia.edu,ucsf.edu;health.ucdavis.edu;health.ucsd.edu;ucihealth.org;uclahealth.org,Statewide CA · UCSF + UC Davis + UC San Diego + UC Irvine (incl. former Tenet Pacific Coast Network) + UCLA · multi-campus consortium

@@ -661,6 +661,42 @@ footer { visibility: hidden; }
 }
 .fl-tile-actions { margin-top: auto; }
 
+/* === Multi-logo strip (for consortium tiles like UC Health) === */
+.fl-tile-logo-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+    align-items: center;
+}
+.fl-tile-logo-strip img {
+    width: 38px;
+    height: 38px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #fff;
+    border: 1px solid var(--f-border);
+    padding: 3px;
+    transition: transform 0.15s ease;
+}
+.fl-tile-logo-strip img:hover {
+    transform: scale(1.08);
+}
+.fl-tile-logo-strip .fl-tile-logo-fallback {
+    width: 38px;
+    height: 38px;
+    font-size: 0.9rem;
+    border-radius: 6px;
+}
+.fl-tile-consortium-name {
+    font-family: 'Newsreader', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--f-navy);
+    line-height: 1.2;
+    margin-bottom: 4px;
+}
+
 /* === Stat tile (compact number-led) === */
 .fl-stat {
     display: flex; align-items: center; gap: 10px;
