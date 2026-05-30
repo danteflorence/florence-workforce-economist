@@ -204,7 +204,7 @@ def _tile_html(row: dict) -> str:
         f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(monthly_fee)}/mo</div>"
         f"<div class='l'>Florence fee</div></div>"
         f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_savings)}</div>"
-        f"<div class='l'>24-mo savings</div></div>"
+        f"<div class='l'>24-mo impact</div></div>"
         f"</div>"
     )
     return f"<div class='fl-tile'>{head_html}{stats_html}</div>"
@@ -283,7 +283,7 @@ def _hospital_tile_html(row: dict, sys_logo_lookup: dict) -> str:
         f"<div class='fl-tile-stat'><div class='v'>${agency_premium:,.0f}/hr</div>"
         f"<div class='l'>Agency rate</div></div>"
         f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_savings)}</div>"
-        f"<div class='l'>24-mo savings</div></div>"
+        f"<div class='l'>24-mo impact</div></div>"
         f"<div class='fl-tile-stat'><div class='v'>{deal_score:.0f}/100</div>"
         f"<div class='l'>Deal score</div></div>"
         f"</div></div>"

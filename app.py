@@ -1208,7 +1208,7 @@ florence_brand_strip(section_tag="WORKFORCE ECONOMIST  ·  INTERNAL")
 if view == "inpatient":
     florence_eyebrow("Inpatient · Build a customer proposal")
     florence_headline(
-        "Pick a hospital system. See the savings.",
+        "Pick a hospital system. See the impact.",
         subhead="Premium agency labor → permanent international RNs. One-click proposal.",
     )
 
@@ -1308,9 +1308,16 @@ if view == "inpatient":
     if not show_independent:
         fr = fr[fr["health_system"] != "Independent / Unknown"]
 
+    # Group by health_system_id ONLY to avoid duplicates when the universe
+    # has inconsistent display names for the same system (e.g. "CommonSpirit"
+    # vs "CommonSpirit Health"). We take the longest health_system string in
+    # each group as the canonical name; the directory display_name overrides
+    # this downstream in merged_systems().
     sys_agg = (
-        fr.groupby(["health_system_id", "health_system"])
+        fr.groupby("health_system_id")
         .agg(
+            health_system=("health_system",
+                           lambda s: max(s.dropna().astype(str), key=len, default="")),
             n_facilities=("ccn", "count"),
             rn_need=("rn_need", "sum"),
             monthly_fee_target=("target_monthly_florence_fee_account", "sum"),
@@ -1349,7 +1356,7 @@ if view == "inpatient":
         savings_str = f"${savings_b:.2f}B" if savings_b >= 1 else f"${savings_m:,.0f}M"
         label = (
             f"{row['health_system']} ({row['primary_state']}) — "
-            f"{row['n_facilities']} facilities · saves {savings_str} over 24 mo"
+            f"{row['n_facilities']} facilities · {savings_str} impact over 24 mo"
         )
         sys_label_map[label] = row["health_system_id"]
 
@@ -1543,7 +1550,7 @@ if view == "inpatient":
           <div class="fl-delta-item">
             <div class="icon">savings</div>
             <div class="metric">${_hourly_delta:,.0f}/hr</div>
-            <div class="label">Cost saved</div>
+            <div class="label">Cost impact</div>
           </div>
           <div class="fl-delta-item">
             <div class="icon">group_add</div>
@@ -1570,7 +1577,7 @@ if view == "inpatient":
         f"""
         <div class="florence-banner">
           <div class="banner-text">
-            Annual savings opportunity · net of Florence fees and FICA equivalence
+            Annual financial impact · net of Florence fees
           </div>
           <div style="display:flex; align-items:baseline; gap:14px;">
             <div class="banner-value">{_fmt_big(annual_savings)}</div>
@@ -1772,7 +1779,7 @@ if view == "inpatient":
 
         with st.expander(
             f"{r['name']}  ·  {r['city']}, {r['state']}  ·  "
-            f"saves {_fmt_big(fac_savings)} over 24 mo  ·  "
+            f"{_fmt_big(fac_savings)} impact over 24 mo  ·  "
             f"Florence fee {_fmt_fee(t_fee)}{unit_label}",
             expanded=(i == 0),
         ):
@@ -1921,7 +1928,7 @@ if view == "inpatient":
             help=_tip("florence_fee"),
         )
         h2.metric(
-            "Total hospital savings",
+            "Total financial impact",
             _fmt_big(total_term_savings_target),
             f"vs Florence fee {_fmt_big(total_term_fee_target)}",
             help=_tip("savings", value=f"{total_term_savings_target/1e6:,.0f}M"),
@@ -1939,7 +1946,7 @@ if view == "inpatient":
             help=_tip("deal_score"),
         )
         h5.metric(
-            "System savings : fee ratio",
+            "Impact : fee ratio",
             f"{total_term_savings_target/total_term_fee_target:.1f}×"
                 if total_term_fee_target > 0 else "—",
             help=_tip("savings"),
