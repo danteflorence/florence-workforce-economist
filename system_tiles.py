@@ -141,6 +141,77 @@ def _fmt_big(v: float) -> str:
     return f"${v:,.0f}"
 
 
+def _tile_label(row: dict) -> str:
+    """Build a multi-line markdown label for the clickable tile-button.
+
+    Streamlit buttons accept limited markdown in labels: headings, bold,
+    italic, Material icons (:material/X:), and line breaks. Tiles render
+    as styled cards via CSS targeting full-width secondary buttons.
+    """
+    name = row.get("display_name") or row.get("health_system") or "Unknown"
+    rank = row.get("becker_rank_2026")
+    n_fac = int(row.get("n_facilities", 0) or 0)
+    rn_need = int(row.get("rn_need", 0) or 0)
+    monthly_fee = float(row.get("monthly_fee_target", 0) or 0)
+    term_savings = float(row.get("term_savings_target", 0) or 0)
+    child_domains_raw = (row.get("child_domains") or "").strip()
+    child_brands = [
+        _domain_to_brand_label(d.strip())
+        for d in child_domains_raw.replace(",", ";").split(";") if d.strip()
+    ]
+
+    lines = [f"### :material/business: {name}"]
+    if rank == rank and rank is not None:
+        try:
+            lines.append(f":material/military_tech: **#{int(rank)} · Becker 2026**")
+        except Exception:
+            pass
+    if child_brands:
+        lines.append("**" + "  ·  ".join(child_brands) + "**")
+    lines.append(f":material/apartment: **{n_fac:,}** facilities  ·  "
+                 f":material/groups: **{rn_need:,}** RN need")
+    lines.append(f":material/payments: **{_fmt_big(monthly_fee)}/mo** fee  ·  "
+                 f":material/trending_up: **{_fmt_big(term_savings)}** 24-mo impact")
+    return "\n\n".join(lines)
+
+
+def _hospital_tile_label(row: dict) -> str:
+    """Markdown label for a hospital tile-button."""
+    name = row.get("name", "Unknown")
+    sys_name = row.get("health_system", "Independent")
+    city = row.get("city", "")
+    state = row.get("state", "")
+    rn_need = int(row.get("rn_need", 0) or 0)
+    agency_premium = float(row.get("signal_agency_premium", 0) or 0)
+    term_savings = float(row.get("target_term_net_savings_account", 0) or 0)
+    deal_score = float(row.get("target_deal_score", 0) or 0) * 100
+    return "\n\n".join([
+        f"### :material/local_hospital: {name}",
+        f"_{sys_name} · {city}, {state}_",
+        f":material/groups: **{rn_need:,}** RN need  ·  "
+        f":material/payments: **${agency_premium:,.0f}/hr** agency rate",
+        f":material/trending_up: **{_fmt_big(term_savings)}** 24-mo impact  ·  "
+        f":material/star: **{deal_score:.0f}/100** deal score",
+    ])
+
+
+def _outpatient_tile_label(row: dict) -> str:
+    """Markdown label for an outpatient chain tile-button."""
+    name = row.get("health_system", "Unknown")
+    primary_state = row.get("primary_state", "—")
+    n_facilities = int(row.get("n", 0) or 0)
+    rn = int(row.get("rn", 0) or 0)
+    term_rev = float(row.get("rev", 0) or 0)
+    return "\n\n".join([
+        f"### :material/medical_services: {name}",
+        f"**{primary_state}** · primary state",
+        f":material/apartment: **{n_facilities:,}** facilities  ·  "
+        f":material/groups: **{rn:,}** RNs placeable",
+        f":material/trending_up: **{_fmt_big(term_rev)}** 24-mo uplift  ·  "
+        f"**{_fmt_big(term_rev/2)}/yr** annual",
+    ])
+
+
 def _tile_html(row: dict) -> str:
     """Build the HTML for one tile. Renders multi-logo strip if child_domains
     is populated (for consortium tiles like UC Health), otherwise single logo."""
@@ -224,10 +295,8 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
         return None
 
     visible = merged.head(max_tiles)
-    n_columns = 3   # 3-wide grid; CSS responsive auto-wraps on narrow screens
+    n_columns = 3
     clicked_id: Optional[str] = None
-
-    # Render in rows of n_columns
     rows_count = (len(visible) + n_columns - 1) // n_columns
     for r in range(rows_count):
         cols = st.columns(n_columns)
@@ -237,17 +306,14 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
                 continue
             row = visible.iloc[idx]
             with cols[c]:
-                st.markdown(_tile_html(row.to_dict()),
-                            unsafe_allow_html=True)
                 sys_id = row["health_system_id"]
                 if st.button(
-                    "Open →",
+                    _tile_label(row.to_dict()),
                     key=f"tile_open_{sys_id}",
-                    type="primary",
                     use_container_width=True,
+                    help=f"Open {row.get('display_name') or row.get('health_system')}",
                 ):
                     clicked_id = sys_id
-
     return clicked_id
 
 
@@ -323,14 +389,12 @@ def render_hospital_tile_grid(st, recs_df: pd.DataFrame,
                 continue
             row = visible.iloc[idx]
             with cols[c]:
-                st.markdown(_hospital_tile_html(row.to_dict(), sys_logo_lookup),
-                            unsafe_allow_html=True)
                 ccn = str(row["ccn"])
                 if st.button(
-                    "Open →",
+                    _hospital_tile_label(row.to_dict()),
                     key=f"hosp_tile_open_{ccn}",
-                    type="primary",
                     use_container_width=True,
+                    help=f"Open {row.get('name')}",
                 ):
                     clicked_ccn = ccn
     return clicked_ccn
@@ -425,14 +489,12 @@ def render_outpatient_tile_grid(st, nh_df: pd.DataFrame,
         cols = st.columns(n_columns)
         for c, row in enumerate(batch):
             with cols[c]:
-                st.markdown(_outpatient_tile_html(row.to_dict()),
-                            unsafe_allow_html=True)
                 hsid = row["health_system_id"]
                 if st.button(
-                    "Open →",
+                    _outpatient_tile_label(row.to_dict()),
                     key=f"out_tile_open_{hsid}",
-                    type="primary",
                     use_container_width=True,
+                    help=f"Open {row.get('health_system')}",
                 ):
                     clicked_id = hsid
     return clicked_id

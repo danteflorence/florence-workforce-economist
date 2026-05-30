@@ -661,6 +661,64 @@ footer { visibility: hidden; }
 }
 .fl-tile-actions { margin-top: auto; }
 
+/* === Clickable tile buttons (st.button styled as a tile-card) === */
+/* We use st.button with multi-line markdown labels as the tiles. CSS makes
+   the button look like a clickable card. Scoped to the main content area
+   so sidebar buttons stay unaffected. */
+section[data-testid="stMain"] .stButton > button[kind="secondary"] {
+    background: white !important;
+    color: var(--f-navy) !important;
+    border: 1px solid var(--f-border) !important;
+    border-radius: 12px !important;
+    padding: 18px 20px !important;
+    text-align: left !important;
+    min-height: 180px !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
+    font-family: 'Inter', sans-serif !important;
+    box-shadow: none !important;
+    line-height: 1.45 !important;
+    display: block !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+}
+section[data-testid="stMain"] .stButton > button[kind="secondary"]:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(15, 27, 45, 0.10) !important;
+    border-color: var(--f-teal) !important;
+    background: white !important;
+    color: var(--f-navy) !important;
+}
+section[data-testid="stMain"] .stButton > button[kind="secondary"]:focus {
+    outline: none !important;
+    border-color: var(--f-teal) !important;
+}
+/* Inside the tile-button, style the markdown elements */
+section[data-testid="stMain"] .stButton > button[kind="secondary"] h3 {
+    font-family: 'Newsreader', serif !important;
+    font-size: 1.15rem !important;
+    font-weight: 600 !important;
+    color: var(--f-navy) !important;
+    margin: 0 0 8px 0 !important;
+    line-height: 1.25 !important;
+}
+section[data-testid="stMain"] .stButton > button[kind="secondary"] p {
+    font-size: 0.85rem !important;
+    color: var(--f-muted) !important;
+    margin: 4px 0 !important;
+}
+section[data-testid="stMain"] .stButton > button[kind="secondary"] p strong {
+    color: var(--f-navy) !important;
+    font-weight: 600 !important;
+}
+section[data-testid="stMain"] .stButton > button[kind="secondary"] em {
+    color: var(--f-muted) !important;
+    font-style: normal !important;
+    font-size: 0.78rem !important;
+}
+/* Don't restyle the small back-buttons that have short labels */
+section[data-testid="stMain"] .stButton > button[kind="secondary"]:not([data-testid*="back"]) {}
+/* Primary buttons (e.g. "Sign in", "Mark done") keep their teal look */
+
 /* === Multi-logo strip (for consortium tiles like UC Health) === */
 .fl-tile-logo-strip {
     display: flex;
@@ -842,7 +900,7 @@ _pricing_mode_choice = st.sidebar.radio(
     label_visibility="collapsed",
     help=(
         "Flat placement fee: Florence collects a one-time fee per RN (default $50K), "
-        "amortized over the contract term. Matches the KP/AMN deck math.\n\n"
+        "amortized over the contract term. Matches the partner deck math.\n\n"
         "FICA-offset target: Florence fee sized so FICA savings cover a target % "
         "of the fee. More dynamic, captures more revenue per facility."
     ),
@@ -859,7 +917,7 @@ if pricing_mode == PricingMode.FLAT_PLACEMENT_FEE.value:
         "Placement fee per RN ($)",
         25_000, 100_000, 50_000, 1_000,
         format="$%d",
-        help="One-time per-RN placement fee. Default $50K matches the KP/AMN deck. "
+        help="One-time per-RN placement fee. Default $50K matches the partner deck. "
              "Per-system overrides live in the System Ownership tab.",
     )
     flat_fee_term_months = st.sidebar.selectbox(
@@ -907,7 +965,7 @@ with st.sidebar.expander(":material/handshake: Partner channel (atop core rate)"
         key="sb_direct_markup",
     )
     _amn_markup_int = st.slider(
-        "AMN wholesale markup", 0, 50, 20, 1,
+        "Distribution-partner markup", 0, 50, 20, 1,
         format="%d%%",
         key="sb_amn_markup",
     )
@@ -938,7 +996,7 @@ with st.sidebar.expander(":material/tune: Capacity & need assumptions", expanded
 # ── 5. MSP overlay (one-line, mostly autopilot) ──
 with st.sidebar.expander(":material/balance: MSP / agency-overlay tuning", expanded=False):
     st.caption(
-        "**Kaiser** uses real-disclosed $622M AMN overlay (+$17.39/hr). "
+        "**Kaiser** uses real-disclosed $622M partner overlay (+$17.39/hr). "
         "**11 other systems** (HCA, Sutter, Providence, UPMC, etc.) use the placeholder "
         "% below until their MSP data is disclosed."
     )
@@ -1377,6 +1435,7 @@ if view == "inpatient":
 
         if tile_mode == "Biggest health systems":
             florence_eyebrow("Top U.S. health systems · Becker's 2026 ranking")
+            st.caption(":material/touch_app: Click any tile to open the system.")
             clicked = system_tiles.render_inpatient_tile_grid(st, sys_agg)
             if clicked:
                 st.session_state["inpatient_active_system"] = clicked
@@ -1406,6 +1465,7 @@ if view == "inpatient":
         else:
             # Hospitals view — individual facilities sorted by RN need
             florence_eyebrow("Top U.S. hospitals · by RN need")
+            st.caption(":material/touch_app: Click any tile to open the hospital in Price-a-hospital.")
             clicked_ccn = system_tiles.render_hospital_tile_grid(st, fr)
             if clicked_ccn:
                 # Pre-select this hospital in the Price-a-hospital view + navigate
@@ -1589,13 +1649,13 @@ if view == "inpatient":
     )
 
     # ─────────────────────────────────────────────────────────────────
-    # 02 · CHANNEL PRICING — Direct vs Via AMN (markup atop core rate)
+    # 02 · CHANNEL PRICING — Direct vs Via distribution partner (markup atop core rate)
     # ─────────────────────────────────────────────────────────────────
     st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
     florence_eyebrow("02 · Channel pricing")
     florence_headline(
         "Two channels. Same Florence economics.",
-        subhead="Direct = customer-friendly price. AMN = partner markup on top. Florence net is identical.",
+        subhead="Direct = customer-friendly price. Distribution partner = markup on top. Florence net is identical.",
     )
     core_monthly = sys_recs["target_monthly_fee"].median()
     core_per_rn_per_mo = sys_recs["target_monthly_florence_fee_account"].sum() / max(sys_recs["rn_need"].sum(), 1)
@@ -1627,15 +1687,15 @@ if view == "inpatient":
         st.markdown(
             f"""
             <div class="florence-card with-florence" style="min-height:200px;">
-              <div class="card-label">Via AMN ({amn_partner_markup_pct:.0%} markup)</div>
+              <div class="card-label">Via distribution partner ({amn_partner_markup_pct:.0%} markup)</div>
               <div style="display:flex; align-items:baseline; gap:6px;">
                 <div class="card-number">${amn_per_rn_per_mo:,.0f}</div>
                 <div class="card-unit">/RN/mo</div>
               </div>
-              <div class="card-headline">Sold through AMN.</div>
+              <div class="card-headline">Sold through distribution partner.</div>
               <div class="card-body">
-                AMN's distribution channel. Customer pays Florence's core rate
-                <b>+ ${amn_margin_per_rn:,.0f}/RN/mo</b> AMN margin atop.
+                Partner's distribution channel. Customer pays Florence's core rate
+                <b>+ ${amn_margin_per_rn:,.0f}/RN/mo</b> partner margin atop.
                 Florence still collects <b>${core_per_rn_per_mo:,.0f}/RN/mo</b> —
                 core rate protected.
               </div>
@@ -1976,7 +2036,7 @@ if view == "inpatient":
             "FICA-offset target pricing. Per-facility Target offset percentages are "
             "calibrated using HCRIS contract-labor rates (CMS Form 2552-10 Worksheet S-3 "
             "line 01100), BLS OEWS MSA-level RN wages, and known system-level overlays "
-            "(Kaiser AMN markup, placeholder MSP fees for HCA / Sutter / Ascension / etc.)."
+            "(Kaiser distribution-partner markup, placeholder MSP fees for HCA / Sutter / Ascension / etc.)."
         )
         st.markdown(
             f"**Recommendation posture for {selected_sys_name}:** {posture} "
@@ -2703,6 +2763,7 @@ if view == "outpatient":
     if active_chain is None:
         # Tile grid landing — sorted by state
         florence_eyebrow("Top outpatient chains · sorted by state")
+        st.caption(":material/touch_app: Click any tile to open the chain.")
         clicked = _outpatient_tiles.render_outpatient_tile_grid(st, fr)
         if clicked:
             st.session_state["outpatient_active_chain"] = clicked
@@ -3259,7 +3320,7 @@ if view == "health_systems":
             f"${sys_feas['gross_agency_savings_total'].sum():,.0f} | — |",
             f"| **Hospital — net savings after Florence fee** | "
             f"**${sys_feas['net_savings_total'].sum():,.0f}** | — |",
-            f"| Partner channel (e.g. AMN) | ${sys_feas['partner_revenue_total'].sum():,.0f} | — |",
+            f"| Partner channel | ${sys_feas['partner_revenue_total'].sum():,.0f} | — |",
             f"| **Florence net revenue** | **${sys_feas['florence_net_total'].sum():,.0f}** | "
             f"**${sys_feas['florence_net_total'].sum() / amortization_months:,.0f} / mo** |",
             "",
@@ -3298,7 +3359,7 @@ if view == "health_systems":
             f"- RN need = contracted labor FTE × {rn_share:.0%} × {coverage:.0%}",
             f"- Commitment / benefit period: {commitment_years} years × 1,872 hrs/yr",
             f"- Amortization: {amortization_months} months",
-            f"- AMN partner markup (atop core rate): {amn_partner_markup_pct:.0%}",
+            f"- Distribution-partner markup (atop core rate): {amn_partner_markup_pct:.0%}",
             f"- Direct partner markup (atop core rate): {direct_partner_markup_pct:.0%}",
         ]
         proposal_md = "\n".join(proposal_lines)
