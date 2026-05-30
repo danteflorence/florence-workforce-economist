@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "updated_at": "2026-05-30T16:51:41",
+  "updated_at": "2026-05-30T16:55:44",
   "overrides": [
     {
       "ccn": "240020",
@@ -120,6 +120,48 @@
       "new_system_name": "University of California Health",
       "note": "UCSF acquired from CommonSpirit (was Dignity Health St. Mary's SF)",
       "created_at": "2026-05-30T16:51:41"
+    },
+    {
+      "ccn": "350002",
+      "new_system_id": "altru_health_system",
+      "new_system_name": "Altru Health System",
+      "note": "Altru acquisition: CHI St. Alexius Bismarck (from CommonSpirit)",
+      "created_at": "2026-05-30T16:55:44"
+    },
+    {
+      "ccn": "351303",
+      "new_system_id": "altru_health_system",
+      "new_system_name": "Altru Health System",
+      "note": "Altru acquisition: Garrison Memorial Hospital (from CommonSpirit)",
+      "created_at": "2026-05-30T16:55:44"
+    },
+    {
+      "ccn": "351304",
+      "new_system_id": "altru_health_system",
+      "new_system_name": "Altru Health System",
+      "note": "Altru acquisition: CHI St. Alexius Turtle Lake (from CommonSpirit)",
+      "created_at": "2026-05-30T16:55:44"
+    },
+    {
+      "ccn": "351333",
+      "new_system_id": "altru_health_system",
+      "new_system_name": "Altru Health System",
+      "note": "Altru acquisition: CHI St. Alexius Devils Lake (from CommonSpirit, effective Mar 2026)",
+      "created_at": "2026-05-30T16:55:44"
+    },
+    {
+      "ccn": "360211",
+      "new_system_id": "upmc",
+      "new_system_name": "UPMC",
+      "note": "UPMC acquisition: Trinity Med Ctr East/West Steubenville (from CommonSpirit)",
+      "created_at": "2026-05-30T16:55:44"
+    },
+    {
+      "ccn": "361302",
+      "new_system_id": "upmc",
+      "new_system_name": "UPMC",
+      "note": "UPMC acquisition: Twin City Medical Center Dennison (from CommonSpirit)",
+      "created_at": "2026-05-30T16:55:44"
     }
   ]
 }
