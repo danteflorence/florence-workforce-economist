@@ -92,13 +92,43 @@ def merged_systems(sys_agg: pd.DataFrame,
 
 # ─── HTML rendering ─────────────────────────────────────────────────
 def _initials(name: str) -> str:
-    """Short initials for the logo-fallback badge."""
+    """Short initials for the brand badge.
+
+    If the first word is already an ALLCAPS short acronym (HCA, UPMC, UCSF,
+    UCLA, SSM, etc.), use it as-is. Otherwise use first letters of the
+    first two words.
+    """
     tokens = [w for w in name.replace("/", " ").split() if w[:1].isalpha()]
     if not tokens:
         return "?"
+    # First token is already a short uppercase acronym?
+    if 2 <= len(tokens[0]) <= 5 and tokens[0].isupper():
+        return tokens[0]
     if len(tokens) == 1:
         return tokens[0][:2].upper()
     return (tokens[0][:1] + tokens[1][:1]).upper()
+
+
+def _domain_to_brand_label(domain: str) -> str:
+    """Extract a short brand label from a domain for the multi-logo strip.
+
+    Examples:
+        ucsf.edu               → 'UCSF'
+        health.ucdavis.edu     → 'UCDAVIS'  (4-5 chars max)
+        health.ucsd.edu        → 'UCSD'
+        ucihealth.org          → 'UCI'  (strips 'HEALTH' suffix)
+        uclahealth.org         → 'UCLA'
+    """
+    parts = domain.lower().split(".")
+    if parts and parts[0] in ("health", "www", "my", "secure"):
+        parts = parts[1:]
+    if not parts:
+        return "?"
+    sld = parts[0].upper()
+    # Strip common "HEALTH" suffix so ucihealth → UCI
+    if sld.endswith("HEALTH") and len(sld) > 6:
+        sld = sld[:-6]
+    return sld[:6]
 
 
 def _fmt_big(v: float) -> str:
@@ -137,16 +167,18 @@ def _tile_html(row: dict) -> str:
     term_savings = float(row.get("term_savings_target", 0) or 0)
 
     # ─── Multi-logo consortium variant ────────────────────────────────
-    # NOTE: all HTML is built as single-line strings to avoid Streamlit's
-    # markdown parser treating indented multi-line interpolation as code blocks.
+    # We render styled initials badges for each child brand instead of
+    # remote logos. Clearbit's free logo API was shut down after the HubSpot
+    # acquisition; free favicon services only return 16-25px images. Initials
+    # badges look intentional (B2B SaaS standard) and stay reliable.
     if child_domains:
-        child_imgs = "".join(
-            f"<img src='https://logo.clearbit.com/{d}' alt='{d} logo' "
-            f"onerror=\"this.style.display='none';\">"
+        child_badges = "".join(
+            f"<div class='fl-tile-logo-fallback' "
+            f"style='font-size:0.78rem;'>{_domain_to_brand_label(d)}</div>"
             for d in child_domains
         )
         head_html = (
-            f"<div class='fl-tile-logo-strip'>{child_imgs}</div>"
+            f"<div class='fl-tile-logo-strip'>{child_badges}</div>"
             f"<div class='fl-tile-consortium-name'>{name}</div>"
             f"{rank_html}"
             f"<div class='fl-tile-consortium-tag' "
@@ -155,18 +187,8 @@ def _tile_html(row: dict) -> str:
             f"margin-top:2px; font-weight:600;'>Multi-campus consortium</div>"
         )
     else:
-        # ─── Single-logo standard tile ────────────────────────────────
-        if domain:
-            logo_html = (
-                f"<img class='fl-tile-logo-img' "
-                f"src='https://logo.clearbit.com/{domain}' "
-                f"alt='{name} logo' "
-                f"onerror=\"this.style.display='none'; "
-                f"this.nextElementSibling.style.display='flex';\">"
-                f"<div class='fl-tile-logo-fallback' style='display:none;'>{inits}</div>"
-            )
-        else:
-            logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
+        # ─── Single-logo standard tile (initials badge) ────────────────
+        logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
         head_html = (
             f"<div class='fl-tile-head'>{logo_html}"
             f"<div><div class='fl-tile-name'>{name}</div>{rank_html}</div>"
@@ -242,22 +264,9 @@ def _hospital_tile_html(row: dict, sys_logo_lookup: dict) -> str:
     term_savings = float(row.get("target_term_net_savings_account", 0) or 0)
     deal_score = float(row.get("target_deal_score", 0) or 0) * 100
 
-    # Use parent system's logo if available
-    parent_info = sys_logo_lookup.get(sys_id, {})
-    domain = parent_info.get("domain", "")
+    # Initials badge using parent-system name (Clearbit logo API is dead)
     inits = _initials(sys_name) if sys_name else _initials(name)
-
-    if domain:
-        logo_html = (
-            f"<img class='fl-tile-logo-img' "
-            f"src='https://logo.clearbit.com/{domain}' "
-            f"alt='{sys_name} logo' "
-            f"onerror=\"this.style.display='none'; "
-            f"this.nextElementSibling.style.display='flex';\">"
-            f"<div class='fl-tile-logo-fallback' style='display:none;'>{inits}</div>"
-        )
-    else:
-        logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
+    logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
 
     # Single-line HTML to avoid Streamlit markdown parsing nested indentation
     # as code blocks.
@@ -336,26 +345,8 @@ def _outpatient_tile_html(row: dict) -> str:
     term_rev = float(row.get("rev", 0) or 0)
     inits = _initials(name)
 
-    # Outpatient chains usually don't have a CSV-mapped logo yet. Try to
-    # use a domain we know about (HCA, Kaiser, etc. own outpatient too).
-    directory = load_directory()
-    domain_lookup = {
-        r["florence_system_id"]: r.get("domain", "")
-        for _, r in directory.iterrows()
-        if r.get("florence_system_id")
-    }
-    domain = domain_lookup.get(row.get("health_system_id", ""), "")
-    if domain:
-        logo_html = (
-            f"<img class='fl-tile-logo-img' "
-            f"src='https://logo.clearbit.com/{domain}' "
-            f"alt='{name} logo' "
-            f"onerror=\"this.style.display='none'; "
-            f"this.nextElementSibling.style.display='flex';\">"
-            f"<div class='fl-tile-logo-fallback' style='display:none;'>{inits}</div>"
-        )
-    else:
-        logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
+    # Initials badge (no remote logo dependency)
+    logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
 
     # Single-line HTML to avoid Streamlit markdown code-block treatment.
     return (

@@ -665,28 +665,23 @@ footer { visibility: hidden; }
 .fl-tile-logo-strip {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
+    gap: 5px;
     margin-bottom: 10px;
     align-items: center;
 }
-.fl-tile-logo-strip img {
-    width: 38px;
-    height: 38px;
-    object-fit: contain;
+.fl-tile-logo-strip .fl-tile-logo-fallback {
+    width: auto;
+    min-width: 38px;
+    height: 30px;
+    padding: 0 8px;
+    font-size: 0.72rem;
     border-radius: 6px;
-    background: #fff;
-    border: 1px solid var(--f-border);
-    padding: 3px;
+    background: var(--f-navy);
     transition: transform 0.15s ease;
 }
-.fl-tile-logo-strip img:hover {
-    transform: scale(1.08);
-}
-.fl-tile-logo-strip .fl-tile-logo-fallback {
-    width: 38px;
-    height: 38px;
-    font-size: 0.9rem;
-    border-radius: 6px;
+.fl-tile-logo-strip .fl-tile-logo-fallback:hover {
+    transform: scale(1.06);
+    background: var(--f-teal);
 }
 .fl-tile-consortium-name {
     font-family: 'Newsreader', serif;
