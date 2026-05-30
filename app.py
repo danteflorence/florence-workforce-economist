@@ -1327,33 +1327,53 @@ if view == "inpatient":
 
     if active_sys is None:
         # Tile grid — the rep's landing
-        florence_eyebrow("Pick a health system")
-        clicked = system_tiles.render_inpatient_tile_grid(st, sys_agg)
-        if clicked:
-            st.session_state["inpatient_active_system"] = clicked
-            st.rerun()
+        # Toggle: Health systems (Becker ranked) vs Hospitals (by RN need)
+        tile_mode = st.radio(
+            "Show",
+            ["Biggest health systems", "Biggest hospitals"],
+            horizontal=True,
+            label_visibility="collapsed",
+            key="inpatient_tile_mode",
+        )
 
-        # Fallback: full dropdown for systems not in Becker's top 30
-        _unranked = system_tiles.render_unranked_count(st, sys_agg)
-        with st.expander(
-            f":material/search: Search all systems "
-            f"({_unranked} not in the Becker directory)",
-            expanded=False,
-        ):
-            selected_label = st.selectbox(
-                "Pick any system",
-                list(sys_label_map.keys()),
-                label_visibility="collapsed",
-                key="inpatient_dropdown_fallback",
-            )
-            if selected_label and sys_label_map.get(selected_label):
-                if st.button(
-                    f"Open {selected_label.split(' (')[0]} →",
-                    type="primary",
-                    key="inpatient_dropdown_open",
-                ):
-                    st.session_state["inpatient_active_system"] = sys_label_map[selected_label]
-                    st.rerun()
+        if tile_mode == "Biggest health systems":
+            florence_eyebrow("Top U.S. health systems · Becker's 2026 ranking")
+            clicked = system_tiles.render_inpatient_tile_grid(st, sys_agg)
+            if clicked:
+                st.session_state["inpatient_active_system"] = clicked
+                st.rerun()
+
+            # Fallback dropdown for unranked / "everything else"
+            _unranked = system_tiles.render_unranked_count(st, sys_agg)
+            with st.expander(
+                f":material/search: Search all systems "
+                f"({_unranked} not in the Becker directory)",
+                expanded=False,
+            ):
+                selected_label = st.selectbox(
+                    "Pick any system",
+                    list(sys_label_map.keys()),
+                    label_visibility="collapsed",
+                    key="inpatient_dropdown_fallback",
+                )
+                if selected_label and sys_label_map.get(selected_label):
+                    if st.button(
+                        f"Open {selected_label.split(' (')[0]} →",
+                        type="primary",
+                        key="inpatient_dropdown_open",
+                    ):
+                        st.session_state["inpatient_active_system"] = sys_label_map[selected_label]
+                        st.rerun()
+        else:
+            # Hospitals view — individual facilities sorted by RN need
+            florence_eyebrow("Top U.S. hospitals · by RN need")
+            clicked_ccn = system_tiles.render_hospital_tile_grid(st, fr)
+            if clicked_ccn:
+                # Pre-select this hospital in the Price-a-hospital view + navigate
+                st.session_state["price_hospital_preselect_ccn"] = clicked_ccn
+                st.session_state["nav_view"] = "price_hospital"
+                st.rerun()
+
         st.stop()
 
     # ── Detail view ────────────────────────────────────────────────
@@ -2628,7 +2648,10 @@ if view == "outpatient":
         st.warning("No facilities match the current filter.")
         st.stop()
 
-    # ── Chain selector (mirrors the hospital-tab system pattern) ──────
+    # ── Chain selector — tile grid sorted by state, with dropdown fallback ──
+    import system_tiles as _outpatient_tiles
+    active_chain = st.session_state.get("outpatient_active_chain")
+
     chain_summary = (
         fr.groupby(["health_system_id", "health_system"])
         .agg(n=("ccn", "count"),
@@ -2637,44 +2660,61 @@ if view == "outpatient":
         .reset_index()
         .sort_values("rev", ascending=False)
     )
-    # Show "All facilities" first, then named chains, then Independent last
-    chain_labels = ["All facilities in this filter"]
-    chain_map = {chain_labels[0]: None}
-    for _, r in chain_summary.iterrows():
-        if r["health_system_id"] == "independent":
-            continue
-        label = (
-            f"{r['health_system']}  ·  "
-            f"{int(r['n']):,} facilities  ·  "
-            f"unlocks ${r['rev']/1e9:.2f}B"
-            if r["rev"] >= 1e9 else
-            f"{r['health_system']}  ·  "
-            f"{int(r['n']):,} facilities  ·  "
-            f"unlocks ${r['rev']/1e6:,.0f}M"
-        )
-        chain_labels.append(label)
-        chain_map[label] = r["health_system_id"]
-    # Append Independent at the end
-    indep_row = chain_summary[chain_summary["health_system_id"] == "independent"]
-    if len(indep_row):
-        r = indep_row.iloc[0]
-        label = (
-            f"Independent / Unknown  ·  "
-            f"{int(r['n']):,} facilities  ·  "
-            f"unlocks ${r['rev']/1e9:.2f}B"
-        )
-        chain_labels.append(label)
-        chain_map[label] = "independent"
 
-    selected_chain_label = st.selectbox(
-        "Chain / system",
-        chain_labels,
-        label_visibility="collapsed",
-        key="nh_chain_selector",
-    )
-    selected_chain_id = chain_map[selected_chain_label]
+    if active_chain is None:
+        # Tile grid landing — sorted by state
+        florence_eyebrow("Top outpatient chains · sorted by state")
+        clicked = _outpatient_tiles.render_outpatient_tile_grid(st, fr)
+        if clicked:
+            st.session_state["outpatient_active_chain"] = clicked
+            st.rerun()
+
+        # Fallback for systems not in the directory + "All facilities"
+        with st.expander(
+            ":material/search: Search all chains or view full universe",
+            expanded=False,
+        ):
+            chain_labels = ["All facilities in this filter"]
+            chain_map = {chain_labels[0]: None}
+            for _, r in chain_summary.iterrows():
+                if r["health_system_id"] == "independent":
+                    continue
+                label = f"{r['health_system']} · {int(r['n']):,} facilities"
+                chain_labels.append(label)
+                chain_map[label] = r["health_system_id"]
+            indep_row = chain_summary[chain_summary["health_system_id"] == "independent"]
+            if len(indep_row):
+                ir = indep_row.iloc[0]
+                label = f"Independent / Unknown · {int(ir['n']):,} facilities"
+                chain_labels.append(label)
+                chain_map[label] = "independent"
+
+            picked = st.selectbox(
+                "Pick a chain",
+                chain_labels,
+                label_visibility="collapsed",
+                key="nh_chain_selector_fallback",
+            )
+            if st.button("Open →", type="primary", key="nh_chain_open"):
+                st.session_state["outpatient_active_chain"] = (
+                    chain_map[picked] if chain_map[picked] is not None
+                    else "__ALL__"
+                )
+                st.rerun()
+        st.stop()
+
+    # Detail view
+    if st.button("← Back to chains", key="outpatient_back"):
+        st.session_state["outpatient_active_chain"] = None
+        st.rerun()
+
+    selected_chain_id = active_chain if active_chain != "__ALL__" else None
     if selected_chain_id is not None:
         fr = fr[fr["health_system_id"] == selected_chain_id]
+        if fr.empty:
+            st.warning("This chain isn't in the current filter. Clearing.")
+            st.session_state["outpatient_active_chain"] = None
+            st.rerun()
         selected_chain_name = fr.iloc[0]["health_system"]
     else:
         selected_chain_name = None
@@ -3773,19 +3813,40 @@ if view == "price_hospital":
         "pays, what they save vs agency, what splits to partner, what Florence nets."
     )
 
+    # Honor a preselect from the Inpatient tile grid (Hospitals view → Open →)
+    _preselect_ccn = st.session_state.pop("price_hospital_preselect_ccn", None)
+    _preselect_row = None
+    if _preselect_ccn:
+        _hits = universe[universe["ccn"].astype(str).str.zfill(6) == str(_preselect_ccn).zfill(6)]
+        if not _hits.empty:
+            _preselect_row = _hits.iloc[0]
+            st.success(
+                f":material/local_hospital: Pre-selected **{_preselect_row['name']}** "
+                f"from the Inpatient hospital tiles.",
+                icon=":material/info:",
+            )
+
+    _states_list = sorted(universe["state"].unique())
+    _default_state_idx = (
+        _states_list.index(_preselect_row["state"]) if _preselect_row is not None
+        else (_states_list.index("CA") if "CA" in _states_list else 0)
+    )
     state_pick = st.selectbox(
-        "State", sorted(universe["state"].unique()),
-        index=sorted(universe["state"].unique()).index("CA"),
+        "State", _states_list,
+        index=_default_state_idx,
     )
     hosp_list = universe[universe["state"] == state_pick].sort_values("name")
+    _hosp_labels = hosp_list.apply(
+        lambda r: f"{r['name']} — {r['city']}", axis=1).tolist()
+    _default_hosp_idx = 0
+    if _preselect_row is not None and _preselect_row["state"] == state_pick:
+        _target_label = f"{_preselect_row['name']} — {_preselect_row['city']}"
+        if _target_label in _hosp_labels:
+            _default_hosp_idx = _hosp_labels.index(_target_label)
     hosp_label = st.selectbox(
-        "Hospital",
-        hosp_list.apply(lambda r: f"{r['name']} — {r['city']}", axis=1).tolist(),
+        "Hospital", _hosp_labels, index=_default_hosp_idx,
     )
-    row = hosp_list.iloc[
-        hosp_list.apply(lambda r: f"{r['name']} — {r['city']}", axis=1).tolist()
-        .index(hosp_label)
-    ]
+    row = hosp_list.iloc[_hosp_labels.index(hosp_label)]
 
     profile = row_to_profile(row)
     # Attach data provenance for manual-review decision

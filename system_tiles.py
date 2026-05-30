@@ -199,6 +199,248 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
     return clicked_id
 
 
+# ─── Hospital-level tiles (the "Biggest hospitals" toggle) ──────────
+def _hospital_tile_html(row: dict, sys_logo_lookup: dict) -> str:
+    """Tile for an individual hospital. Uses parent system's logo if known."""
+    name = row.get("name", "Unknown")
+    sys_id = row.get("health_system_id", "")
+    sys_name = row.get("health_system", "Independent")
+    city = row.get("city", "")
+    state = row.get("state", "")
+    rn_need = int(row.get("rn_need", 0) or 0)
+    agency_premium = float(row.get("signal_agency_premium", 0) or 0)
+    term_savings = float(row.get("target_term_net_savings_account", 0) or 0)
+    deal_score = float(row.get("target_deal_score", 0) or 0) * 100
+
+    # Use parent system's logo if available
+    parent_info = sys_logo_lookup.get(sys_id, {})
+    domain = parent_info.get("domain", "")
+    inits = _initials(sys_name) if sys_name else _initials(name)
+
+    if domain:
+        logo_html = (
+            f"<img class='fl-tile-logo-img' "
+            f"src='https://logo.clearbit.com/{domain}' "
+            f"alt='{sys_name} logo' "
+            f"onerror=\"this.style.display='none'; "
+            f"this.nextElementSibling.style.display='flex';\">"
+            f"<div class='fl-tile-logo-fallback' style='display:none;'>{inits}</div>"
+        )
+    else:
+        logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
+
+    return f"""
+    <div class='fl-tile'>
+      <div class='fl-tile-head'>
+        {logo_html}
+        <div>
+          <div class='fl-tile-name'>{name}</div>
+          <div style='font-family:Inter,sans-serif; font-size:0.78rem;
+                      color:#5B6675; margin-top:3px;'>
+            {sys_name} · {city}, {state}
+          </div>
+        </div>
+      </div>
+      <div class='fl-tile-stats'>
+        <div class='fl-tile-stat'>
+          <div class='v'>{rn_need:,}</div>
+          <div class='l'>RN need</div>
+        </div>
+        <div class='fl-tile-stat'>
+          <div class='v'>${agency_premium:,.0f}/hr</div>
+          <div class='l'>Agency rate</div>
+        </div>
+        <div class='fl-tile-stat'>
+          <div class='v'>{_fmt_big(term_savings)}</div>
+          <div class='l'>24-mo savings</div>
+        </div>
+        <div class='fl-tile-stat'>
+          <div class='v'>{deal_score:.0f}/100</div>
+          <div class='l'>Deal score</div>
+        </div>
+      </div>
+    </div>
+    """
+
+
+def render_hospital_tile_grid(st, recs_df: pd.DataFrame,
+                              max_tiles: int = 30) -> Optional[str]:
+    """Render top hospitals as tiles, sorted by RN need.
+
+    Returns the clicked hospital CCN if a tile button was pressed.
+    """
+    # Drop NA + sort by RN need
+    visible = (recs_df.dropna(subset=["rn_need"])
+               .sort_values("rn_need", ascending=False)
+               .head(max_tiles))
+    if visible.empty:
+        st.info("No hospitals match the current filter.")
+        return None
+
+    # Build parent-system logo lookup
+    directory = load_directory()
+    sys_logo_lookup = {
+        row["florence_system_id"]: {"domain": row.get("domain", "")}
+        for _, row in directory.iterrows()
+        if row.get("florence_system_id")
+    }
+
+    n_columns = 3
+    clicked_ccn: Optional[str] = None
+    rows_count = (len(visible) + n_columns - 1) // n_columns
+    for r in range(rows_count):
+        cols = st.columns(n_columns)
+        for c in range(n_columns):
+            idx = r * n_columns + c
+            if idx >= len(visible):
+                continue
+            row = visible.iloc[idx]
+            with cols[c]:
+                st.markdown(_hospital_tile_html(row.to_dict(), sys_logo_lookup),
+                            unsafe_allow_html=True)
+                ccn = str(row["ccn"])
+                if st.button(
+                    "Open →",
+                    key=f"hosp_tile_open_{ccn}",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    clicked_ccn = ccn
+    return clicked_ccn
+
+
+# ─── Outpatient chain tiles (sorted by state) ───────────────────────
+def _outpatient_tile_html(row: dict) -> str:
+    name = row.get("health_system", "Unknown")
+    primary_state = row.get("primary_state", "—")
+    n_facilities = int(row.get("n", 0) or 0)
+    rn = int(row.get("rn", 0) or 0)
+    term_rev = float(row.get("rev", 0) or 0)
+    inits = _initials(name)
+
+    # Outpatient chains usually don't have a CSV-mapped logo yet. Try to
+    # use a domain we know about (HCA, Kaiser, etc. own outpatient too).
+    directory = load_directory()
+    domain_lookup = {
+        r["florence_system_id"]: r.get("domain", "")
+        for _, r in directory.iterrows()
+        if r.get("florence_system_id")
+    }
+    domain = domain_lookup.get(row.get("health_system_id", ""), "")
+    if domain:
+        logo_html = (
+            f"<img class='fl-tile-logo-img' "
+            f"src='https://logo.clearbit.com/{domain}' "
+            f"alt='{name} logo' "
+            f"onerror=\"this.style.display='none'; "
+            f"this.nextElementSibling.style.display='flex';\">"
+            f"<div class='fl-tile-logo-fallback' style='display:none;'>{inits}</div>"
+        )
+    else:
+        logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
+
+    return f"""
+    <div class='fl-tile'>
+      <div class='fl-tile-head'>
+        {logo_html}
+        <div>
+          <div class='fl-tile-name'>{name}</div>
+          <div class='fl-tile-rank'>{primary_state}</div>
+        </div>
+      </div>
+      <div class='fl-tile-stats'>
+        <div class='fl-tile-stat'>
+          <div class='v'>{n_facilities:,}</div>
+          <div class='l'>Facilities</div>
+        </div>
+        <div class='fl-tile-stat'>
+          <div class='v'>{rn:,}</div>
+          <div class='l'>RNs placeable</div>
+        </div>
+        <div class='fl-tile-stat'>
+          <div class='v'>{_fmt_big(term_rev)}</div>
+          <div class='l'>24-mo uplift</div>
+        </div>
+        <div class='fl-tile-stat'>
+          <div class='v'>{_fmt_big(term_rev/2)}/yr</div>
+          <div class='l'>Annual</div>
+        </div>
+      </div>
+    </div>
+    """
+
+
+def render_outpatient_tile_grid(st, nh_df: pd.DataFrame,
+                                max_tiles: int = 30) -> Optional[str]:
+    """Render outpatient chain tiles, grouped by primary state.
+
+    Returns the clicked health_system_id if a tile was pressed.
+    """
+    # Compute chain-level aggregation with primary state
+    grouped = nh_df.dropna(subset=["health_system_id"]).copy()
+    grouped = grouped[grouped["health_system_id"] != "independent"]
+    if grouped.empty:
+        st.info("No outpatient chains match the current filter.")
+        return None
+
+    # Compute primary state per chain (mode/most-common)
+    primary_state = (grouped.groupby("health_system_id")["state"]
+                     .agg(lambda s: s.value_counts().idxmax())
+                     .rename("primary_state").reset_index())
+    chain_summary = (grouped.groupby(["health_system_id", "health_system"])
+                     .agg(n=("ccn", "count"),
+                          rn=("rn_estimate", "sum"),
+                          rev=("account_term_revenue_uplift", "sum"))
+                     .reset_index()
+                     .merge(primary_state, on="health_system_id", how="left"))
+    chain_summary = chain_summary.sort_values(
+        ["primary_state", "rev"], ascending=[True, False]
+    ).head(max_tiles)
+
+    n_columns = 3
+    clicked_id: Optional[str] = None
+    current_state = None
+    rows_to_render = []
+    for _, row in chain_summary.iterrows():
+        if row["primary_state"] != current_state:
+            rows_to_render.append(("HEADER", row["primary_state"]))
+            current_state = row["primary_state"]
+        rows_to_render.append(("TILE", row))
+
+    i = 0
+    while i < len(rows_to_render):
+        if rows_to_render[i][0] == "HEADER":
+            state = rows_to_render[i][1]
+            st.markdown(
+                f"<div style='font-family:Inter,sans-serif; font-size:0.8rem; "
+                f"font-weight:600; letter-spacing:0.18em; color:#5B6675; "
+                f"text-transform:uppercase; margin:18px 0 8px 0;'>"
+                f"{state}</div>",
+                unsafe_allow_html=True,
+            )
+            i += 1
+            continue
+        # Take up to n_columns consecutive TILE entries
+        batch = []
+        while i < len(rows_to_render) and rows_to_render[i][0] == "TILE" and len(batch) < n_columns:
+            batch.append(rows_to_render[i][1])
+            i += 1
+        cols = st.columns(n_columns)
+        for c, row in enumerate(batch):
+            with cols[c]:
+                st.markdown(_outpatient_tile_html(row.to_dict()),
+                            unsafe_allow_html=True)
+                hsid = row["health_system_id"]
+                if st.button(
+                    "Open →",
+                    key=f"out_tile_open_{hsid}",
+                    type="primary",
+                    use_container_width=True,
+                ):
+                    clicked_id = hsid
+    return clicked_id
+
+
 def render_unranked_count(st, sys_agg: pd.DataFrame) -> int:
     """Return the count of systems not in the Becker directory."""
     merged = merged_systems(sys_agg)
