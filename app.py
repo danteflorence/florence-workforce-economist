@@ -570,6 +570,97 @@ footer { visibility: hidden; }
     font-weight: 500;
 }
 
+/* === System tile grid (Inpatient landing) === */
+.fl-tile-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+    margin: 14px 0 8px 0;
+}
+.fl-tile {
+    background: white;
+    border: 1px solid var(--f-border);
+    border-radius: 12px;
+    padding: 18px 18px 14px 18px;
+    display: flex; flex-direction: column;
+    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+.fl-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(15, 27, 45, 0.08);
+    border-color: var(--f-teal);
+}
+.fl-tile-head {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+    min-height: 56px;
+}
+.fl-tile-logo-img {
+    width: 56px; height: 56px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: #fff;
+    border: 1px solid var(--f-border);
+    padding: 4px;
+}
+.fl-tile-logo-fallback {
+    width: 56px; height: 56px;
+    background: var(--f-teal);
+    color: white;
+    border-radius: 8px;
+    font-family: 'Newsreader', serif;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.fl-tile-name {
+    font-family: 'Newsreader', serif;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--f-navy);
+    line-height: 1.2;
+}
+.fl-tile-rank {
+    display: inline-block;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--f-teal-dark);
+    background: rgba(11, 197, 160, 0.12);
+    padding: 2px 8px;
+    border-radius: 10px;
+    letter-spacing: 0.04em;
+    margin-top: 4px;
+}
+.fl-tile-stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 12px;
+    margin: 6px 0 14px 0;
+}
+.fl-tile-stat {
+    border-left: 2px solid var(--f-border);
+    padding: 2px 0 2px 10px;
+}
+.fl-tile-stat .v {
+    font-family: 'Newsreader', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--f-navy);
+    line-height: 1.1;
+}
+.fl-tile-stat .l {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    color: var(--f-muted);
+    text-transform: uppercase;
+    margin-top: 2px;
+}
+.fl-tile-actions { margin-top: auto; }
+
 /* === Stat tile (compact number-led) === */
 .fl-stat {
     display: flex; align-items: center; gap: 10px;
@@ -1230,17 +1321,55 @@ if view == "inpatient":
         )
         sys_label_map[label] = row["health_system_id"]
 
-    selected_label = st.selectbox(
-        "Health system",
-        list(sys_label_map.keys()),
-        label_visibility="collapsed",
-    )
-    if sys_label_map[selected_label] is None:
-        st.info("Pick a system from the list below the divider.")
+    # ── Tile-grid landing OR detail view (session-state driven) ──────
+    import system_tiles
+    active_sys = st.session_state.get("inpatient_active_system")
+
+    if active_sys is None:
+        # Tile grid — the rep's landing
+        florence_eyebrow("Pick a health system")
+        clicked = system_tiles.render_inpatient_tile_grid(st, sys_agg)
+        if clicked:
+            st.session_state["inpatient_active_system"] = clicked
+            st.rerun()
+
+        # Fallback: full dropdown for systems not in Becker's top 30
+        _unranked = system_tiles.render_unranked_count(st, sys_agg)
+        with st.expander(
+            f":material/search: Search all systems "
+            f"({_unranked} not in the Becker directory)",
+            expanded=False,
+        ):
+            selected_label = st.selectbox(
+                "Pick any system",
+                list(sys_label_map.keys()),
+                label_visibility="collapsed",
+                key="inpatient_dropdown_fallback",
+            )
+            if selected_label and sys_label_map.get(selected_label):
+                if st.button(
+                    f"Open {selected_label.split(' (')[0]} →",
+                    type="primary",
+                    key="inpatient_dropdown_open",
+                ):
+                    st.session_state["inpatient_active_system"] = sys_label_map[selected_label]
+                    st.rerun()
         st.stop()
 
-    selected_sys_id = sys_label_map[selected_label]
+    # ── Detail view ────────────────────────────────────────────────
+    if st.button("← Back to systems", key="inpatient_back"):
+        st.session_state["inpatient_active_system"] = None
+        st.rerun()
+
+    selected_sys_id = active_sys
     sys_recs = fr[fr["health_system_id"] == selected_sys_id].copy()
+    if sys_recs.empty:
+        st.warning(
+            "This system isn't in the current filter. Clearing the filter "
+            "and showing the system list."
+        )
+        st.session_state["inpatient_active_system"] = None
+        st.rerun()
     selected_sys_name = sys_recs.iloc[0]["health_system"]
 
     # ── Core numbers (computed once, used everywhere) ─────────────────
