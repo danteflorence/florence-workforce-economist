@@ -1195,6 +1195,10 @@ _nav_section("Sales today")
 _nav_button("Inpatient", "inpatient", "local_hospital")
 _nav_button("Outpatient", "outpatient", "medical_services")
 
+# ─── Growth automation ───────────────────────────────────────────
+_nav_section("Growth automation")
+_nav_button("Growth automation", "growth", "rocket_launch")
+
 # ─── Live intelligence ───────────────────────────────────────────
 _nav_section("Live intelligence")
 _nav_button("Market intelligence", "market_intel", "trending_up")
@@ -2134,6 +2138,49 @@ if view == "pipeline":
                 icon=":material/lightbulb:",
             ),
         )
+
+
+# =====================================================================
+# GROWTH AUTOMATION — AI SDR engine: employer demand + university supply
+# =====================================================================
+if view == "growth":
+    import growth_automation as _ga
+    florence_eyebrow("Growth automation · AI SDR engine")
+    florence_headline(
+        "Acquire both sides of the network.",
+        subhead="AI-personalized outreach to long-tail employers and global "
+                "nursing programs — discovered, generated, and tracked.",
+    )
+
+    @st.cache_data
+    def _ga_load_priced() -> pd.DataFrame:
+        path = DATA_DIR / "non_hospital_priced.parquet"
+        return pd.read_parquet(path) if path.exists() else pd.DataFrame()
+
+    _ga_priced = _ga_load_priced()
+    _ga_territory_states = None
+    if _AUTH_REQUIRED and not _ga_priced.empty:
+        try:
+            import rbac as _rbac_ga
+            _terr = st.session_state.get("current_territory", "ALL")
+            _ga_priced = _rbac_ga.filter_by_territory(
+                _ga_priced, _terr, state_col="state"
+            )
+            if _terr and _terr != "ALL":
+                _ga_territory_states = sorted(
+                    _ga_priced["state"].dropna().unique().tolist()
+                )
+        except Exception:
+            pass
+
+    _ga_rep_email = (
+        (current_user or {}).get("email", "") if current_user else ""
+    ) or "demo@florence.dev"
+
+    _ga.streamlit_growth_view(
+        st, priced_df=_ga_priced, rep_email=_ga_rep_email,
+        territory_states=_ga_territory_states,
+    )
 
 
 # =====================================================================

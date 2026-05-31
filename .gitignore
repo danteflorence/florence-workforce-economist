@@ -9,6 +9,10 @@ data/auth_otp_codes.csv
 secrets.toml
 .streamlit/secrets.toml
 
+# ─── Runtime pipeline data (rep PII; lazily re-created on first read) ─
+data/growth_employer_pipeline.csv
+data/growth_university_pipeline.csv
+
 # ─── Raw source data (large, public — re-downloadable) ──────────────
 # CMS HCRIS raw zips
 data/hcris_raw/
