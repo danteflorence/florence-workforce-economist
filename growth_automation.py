@@ -47,6 +47,14 @@ from typing import Optional
 
 import pandas as pd
 
+# Optional contact enrichment (CMS public data → named decision-makers + the
+# management-company rollup). Imported defensively so the Growth engine still
+# runs if the module or its parquet outputs are absent (graceful degradation).
+try:
+    import contact_enrichment as _ce
+except Exception:  # pragma: no cover - module is best-effort
+    _ce = None
+
 DATA_DIR = Path(__file__).parent / "data"
 EMPLOYER_FILE = DATA_DIR / "growth_employer_pipeline.csv"
 UNIVERSITY_FILE = DATA_DIR / "growth_university_pipeline.csv"
@@ -103,6 +111,11 @@ EMPLOYER_FIELDS = [
     "target_id", "rep_email", "ccn", "name", "city", "state",
     "facility_type", "ownership_type", "rn_estimate",
     "monthly_fee_per_rn", "account_monthly_fee",
+    # ── Contact enrichment (CMS public data; populated at add time) ──
+    "primary_contact_name", "primary_contact_title", "primary_contact_role",
+    "facility_phone", "controlling_org", "controlling_org_facility_count",
+    "is_mgmt_company_run", "pe_or_mgmt_backed", "decision_maker_level",
+    "rn_turnover_pct", "needs_nppes",
     "stage", "created_at", "last_touched_at",
     "assets_generated_at", "notes",
 ]
@@ -190,6 +203,47 @@ def _now() -> str:
 
 
 # ═════════════════════════════════════════════════════════════════════
+# CONTACT ENRICHMENT BRIDGE
+# ═════════════════════════════════════════════════════════════════════
+# Contact columns carried on each employer target. Sourced from CMS public
+# data (NH_Ownership named owners/managers, Care Compare phones, the PECOS
+# management-company signal) via contact_enrichment.lookup_contact().
+_CONTACT_FIELDS = [
+    "primary_contact_name", "primary_contact_title", "primary_contact_role",
+    "facility_phone", "controlling_org", "controlling_org_facility_count",
+    "is_mgmt_company_run", "pe_or_mgmt_backed", "decision_maker_level",
+    "rn_turnover_pct", "needs_nppes",
+]
+
+
+def _contact_fields(ccn: str) -> dict:
+    """CMS-derived contact fields for one CCN, as strings ready for the CSV.
+
+    Returns empty strings for every field when enrichment is unavailable (no
+    module, no parquet, or CCN not found) so the pipeline still works headless.
+    """
+    blank = {k: "" for k in _CONTACT_FIELDS}
+    if _ce is None or not str(ccn).strip():
+        return blank
+    try:
+        info = _ce.lookup_contact(str(ccn).strip())
+    except Exception:
+        return blank
+    if not info:
+        return blank
+    out = {}
+    for k in _CONTACT_FIELDS:
+        v = info.get(k, "")
+        out[k] = "" if v is None else str(v)
+    return out
+
+
+def _truthy(v) -> bool:
+    """Interpret a stringified flag ('True'/'1'/'yes') as boolean."""
+    return str(v).strip().lower() in ("true", "1", "yes", "y")
+
+
+# ═════════════════════════════════════════════════════════════════════
 # EMPLOYER PIPELINE — CRUD
 # ═════════════════════════════════════════════════════════════════════
 def add_employer_target(rep_email: str, row: dict) -> Optional[str]:
@@ -214,6 +268,7 @@ def add_employer_target(rep_email: str, row: dict) -> Optional[str]:
         "rn_estimate": str(row.get("rn_estimate", "")),
         "monthly_fee_per_rn": str(row.get("monthly_fee_per_rn", "")),
         "account_monthly_fee": str(row.get("account_monthly_fee", "")),
+        **_contact_fields(ccn),
         "stage": "discovered",
         "created_at": _now(),
         "last_touched_at": _now(),
@@ -247,6 +302,7 @@ def add_employer_targets_bulk(rep_email: str, rows: list[dict]) -> int:
             "rn_estimate": str(row.get("rn_estimate", "")),
             "monthly_fee_per_rn": str(row.get("monthly_fee_per_rn", "")),
             "account_monthly_fee": str(row.get("account_monthly_fee", "")),
+            **_contact_fields(ccn),
             "stage": "discovered",
             "created_at": _now(),
             "last_touched_at": _now(),
@@ -388,7 +444,14 @@ def discover_employer_targets(
     sort_col = "rn_estimate" if "rn_estimate" in df.columns else None
     if sort_col:
         df = df.sort_values(sort_col, ascending=False, key=lambda s: pd.to_numeric(s, errors="coerce").fillna(0))
-    return df.head(limit)
+    df = df.head(limit)
+    # Attach CMS-derived decision-maker / phone / operator columns for display.
+    if _ce is not None:
+        try:
+            df = _ce.enrich(df)
+        except Exception:
+            pass
+    return df
 
 
 # ═════════════════════════════════════════════════════════════════════
@@ -748,6 +811,121 @@ def streamlit_growth_view(st, priced_df: pd.DataFrame, rep_email: str,
         _streamlit_university_tab(st, rep_email)
 
 
+def _contact_line_html(t) -> str:
+    """Internal contact line for an employer card — named decision-maker, phone,
+    operator, and management-company / PE-REIT badges. '' when nothing is known.
+
+    Contact facts (names, titles, phones, operator) never carry tax/visa
+    language, so this is safe for the internal pipeline view.
+    """
+    name = str(t.get("primary_contact_name", "")).strip()
+    title = str(t.get("primary_contact_title", "")).strip()
+    phone = str(t.get("facility_phone", "")).strip()
+    org = str(t.get("controlling_org", "")).strip()
+    n_sites = str(t.get("controlling_org_facility_count", "")).strip()
+    is_mgmt = _truthy(t.get("is_mgmt_company_run", ""))
+    pe = _truthy(t.get("pe_or_mgmt_backed", ""))
+    needs_nppes = _truthy(t.get("needs_nppes", ""))
+
+    parts = []
+    person = ""
+    if name:
+        person = f"<b style='color:#0F1B2D'>{name}</b>"
+        if title:
+            person += f" <span style='color:#5B6675'>· {title}</span>"
+    if phone:
+        person += f"{' · ' if person else ''}<span style='color:#0F1B2D'>{phone}</span>"
+    if person:
+        parts.append(f"<div style='font-size:0.85rem; margin-top:6px;'>{person}</div>")
+    elif needs_nppes:
+        parts.append(
+            "<div style='font-size:0.78rem; color:#9AA4B2; margin-top:6px;'>"
+            "No CMS phone/name on file — NPPES lookup needed</div>"
+        )
+
+    op = ""
+    if org:
+        sites = f" · {n_sites} sites" if n_sites and n_sites not in ("0", "") else ""
+        op = f"<span style='color:#5B6675'>Operator: {org}{sites}</span>"
+    badges = ""
+    if is_mgmt:
+        badges += ("<span style='background:#0F1B2D;color:#fff;border-radius:4px;"
+                   "padding:1px 7px;font-size:0.68rem;margin-left:6px;'>MANAGEMENT CO</span>")
+    if pe:
+        badges += ("<span style='background:#8A6D3B;color:#fff;border-radius:4px;"
+                   "padding:1px 7px;font-size:0.68rem;margin-left:6px;'>PE / REIT-BACKED</span>")
+    if op or badges:
+        parts.append(f"<div style='font-size:0.8rem; margin-top:3px;'>{op}{badges}</div>")
+    return "".join(parts)
+
+
+def _render_operator_rollup(st, priced_df, rep_email) -> bool:
+    """Land-once-unlock-N view: rank multi-site operators and let a rep add an
+    operator's whole portfolio in one click. Returns True if it rendered."""
+    if _ce is None:
+        return False
+    try:
+        rollup = _ce.load_rollup()
+    except Exception:
+        return False
+    if rollup is None or rollup.empty or "n_facilities" not in rollup.columns:
+        return False
+
+    st.markdown("#### 2 · Target operators, not just sites")
+    st.caption(
+        "The wedge into the long tail is the management company, not the "
+        "100-bed site. Land one operator and you unlock its whole portfolio. "
+        "Ranked by facilities controlled."
+    )
+    top = rollup.sort_values("n_facilities", ascending=False).head(40)
+    show_cols = [c for c in
+                 ["controlling_org", "n_facilities", "total_rn_capacity",
+                  "n_states", "pe_or_mgmt_backed", "sample_facilities"]
+                 if c in top.columns]
+    st.dataframe(
+        top[show_cols].rename(columns={
+            "controlling_org": "Operator", "n_facilities": "Sites",
+            "total_rn_capacity": "RN capacity", "n_states": "States",
+            "pe_or_mgmt_backed": "PE/REIT", "sample_facilities": "Example sites",
+        }),
+        use_container_width=True, hide_index=True, height=280,
+    )
+
+    has_ccn = priced_df is not None and not priced_df.empty and "ccn" in priced_df.columns
+    op_names = top["controlling_org"].dropna().tolist()
+    pick = st.selectbox(
+        "Add an operator's entire portfolio to your pipeline",
+        options=["—"] + op_names, key="ga_emp_operator_pick",
+    )
+    if pick and pick != "—" and has_ccn:
+        try:
+            ccns = {str(c) for c in _ce.ccns_for_operator(pick)}
+        except Exception:
+            ccns = set()
+        sites = priced_df[priced_df["ccn"].astype(str).isin(ccns)]
+        st.markdown(
+            f"**{pick}** — {len(ccns)} sites in CMS data, "
+            f"{len(sites)} matched in the priced universe."
+        )
+        if not sites.empty and st.button(
+            f":material/domain_add: Add all {len(sites)} {pick} sites to my pipeline",
+            type="primary", key="ga_emp_addoperator",
+        ):
+            rows = [{
+                "ccn": r.get("ccn", ""), "name": r.get("name", ""),
+                "city": r.get("city", ""), "state": r.get("state", ""),
+                "facility_type": r.get("facility_type", ""),
+                "ownership_type": r.get("ownership_type", ""),
+                "rn_estimate": r.get("rn_estimate", ""),
+                "monthly_fee_per_rn": r.get("florence_fee_per_rn_month", ""),
+                "account_monthly_fee": r.get("account_monthly_florence_fee", ""),
+            } for _, r in sites.iterrows()]
+            n = add_employer_targets_bulk(rep_email, rows)
+            st.success(f"Added {n} new {pick} sites ({len(rows) - n} already tracked).")
+            st.rerun()
+    return True
+
+
 def _streamlit_employer_tab(st, priced_df, rep_email, territory_states) -> None:
     st.markdown("#### 1 · Discover long-tail employers")
     st.caption(
@@ -800,7 +978,9 @@ def _streamlit_employer_tab(st, priced_df, rep_email, territory_states) -> None:
         show_cols = [c for c in
                      ["name", "city", "state", "facility_type",
                       "ownership_type", "rn_estimate", "florence_fee_per_rn_month",
-                      "account_monthly_florence_fee"]
+                      "account_monthly_florence_fee",
+                      "primary_contact_name", "primary_contact_title",
+                      "facility_phone", "controlling_org"]
                      if c in results.columns]
         st.dataframe(
             results[show_cols].rename(columns={
@@ -808,6 +988,10 @@ def _streamlit_employer_tab(st, priced_df, rep_email, territory_states) -> None:
                 "facility_type": "Type", "ownership_type": "Ownership",
                 "rn_estimate": "RNs", "florence_fee_per_rn_month": "$/RN/mo",
                 "account_monthly_florence_fee": "Account $/mo",
+                "primary_contact_name": "Decision-maker",
+                "primary_contact_title": "Title",
+                "facility_phone": "Phone",
+                "controlling_org": "Operator",
             }),
             use_container_width=True, hide_index=True, height=280,
         )
@@ -830,9 +1014,13 @@ def _streamlit_employer_tab(st, priced_df, rep_email, territory_states) -> None:
             st.success(f"Added {n} new targets ({len(rows) - n} already tracked).")
             st.rerun()
 
+    # ── Target operators (land once, unlock N) ──
+    st.markdown("---")
+    shown = _render_operator_rollup(st, priced_df, rep_email)
+
     # ── Active employer pipeline ──
     st.markdown("---")
-    st.markdown("#### 2 · Work your employer pipeline")
+    st.markdown(f"#### {'3' if shown else '2'} · Work your employer pipeline")
     emp = list_employer_targets(rep_email)
     if emp.empty:
         st.info("No employer targets yet. Discover and add some above.",
@@ -850,7 +1038,8 @@ def _streamlit_employer_tab(st, priced_df, rep_email, territory_states) -> None:
                     f"color:#0F1B2D; margin-top:4px;'>{str(t['name']).title()}</div>"
                     f"<div style='color:#5B6675; font-size:0.83rem;'>"
                     f"{t['facility_type']} · {str(t['city']).title()}, {t['state']} · "
-                    f"{t['rn_estimate']} RN capacity</div>",
+                    f"{t['rn_estimate']} RN capacity</div>"
+                    + _contact_line_html(t),
                     unsafe_allow_html=True,
                 )
             with head_r:

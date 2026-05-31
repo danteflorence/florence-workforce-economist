@@ -70,6 +70,8 @@ FLORENCE_CSS = """
 :root {
     --f-teal: #0BC5A0;
     --f-teal-dark: #089478;
+    --f-indigo: #3E2D8F;        /* Avila×Florence deck accent */
+    --f-indigo-dark: #2E2270;
     --f-navy: #0F1B2D;
     --f-navy-soft: #1A2A44;
     --f-gray: #F4F6F8;
@@ -577,39 +579,55 @@ footer { visibility: hidden; }
     gap: 14px;
     margin: 14px 0 8px 0;
 }
+/* Deck-styled tile cards (Avila×Florence). Two brand accents alternate across
+   the grid; the .hero stat + badge + rank pill + top rail pick up the accent. */
 .fl-tile {
+    position: relative;
     background: white;
     border: 1px solid var(--f-border);
-    border-radius: 12px;
-    padding: 18px 18px 14px 18px;
+    border-radius: 16px;
+    padding: 22px 20px 16px 20px;
+    margin-bottom: 8px;
+    min-height: 196px;
     display: flex; flex-direction: column;
-    transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+    overflow: hidden;
+    --accent: var(--f-teal-dark);
+    --accent-soft: rgba(8, 148, 120, 0.10);
+    transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
 }
+.fl-tile::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    background: var(--accent);
+}
+.fl-tile.fl-accent-teal   { --accent: var(--f-teal-dark); --accent-soft: rgba(8, 148, 120, 0.10); }
+.fl-tile.fl-accent-indigo { --accent: var(--f-indigo);    --accent-soft: rgba(62, 45, 143, 0.10); }
 .fl-tile:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(15, 27, 45, 0.08);
-    border-color: var(--f-teal);
+    transform: translateY(-3px);
+    box-shadow: 0 10px 26px rgba(15, 27, 45, 0.10);
+    border-color: var(--accent);
 }
 .fl-tile-head {
-    display: flex; align-items: center; gap: 12px;
+    display: flex; align-items: flex-start; gap: 13px;
     margin-bottom: 14px;
     min-height: 56px;
 }
+.fl-tile-headtext { min-width: 0; }
 .fl-tile-logo-img {
-    width: 56px; height: 56px;
+    width: 54px; height: 54px;
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: 12px;
     background: #fff;
     border: 1px solid var(--f-border);
     padding: 4px;
 }
 .fl-tile-logo-fallback {
-    width: 56px; height: 56px;
-    background: var(--f-teal);
+    width: 54px; height: 54px;
+    background: var(--accent);
     color: white;
-    border-radius: 8px;
+    border-radius: 12px;
     font-family: 'Newsreader', serif;
-    font-size: 1.5rem;
+    font-size: 1.45rem;
     font-weight: 600;
     display: flex;
     align-items: center; justify-content: center;
@@ -617,107 +635,83 @@ footer { visibility: hidden; }
 }
 .fl-tile-name {
     font-family: 'Newsreader', serif;
-    font-size: 1.15rem;
+    font-size: 1.18rem;
     font-weight: 600;
     color: var(--f-navy);
     line-height: 1.2;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+.fl-tile-sub {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    color: var(--f-muted);
+    margin-top: 3px;
+    line-height: 1.35;
+}
+.fl-tile-tag {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.68rem; font-weight: 600;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--f-muted);
+    margin-top: 6px;
 }
 .fl-tile-rank {
-    display: inline-block;
+    display: inline-flex; align-items: center; gap: 5px;
     font-family: 'Inter', sans-serif;
-    font-size: 0.68rem;
+    font-size: 0.66rem;
     font-weight: 700;
-    color: var(--f-teal-dark);
-    background: rgba(11, 197, 160, 0.12);
-    padding: 2px 8px;
-    border-radius: 10px;
-    letter-spacing: 0.04em;
-    margin-top: 4px;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: var(--accent-soft);
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.08em;
+    margin-top: 6px;
+}
+.fl-tile-rank .dot {
+    width: 5px; height: 5px; border-radius: 50%;
+    background: var(--accent); display: inline-block;
 }
 .fl-tile-stats {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 8px 12px;
-    margin: 6px 0 14px 0;
+    gap: 10px 14px;
+    margin: auto 0 4px 0;
 }
 .fl-tile-stat {
     border-left: 2px solid var(--f-border);
-    padding: 2px 0 2px 10px;
+    padding: 1px 0 1px 11px;
 }
 .fl-tile-stat .v {
     font-family: 'Newsreader', serif;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: 600;
     color: var(--f-navy);
     line-height: 1.1;
 }
+.fl-tile-stat .v.hero { color: var(--accent); }
+.fl-tile-stat .v .u {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.72rem; font-weight: 500;
+    color: var(--f-muted);
+}
 .fl-tile-stat .l {
     font-family: 'Inter', sans-serif;
-    font-size: 0.68rem;
-    letter-spacing: 0.08em;
+    font-size: 0.66rem;
+    letter-spacing: 0.10em;
     color: var(--f-muted);
     text-transform: uppercase;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 .fl-tile-actions { margin-top: auto; }
 
-/* === Clickable tile buttons (st.button styled as a tile-card) === */
-/* We use st.button with multi-line markdown labels as the tiles. CSS makes
-   the button look like a clickable card. Scoped to the main content area
-   so sidebar buttons stay unaffected. */
-section[data-testid="stMain"] .stButton > button[kind="secondary"] {
-    background: white !important;
-    color: var(--f-navy) !important;
-    border: 1px solid var(--f-border) !important;
-    border-radius: 12px !important;
-    padding: 18px 20px !important;
-    text-align: left !important;
-    min-height: 180px !important;
-    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease !important;
-    font-family: 'Inter', sans-serif !important;
-    box-shadow: none !important;
-    line-height: 1.45 !important;
-    display: block !important;
-    white-space: normal !important;
-    overflow: hidden !important;
-}
+/* "Open →" button beneath each tile card — compact, full-width, brand hover */
 section[data-testid="stMain"] .stButton > button[kind="secondary"]:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 8px 24px rgba(15, 27, 45, 0.10) !important;
     border-color: var(--f-teal) !important;
-    background: white !important;
-    color: var(--f-navy) !important;
+    color: var(--f-teal-dark) !important;
 }
-section[data-testid="stMain"] .stButton > button[kind="secondary"]:focus {
-    outline: none !important;
-    border-color: var(--f-teal) !important;
-}
-/* Inside the tile-button, style the markdown elements */
-section[data-testid="stMain"] .stButton > button[kind="secondary"] h3 {
-    font-family: 'Newsreader', serif !important;
-    font-size: 1.15rem !important;
-    font-weight: 600 !important;
-    color: var(--f-navy) !important;
-    margin: 0 0 8px 0 !important;
-    line-height: 1.25 !important;
-}
-section[data-testid="stMain"] .stButton > button[kind="secondary"] p {
-    font-size: 0.85rem !important;
-    color: var(--f-muted) !important;
-    margin: 4px 0 !important;
-}
-section[data-testid="stMain"] .stButton > button[kind="secondary"] p strong {
-    color: var(--f-navy) !important;
-    font-weight: 600 !important;
-}
-section[data-testid="stMain"] .stButton > button[kind="secondary"] em {
-    color: var(--f-muted) !important;
-    font-style: normal !important;
-    font-size: 0.78rem !important;
-}
-/* Don't restyle the small back-buttons that have short labels */
-section[data-testid="stMain"] .stButton > button[kind="secondary"]:not([data-testid*="back"]) {}
-/* Primary buttons (e.g. "Sign in", "Mark done") keep their teal look */
 
 /* === Multi-logo strip (for consortium tiles like UC Health) === */
 .fl-tile-logo-strip {
@@ -731,23 +725,16 @@ section[data-testid="stMain"] .stButton > button[kind="secondary"]:not([data-tes
     width: auto;
     min-width: 38px;
     height: 30px;
-    padding: 0 8px;
+    padding: 0 9px;
     font-size: 0.72rem;
-    border-radius: 6px;
-    background: var(--f-navy);
-    transition: transform 0.15s ease;
+    border-radius: 8px;
+    background: var(--accent);
+    opacity: 0.92;
+    transition: transform 0.15s ease, opacity 0.15s ease;
 }
 .fl-tile-logo-strip .fl-tile-logo-fallback:hover {
     transform: scale(1.06);
-    background: var(--f-teal);
-}
-.fl-tile-consortium-name {
-    font-family: 'Newsreader', serif;
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: var(--f-navy);
-    line-height: 1.2;
-    margin-bottom: 4px;
+    opacity: 1;
 }
 
 /* === Stat tile (compact number-led) === */

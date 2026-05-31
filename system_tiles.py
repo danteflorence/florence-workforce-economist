@@ -26,6 +26,7 @@ the tile falls back to a teal initials badge (handled in CSS).
 """
 from __future__ import annotations
 
+import html
 from pathlib import Path
 from typing import Optional
 
@@ -141,82 +142,45 @@ def _fmt_big(v: float) -> str:
     return f"${v:,.0f}"
 
 
-def _tile_label(row: dict) -> str:
-    """Build a multi-line markdown label for the clickable tile-button.
+def _safe(s) -> str:
+    """HTML-escape arbitrary text AND neutralize the `$` LaTeX trigger.
 
-    Streamlit buttons accept limited markdown in labels: headings, bold,
-    italic, Material icons (:material/X:), and line breaks. Tiles render
-    as styled cards via CSS targeting full-width secondary buttons.
+    Streamlit's markdown pipeline runs *before* unsafe HTML is emitted, so a
+    literal `$...$` anywhere in a card — even inside a <div> — gets rendered as
+    LaTeX math (the deployed-tile bug). Escaping `$` to its HTML entity prevents
+    that. html.escape() runs first (handling &, <, >), so there are no `&#...`
+    entities for the `$` swap to clobber.
     """
+    return html.escape(str(s)).replace("$", "&#36;")
+
+
+def _fmt_big_html(v: float) -> str:
+    """Money formatter for HTML cards — same as _fmt_big but with `$` rendered
+    as its HTML entity so Streamlit never parses it as LaTeX math mode."""
+    return _fmt_big(v).replace("$", "&#36;")
+
+
+def _accent_for(idx: int) -> str:
+    """Alternate the deck's two brand accents (teal / indigo) across the grid."""
+    return "indigo" if idx % 2 else "teal"
+
+
+def _tile_html(row: dict, idx: int = 0) -> str:
+    """Build the HTML card for one inpatient system tile.
+
+    Deck-styled (Avila×Florence): white card with a colored accent rail + a
+    serif initials badge in one of the two brand colors (teal / indigo,
+    alternating across the grid), a Newsreader serif name, an uppercase tracked
+    Becker-rank pill, and a 2×2 stat grid whose 24-month-impact number is
+    rendered in the accent color. A multi-badge strip replaces the single badge
+    for consortium tiles (child_domains populated, e.g. UC Health).
+
+    Every `$` is emitted as &#36; so Streamlit's markdown pass never parses the
+    card as LaTeX math — the root cause of the deployed tile bug.
+    """
+    accent = _accent_for(idx)
     name = row.get("display_name") or row.get("health_system") or "Unknown"
-    rank = row.get("becker_rank_2026")
-    n_fac = int(row.get("n_facilities", 0) or 0)
-    rn_need = int(row.get("rn_need", 0) or 0)
-    monthly_fee = float(row.get("monthly_fee_target", 0) or 0)
-    term_savings = float(row.get("term_savings_target", 0) or 0)
-    child_domains_raw = (row.get("child_domains") or "").strip()
-    child_brands = [
-        _domain_to_brand_label(d.strip())
-        for d in child_domains_raw.replace(",", ";").split(";") if d.strip()
-    ]
-
-    lines = [f"### :material/business: {name}"]
-    if rank == rank and rank is not None:
-        try:
-            lines.append(f":material/military_tech: **#{int(rank)} · Becker 2026**")
-        except Exception:
-            pass
-    if child_brands:
-        lines.append("**" + "  ·  ".join(child_brands) + "**")
-    lines.append(f":material/apartment: **{n_fac:,}** facilities  ·  "
-                 f":material/groups: **{rn_need:,}** RN need")
-    lines.append(f":material/payments: **{_fmt_big(monthly_fee)}/mo** fee  ·  "
-                 f":material/trending_up: **{_fmt_big(term_savings)}** 24-mo impact")
-    return "\n\n".join(lines)
-
-
-def _hospital_tile_label(row: dict) -> str:
-    """Markdown label for a hospital tile-button."""
-    name = row.get("name", "Unknown")
-    sys_name = row.get("health_system", "Independent")
-    city = row.get("city", "")
-    state = row.get("state", "")
-    rn_need = int(row.get("rn_need", 0) or 0)
-    agency_premium = float(row.get("signal_agency_premium", 0) or 0)
-    term_savings = float(row.get("target_term_net_savings_account", 0) or 0)
-    deal_score = float(row.get("target_deal_score", 0) or 0) * 100
-    return "\n\n".join([
-        f"### :material/local_hospital: {name}",
-        f"_{sys_name} · {city}, {state}_",
-        f":material/groups: **{rn_need:,}** RN need  ·  "
-        f":material/payments: **${agency_premium:,.0f}/hr** agency rate",
-        f":material/trending_up: **{_fmt_big(term_savings)}** 24-mo impact  ·  "
-        f":material/star: **{deal_score:.0f}/100** deal score",
-    ])
-
-
-def _outpatient_tile_label(row: dict) -> str:
-    """Markdown label for an outpatient chain tile-button."""
-    name = row.get("health_system", "Unknown")
-    primary_state = row.get("primary_state", "—")
-    n_facilities = int(row.get("n", 0) or 0)
-    rn = int(row.get("rn", 0) or 0)
-    term_rev = float(row.get("rev", 0) or 0)
-    return "\n\n".join([
-        f"### :material/medical_services: {name}",
-        f"**{primary_state}** · primary state",
-        f":material/apartment: **{n_facilities:,}** facilities  ·  "
-        f":material/groups: **{rn:,}** RNs placeable",
-        f":material/trending_up: **{_fmt_big(term_rev)}** 24-mo uplift  ·  "
-        f"**{_fmt_big(term_rev/2)}/yr** annual",
-    ])
-
-
-def _tile_html(row: dict) -> str:
-    """Build the HTML for one tile. Renders multi-logo strip if child_domains
-    is populated (for consortium tiles like UC Health), otherwise single logo."""
-    name = row.get("display_name") or row.get("health_system") or "Unknown"
-    domain = (row.get("domain") or "").strip()
+    name_s = _safe(name)
     child_domains_raw = (row.get("child_domains") or "").strip()
     child_domains = [
         d.strip() for d in child_domains_raw.replace(",", ";").split(";")
@@ -226,43 +190,41 @@ def _tile_html(row: dict) -> str:
     rank_html = ""
     if rank == rank and rank is not None:  # not NaN
         try:
-            rank_html = f"<div class='fl-tile-rank'>#{int(rank)} · BECKER 2026</div>"
+            rank_html = (
+                f"<div class='fl-tile-rank'><span class='dot'></span>"
+                f"#{int(rank)} · Becker 2026</div>"
+            )
         except Exception:
             pass
 
-    inits = _initials(name)
-
+    inits = _safe(_initials(name))
     n_fac = int(row.get("n_facilities", 0) or 0)
     rn_need = int(row.get("rn_need", 0) or 0)
     monthly_fee = float(row.get("monthly_fee_target", 0) or 0)
     term_savings = float(row.get("term_savings_target", 0) or 0)
 
     # ─── Multi-logo consortium variant ────────────────────────────────
-    # We render styled initials badges for each child brand instead of
-    # remote logos. Clearbit's free logo API was shut down after the HubSpot
-    # acquisition; free favicon services only return 16-25px images. Initials
-    # badges look intentional (B2B SaaS standard) and stay reliable.
+    # Styled initials badges for each child brand instead of remote logos
+    # (Clearbit's free logo API is dead; favicon services only return tiny
+    # images). Initials badges look intentional and stay reliable.
     if child_domains:
         child_badges = "".join(
-            f"<div class='fl-tile-logo-fallback' "
-            f"style='font-size:0.78rem;'>{_domain_to_brand_label(d)}</div>"
+            f"<div class='fl-tile-logo-fallback' style='font-size:0.74rem;'>"
+            f"{_safe(_domain_to_brand_label(d))}</div>"
             for d in child_domains
         )
         head_html = (
             f"<div class='fl-tile-logo-strip'>{child_badges}</div>"
-            f"<div class='fl-tile-consortium-name'>{name}</div>"
+            f"<div class='fl-tile-name'>{name_s}</div>"
             f"{rank_html}"
-            f"<div class='fl-tile-consortium-tag' "
-            f"style='font-family:Inter,sans-serif; font-size:0.7rem; "
-            f"color:#5B6675; letter-spacing:0.06em; text-transform:uppercase; "
-            f"margin-top:2px; font-weight:600;'>Multi-campus consortium</div>"
+            f"<div class='fl-tile-tag'>Multi-campus consortium</div>"
         )
     else:
-        # ─── Single-logo standard tile (initials badge) ────────────────
         logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
         head_html = (
             f"<div class='fl-tile-head'>{logo_html}"
-            f"<div><div class='fl-tile-name'>{name}</div>{rank_html}</div>"
+            f"<div class='fl-tile-headtext'>"
+            f"<div class='fl-tile-name'>{name_s}</div>{rank_html}</div>"
             f"</div>"
         )
 
@@ -272,13 +234,14 @@ def _tile_html(row: dict) -> str:
         f"<div class='l'>Facilities</div></div>"
         f"<div class='fl-tile-stat'><div class='v'>{rn_need:,}</div>"
         f"<div class='l'>RN need</div></div>"
-        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(monthly_fee)}/mo</div>"
+        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big_html(monthly_fee)}"
+        f"<span class='u'>/mo</span></div>"
         f"<div class='l'>Florence fee</div></div>"
-        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_savings)}</div>"
+        f"<div class='fl-tile-stat'><div class='v hero'>{_fmt_big_html(term_savings)}</div>"
         f"<div class='l'>24-mo impact</div></div>"
         f"</div>"
     )
-    return f"<div class='fl-tile'>{head_html}{stats_html}</div>"
+    return f"<div class='fl-tile fl-accent-{accent}'>{head_html}{stats_html}</div>"
 
 
 # ─── Streamlit grid renderer ────────────────────────────────────────
@@ -307,21 +270,29 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
             row = visible.iloc[idx]
             with cols[c]:
                 sys_id = row["health_system_id"]
+                st.markdown(_tile_html(row.to_dict(), idx),
+                            unsafe_allow_html=True)
+                name = row.get("display_name") or row.get("health_system")
                 if st.button(
-                    _tile_label(row.to_dict()),
+                    "Open →",
                     key=f"tile_open_{sys_id}",
                     use_container_width=True,
-                    help=f"Open {row.get('display_name') or row.get('health_system')}",
+                    help=f"Open {name}",
                 ):
                     clicked_id = sys_id
     return clicked_id
 
 
 # ─── Hospital-level tiles (the "Biggest hospitals" toggle) ──────────
-def _hospital_tile_html(row: dict, sys_logo_lookup: dict) -> str:
-    """Tile for an individual hospital. Uses parent system's logo if known."""
-    name = row.get("name", "Unknown")
-    sys_id = row.get("health_system_id", "")
+def _hospital_tile_html(row: dict, idx: int = 0) -> str:
+    """Deck-styled card for an individual hospital.
+
+    Brand accent (teal / indigo) alternates across the grid; the 24-month
+    impact is the accent-colored hero stat. All `$` are emitted as &#36; so
+    Streamlit never parses the card as LaTeX math.
+    """
+    accent = _accent_for(idx)
+    name = _safe(row.get("name", "Unknown"))
     sys_name = row.get("health_system", "Independent")
     city = row.get("city", "")
     state = row.get("state", "")
@@ -331,26 +302,27 @@ def _hospital_tile_html(row: dict, sys_logo_lookup: dict) -> str:
     deal_score = float(row.get("target_deal_score", 0) or 0) * 100
 
     # Initials badge using parent-system name (Clearbit logo API is dead)
-    inits = _initials(sys_name) if sys_name else _initials(name)
+    inits = _safe(_initials(sys_name) if sys_name else _initials(
+        row.get("name", "?")))
     logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
+    sub = _safe(f"{sys_name} · {city}, {state}")
 
-    # Single-line HTML to avoid Streamlit markdown parsing nested indentation
-    # as code blocks.
     return (
-        f"<div class='fl-tile'>"
+        f"<div class='fl-tile fl-accent-{accent}'>"
         f"<div class='fl-tile-head'>{logo_html}"
-        f"<div><div class='fl-tile-name'>{name}</div>"
-        f"<div style='font-family:Inter,sans-serif; font-size:0.78rem; "
-        f"color:#5B6675; margin-top:3px;'>{sys_name} · {city}, {state}</div>"
+        f"<div class='fl-tile-headtext'><div class='fl-tile-name'>{name}</div>"
+        f"<div class='fl-tile-sub'>{sub}</div>"
         f"</div></div>"
         f"<div class='fl-tile-stats'>"
         f"<div class='fl-tile-stat'><div class='v'>{rn_need:,}</div>"
         f"<div class='l'>RN need</div></div>"
-        f"<div class='fl-tile-stat'><div class='v'>${agency_premium:,.0f}/hr</div>"
+        f"<div class='fl-tile-stat'><div class='v'>&#36;{agency_premium:,.0f}"
+        f"<span class='u'>/hr</span></div>"
         f"<div class='l'>Agency rate</div></div>"
-        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_savings)}</div>"
+        f"<div class='fl-tile-stat'><div class='v hero'>{_fmt_big_html(term_savings)}</div>"
         f"<div class='l'>24-mo impact</div></div>"
-        f"<div class='fl-tile-stat'><div class='v'>{deal_score:.0f}/100</div>"
+        f"<div class='fl-tile-stat'><div class='v'>{deal_score:.0f}"
+        f"<span class='u'>/100</span></div>"
         f"<div class='l'>Deal score</div></div>"
         f"</div></div>"
     )
@@ -370,14 +342,6 @@ def render_hospital_tile_grid(st, recs_df: pd.DataFrame,
         st.info("No hospitals match the current filter.")
         return None
 
-    # Build parent-system logo lookup
-    directory = load_directory()
-    sys_logo_lookup = {
-        row["florence_system_id"]: {"domain": row.get("domain", "")}
-        for _, row in directory.iterrows()
-        if row.get("florence_system_id")
-    }
-
     n_columns = 3
     clicked_ccn: Optional[str] = None
     rows_count = (len(visible) + n_columns - 1) // n_columns
@@ -390,8 +354,10 @@ def render_hospital_tile_grid(st, recs_df: pd.DataFrame,
             row = visible.iloc[idx]
             with cols[c]:
                 ccn = str(row["ccn"])
+                st.markdown(_hospital_tile_html(row.to_dict(), idx),
+                            unsafe_allow_html=True)
                 if st.button(
-                    _hospital_tile_label(row.to_dict()),
+                    "Open →",
                     key=f"hosp_tile_open_{ccn}",
                     use_container_width=True,
                     help=f"Open {row.get('name')}",
@@ -401,31 +367,32 @@ def render_hospital_tile_grid(st, recs_df: pd.DataFrame,
 
 
 # ─── Outpatient chain tiles (sorted by state) ───────────────────────
-def _outpatient_tile_html(row: dict) -> str:
-    name = row.get("health_system", "Unknown")
-    primary_state = row.get("primary_state", "—")
+def _outpatient_tile_html(row: dict, idx: int = 0) -> str:
+    """Deck-styled card for an outpatient chain. Brand accent alternates across
+    the grid; 24-month uplift is the accent hero stat; every `$` is emitted as
+    &#36; so Streamlit never parses the card as LaTeX math."""
+    accent = _accent_for(idx)
+    name = _safe(row.get("health_system", "Unknown"))
     n_facilities = int(row.get("n", 0) or 0)
     rn = int(row.get("rn", 0) or 0)
     term_rev = float(row.get("rev", 0) or 0)
-    inits = _initials(name)
-
-    # Initials badge (no remote logo dependency)
+    inits = _safe(_initials(row.get("health_system", "?")))
     logo_html = f"<div class='fl-tile-logo-fallback'>{inits}</div>"
 
-    # Single-line HTML to avoid Streamlit markdown code-block treatment.
     return (
-        f"<div class='fl-tile'>"
+        f"<div class='fl-tile fl-accent-{accent}'>"
         f"<div class='fl-tile-head'>{logo_html}"
-        f"<div><div class='fl-tile-name'>{name}</div>"
-        f"<div class='fl-tile-rank'>{primary_state}</div></div></div>"
+        f"<div class='fl-tile-headtext'><div class='fl-tile-name'>{name}</div>"
+        f"</div></div>"
         f"<div class='fl-tile-stats'>"
         f"<div class='fl-tile-stat'><div class='v'>{n_facilities:,}</div>"
         f"<div class='l'>Facilities</div></div>"
         f"<div class='fl-tile-stat'><div class='v'>{rn:,}</div>"
         f"<div class='l'>RNs placeable</div></div>"
-        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_rev)}</div>"
+        f"<div class='fl-tile-stat'><div class='v hero'>{_fmt_big_html(term_rev)}</div>"
         f"<div class='l'>24-mo uplift</div></div>"
-        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big(term_rev/2)}/yr</div>"
+        f"<div class='fl-tile-stat'><div class='v'>{_fmt_big_html(term_rev/2)}"
+        f"<span class='u'>/yr</span></div>"
         f"<div class='l'>Annual</div></div>"
         f"</div></div>"
     )
@@ -469,13 +436,12 @@ def render_outpatient_tile_grid(st, nh_df: pd.DataFrame,
         rows_to_render.append(("TILE", row))
 
     i = 0
+    tile_idx = 0  # running counter so the teal/indigo accent alternates
     while i < len(rows_to_render):
         if rows_to_render[i][0] == "HEADER":
-            state = rows_to_render[i][1]
+            state = _safe(rows_to_render[i][1])
             st.markdown(
-                f"<div style='font-family:Inter,sans-serif; font-size:0.8rem; "
-                f"font-weight:600; letter-spacing:0.18em; color:#5B6675; "
-                f"text-transform:uppercase; margin:18px 0 8px 0;'>"
+                f"<div class='florence-eyebrow' style='margin:20px 0 8px 0;'>"
                 f"{state}</div>",
                 unsafe_allow_html=True,
             )
@@ -490,8 +456,11 @@ def render_outpatient_tile_grid(st, nh_df: pd.DataFrame,
         for c, row in enumerate(batch):
             with cols[c]:
                 hsid = row["health_system_id"]
+                st.markdown(_outpatient_tile_html(row.to_dict(), tile_idx),
+                            unsafe_allow_html=True)
+                tile_idx += 1
                 if st.button(
-                    _outpatient_tile_label(row.to_dict()),
+                    "Open →",
                     key=f"out_tile_open_{hsid}",
                     use_container_width=True,
                     help=f"Open {row.get('health_system')}",
