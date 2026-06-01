@@ -4,6 +4,8 @@ data/auth_otp_outbox.log
 data/auth_users.csv
 data/auth_sessions.csv
 data/auth_otp_codes.csv
+# Rep-entered customer-contact overrides (mutable data, not code)
+data/contact_overrides.csv
 .env
 .env.*
 secrets.toml

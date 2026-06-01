@@ -948,6 +948,36 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
                 pinned.remove(system_id)
             else:
                 pinned.append(system_id)
+
+    # ── Customer contact (editable) ───────────────────────────────────
+    st.divider()
+    import contacts as _contacts
+    cc = _contacts.get_contact("system", system_id)
+    who = " · ".join([x for x in (cc.get("contact_name"), cc.get("title")) if x]) or "No named contact yet"
+    st.markdown(
+        f"<div class='fl-eyebrow pur'>Customer contact</div>"
+        f"<div style='margin-top:4px;font-size:.95rem;color:var(--f-ink);'>{who}</div>"
+        f"<div style='font-family:var(--f-mono);font-size:.82rem;color:var(--f-muted);margin-top:2px;'>"
+        f"Tel {cc.get('phone') or '—'} &nbsp;·&nbsp; Email {cc.get('email') or '—'}</div>",
+        unsafe_allow_html=True,
+    )
+    with st.expander("Edit contact"):
+        with st.form(f"qa_contact_{system_id}"):
+            f_name = st.text_input("Contact name", value=cc.get("contact_name", ""))
+            f_title = st.text_input("Title", value=cc.get("title", ""))
+            f_email = st.text_input("Email", value=cc.get("email", ""))
+            f_phone = st.text_input("Phone", value=cc.get("phone", ""))
+            f_notes = st.text_area("Notes", value=cc.get("notes", ""), height=72)
+            if st.form_submit_button("Save contact", type="primary"):
+                rep = (st.session_state.get("current_user_email")
+                       or st.session_state.get("rep_email") or "")
+                _contacts.save_contact(
+                    "system", system_id, org_name=m["name"],
+                    contact_name=f_name, title=f_title, email=f_email,
+                    phone=f_phone, notes=f_notes, by=rep,
+                )
+                st.success("Contact saved.")
+
     st.caption(
         "ZIP includes the customer deck (.pptx), exec summary (PDF + HTML), and "
         "the Excel workbook."
@@ -1628,8 +1658,13 @@ if view == "inpatient":
                 st, sys_agg, search=search_q, status_map=_stage_map,
             )
             if clicked:
-                _push_recent(clicked)
-                open_system_quick_actions(clicked, placeholder_msp_markup_pct)
+                _action, _sid = clicked
+                _push_recent(_sid)
+                if _action == "open":
+                    st.session_state["inpatient_active_system"] = _sid
+                    st.rerun()
+                else:
+                    open_system_quick_actions(_sid, placeholder_msp_markup_pct)
 
             # Fallback dropdown for unranked / "everything else"
             _unranked = system_tiles.render_unranked_count(st, sys_agg)

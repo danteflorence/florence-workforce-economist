@@ -264,14 +264,14 @@ def _tile_html(row: dict, idx: int = 0, status: Optional[str] = None) -> str:
 def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
                                max_tiles: int = 30,
                                search: str = "",
-                               status_map: Optional[dict] = None) -> Optional[str]:
+                               status_map: Optional[dict] = None) -> Optional[tuple]:
     """Render the tile grid for the Inpatient landing page.
 
     `search` filters by system name (case-insensitive); `status_map` maps
     health_system_id → deal stage, rendered as a chip on each tile.
 
-    Returns the clicked system_id if a tile's button was pressed this rerun,
-    else None.
+    Returns (action, system_id) where action is 'open' (deep-dive proposal) or
+    'docs' (generate the document bundle), else None.
     """
     merged = merged_systems(sys_agg)
     status_map = status_map or {}
@@ -287,7 +287,7 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
 
     visible = merged.head(max_tiles)
     n_columns = 3
-    clicked_id: Optional[str] = None
+    clicked: Optional[tuple] = None
     rows_count = (len(visible) + n_columns - 1) // n_columns
     for r in range(rows_count):
         cols = st.columns(n_columns)
@@ -302,14 +302,18 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
                                        status=status_map.get(str(sys_id))),
                             unsafe_allow_html=True)
                 name = row.get("display_name") or row.get("health_system")
-                if st.button(
-                    "Open →",
-                    key=f"tile_open_{sys_id}",
-                    use_container_width=True,
-                    help=f"Open {name}",
-                ):
-                    clicked_id = sys_id
-    return clicked_id
+                ba, bb = st.columns(2)
+                with ba:
+                    if st.button("Open system →", key=f"tile_open_{sys_id}",
+                                 type="primary", use_container_width=True,
+                                 help=f"Open the {name} proposal"):
+                        clicked = ("open", sys_id)
+                with bb:
+                    if st.button("Generate documents", key=f"tile_docs_{sys_id}",
+                                 use_container_width=True,
+                                 help=f"Generate the {name} document bundle"):
+                        clicked = ("docs", sys_id)
+    return clicked
 
 
 # ─── Hospital-level tiles (the "Biggest hospitals" toggle) ──────────
