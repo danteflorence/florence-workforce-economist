@@ -845,12 +845,30 @@ def build_system_bundle_zip(system_id: str, placeholder_msp_markup_pct: float):
         pptx_buf = build_deck_from_system_recs(sys_recs, name, target_offset_pct=offset)
         pptx_path = tmp / f"{safe}_customer_deck.pptx"
         pptx_path.write_bytes(pptx_buf.getvalue())
+
+        # Ready-to-send outreach email, pre-filled with this system's figures so
+        # the rep has the exact language + hero number the moment they download.
+        import outreach_email as _oe
+
+        def _sum(c):
+            return float(sys_recs[c].sum()) if c in sys_recs.columns else 0.0
+        _term_impact = _sum("target_term_net_savings_account")
+        _rn_need = int(_sum("rn_need"))
+        _email = _oe.compose_email(
+            system_name=name,
+            annual_savings=_term_impact / 2,
+            term_impact=_term_impact,
+            rn_need=_rn_need,
+            monthly_fee=_sum("target_monthly_florence_fee_account"),
+        )
+
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
             zf.write(pptx_path, pptx_path.name)
             zf.write(Path(xlsx), Path(xlsx).name)
             zf.write(Path(p), Path(p).name)
             zf.write(Path(h), Path(h).name)
+            zf.writestr("outreach_email.txt", _oe.as_txt(_email))
         return buf.getvalue(), f"{safe}_recommendation_bundle.zip"
 
 
@@ -1022,9 +1040,29 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
             if st.button("Mark responded", key=f"qa_resp_{system_id}"):
                 _mail.record_response("system", system_id)
 
+    # ── Outreach email (ready to send) — exact language + this system's numbers ─
+    import outreach_email as _oe
+    _code = (mst or {}).get("retrieval_code", "") if mst else ""
+    _au = f"{_mail.SIGNUP_BASE}?code={_code}" if _code else ""
+    _email = _oe.compose_email(
+        system_name=m["name"], annual_savings=m["term_impact"] / 2,
+        term_impact=m["term_impact"], rn_need=m["rn_need"],
+        monthly_fee=m["monthly_fee"], code=_code, activation_url=_au,
+        contact_name=cc.get("contact_name", ""),
+        rep_email=(st.session_state.get("current_user_email") or ""),
+    )
+    with st.expander("Outreach email · ready to send"):
+        st.caption(
+            "Pre-filled with this system's hero savings + pricing. Drop in "
+            "[First name] and your sign-off, then send from your own inbox."
+        )
+        st.text_input("Subject", value=_email["subject"], key=f"qa_em_subj_{system_id}")
+        st.code(_email["body"], language=None)  # the code block has a copy button
+        st.markdown(f"[Open prefilled in your email client →]({_email['mailto']})")
+
     st.caption(
-        "ZIP includes the customer deck (.pptx), exec summary (PDF + HTML), and "
-        "the Excel workbook."
+        "ZIP includes the customer deck (.pptx), exec summary (PDF + HTML), the "
+        "Excel workbook, and a ready-to-send outreach email (outreach_email.txt)."
     )
 
 
