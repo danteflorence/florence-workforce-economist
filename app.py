@@ -1483,7 +1483,23 @@ current_user = None
 current_role = "admin"   # default in unauthenticated local mode
 current_territory = "ALL"
 
-if _AUTH_REQUIRED:
+# Google sign-in (Streamlit native OIDC). Conditional — enforces login ONLY when
+# a [auth] section exists in secrets; otherwise it no-ops so the app runs open
+# and nobody is locked out before the OAuth client is provisioned. florence_auth.
+import florence_auth as _gauth
+_g_user = _gauth.require_login(st)
+if _g_user is not None:
+    current_user = {"email": _g_user["email"], "name": _g_user.get("name", "")}
+    st.session_state["current_user_email"] = _g_user["email"]
+    try:
+        import rbac as _rbac
+        _rbac.bootstrap_first_admin(_g_user["email"])
+        current_role = _rbac.get_role(_g_user["email"]) or "rep"
+        current_territory = _rbac.get_territory(_g_user["email"]) or "ALL"
+    except Exception:
+        pass
+
+if _g_user is None and _AUTH_REQUIRED:
     import auth as _flo_auth
     import rbac as _rbac
     _tok = st.session_state.get("florence_session_token")
@@ -1515,6 +1531,9 @@ if _AUTH_REQUIRED:
 st.session_state["current_user"] = current_user
 st.session_state["current_role"] = current_role
 st.session_state["current_territory"] = current_territory
+if current_user and current_user.get("email"):
+    st.session_state["current_user_email"] = current_user["email"]
+_gauth.logout_button(st)  # sidebar sign-out — no-op unless Google auth is configured
 
 
 # ---------------------------------------------------------------------------
