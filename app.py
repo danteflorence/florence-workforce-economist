@@ -1052,6 +1052,87 @@ def _render_quick_access_row(sys_agg, placeholder_msp_markup_pct: float) -> None
                 open_system_quick_actions(sid, placeholder_msp_markup_pct)
 
 
+def render_contact_panel(entity_type: str, entity_id: str, *, org_name: str,
+                         monthly_fee: float = 0.0, term_impact: float = 0.0) -> None:
+    """Inline customer-contact + direct-mail panel for any account
+    (hospital / outpatient facility / chain). Display + edit (incl. address),
+    NPPES address fetch, and the Lob drafter — all tracked. Reusable across views."""
+    import contacts as _contacts
+    import lob_mailer as _mail
+    cc = _contacts.get_contact(entity_type, str(entity_id))
+    florence_eyebrow("Customer contact")
+    who = " · ".join([x for x in (cc.get("contact_name"), cc.get("title")) if x]) or "No named contact yet"
+    addr = " · ".join([x for x in (cc.get("address1"), cc.get("city"), cc.get("state"), cc.get("zip")) if x]) or "No address on file"
+    st.markdown(
+        f"<div style='font-size:.95rem;color:var(--f-ink);'>{who}</div>"
+        f"<div style='font-family:var(--f-mono);font-size:.82rem;color:var(--f-muted);'>"
+        f"Tel {cc.get('phone') or '—'} · Email {cc.get('email') or '—'}</div>"
+        f"<div style='font-family:var(--f-mono);font-size:.78rem;color:var(--f-muted);'>{addr}</div>",
+        unsafe_allow_html=True,
+    )
+    if entity_type in ("facility", "hospital") and not cc.get("address1"):
+        if st.button("Fetch address (NPPES)", key=f"cp_fetch_{entity_type}_{entity_id}"):
+            try:
+                import nppes_enrich
+                got = nppes_enrich.enrich_ccn(str(entity_id))
+                st.success("Address found." if got else "No NPPES address for this NPI.")
+            except Exception as e:
+                st.caption(f"Lookup failed: {e}")
+
+    with st.expander("Edit contact"):
+        with st.form(f"cp_form_{entity_type}_{entity_id}"):
+            f_name = st.text_input("Contact name", value=cc.get("contact_name", ""))
+            f_title = st.text_input("Title", value=cc.get("title", ""))
+            e1, e2 = st.columns(2)
+            with e1:
+                f_email = st.text_input("Email", value=cc.get("email", ""))
+            with e2:
+                f_phone = st.text_input("Phone", value=cc.get("phone", ""))
+            f_addr = st.text_input("Street address", value=cc.get("address1", ""))
+            a1, a2, a3 = st.columns([2, 1, 1])
+            with a1:
+                f_city = st.text_input("City", value=cc.get("city", ""))
+            with a2:
+                f_state = st.text_input("State", value=cc.get("state", ""))
+            with a3:
+                f_zip = st.text_input("ZIP", value=cc.get("zip", ""))
+            f_notes = st.text_area("Notes", value=cc.get("notes", ""), height=68)
+            if st.form_submit_button("Save contact", type="primary"):
+                rep = (st.session_state.get("current_user_email")
+                       or st.session_state.get("rep_email") or "")
+                _contacts.save_contact(
+                    entity_type, str(entity_id), org_name=org_name,
+                    contact_name=f_name, title=f_title, email=f_email, phone=f_phone,
+                    address1=f_addr, city=f_city, state=f_state, zip=f_zip,
+                    notes=f_notes, by=rep,
+                )
+                st.success("Contact saved.")
+
+    mst = _mail.status_for(entity_type, str(entity_id))
+    with st.expander("Direct mail" + (f" · {mst['status']}" if mst else "")):
+        st.caption("Lob connected." if _mail.is_configured()
+                   else "Lob not connected — drafts a preview; set LOB_API_KEY to send.")
+        if not cc.get("mailable"):
+            st.caption("Add a street address + ZIP (or Fetch from NPPES) to enable mail.")
+        if st.button("Draft postcard", key=f"cp_mail_{entity_type}_{entity_id}",
+                     disabled=not cc.get("mailable")):
+            st.session_state[f"cp_mres_{entity_type}_{entity_id}"] = _mail.draft_and_send(
+                entity_type, str(entity_id), org_name=org_name,
+                to_name=cc.get("contact_name", ""), address1=cc.get("address1", ""),
+                city=cc.get("city", ""), state=cc.get("state", ""), zip=cc.get("zip", ""),
+                monthly_fee=monthly_fee, term_impact=term_impact,
+                by=(st.session_state.get("current_user_email") or ""), live=False,
+            )
+        res = st.session_state.get(f"cp_mres_{entity_type}_{entity_id}")
+        if res:
+            st.markdown(f"**Code:** `{res['code']}` — {res['preview']['body'][:140]}…")
+            if res.get("detail"):
+                st.caption(res["detail"])
+        if mst and mst.get("status") in ("drafted", "sent"):
+            if st.button("Mark responded", key=f"cp_resp_{entity_type}_{entity_id}"):
+                _mail.record_response(entity_type, str(entity_id))
+
+
 # ---------------------------------------------------------------------------
 # Cached data
 # ---------------------------------------------------------------------------
@@ -3136,6 +3217,21 @@ if view == "outpatient":
     else:
         selected_chain_name = None
 
+    # Customer contacts at the facility level (CMS phone + NPPES address live here).
+    if not fr.empty:
+        with st.expander(":material/contact_mail: Customer contacts & direct mail", expanded=False):
+            _fac_opts = {
+                f"{r['name']} — {r.get('city', '')}, {r.get('state', '')}": str(r["ccn"])
+                for _, r in fr.head(200).iterrows()
+            }
+            if _fac_opts:
+                _pick = st.selectbox("Facility", list(_fac_opts.keys()), key="out_contact_fac")
+                _ccn = _fac_opts[_pick]
+                _rev = (float(fr[fr["ccn"].astype(str) == _ccn]["account_term_revenue_uplift"].iloc[0])
+                        if "account_term_revenue_uplift" in fr.columns else 0.0)
+                render_contact_panel("facility", _ccn, org_name=_pick.split(" — ")[0],
+                                     monthly_fee=_rev / 24 if _rev else 0.0, term_impact=_rev)
+
     # ── Aggregate hero numbers ────────────────────────────────────────
     total_facilities = len(fr)
     total_rns = int(fr["rn_estimate"].sum())
@@ -4293,6 +4389,16 @@ if view == "price_hospital":
 
     if result.manual_review_flag:
         st.warning(f"⚠ MANUAL REVIEW REQUIRED — {result.manual_review_reason}")
+
+    with st.expander(":material/contact_mail: Customer contact & direct mail", expanded=False):
+        try:
+            _ti = (float(priced_row["target_term_net_savings_account"].iloc[0])
+                   if (len(priced_row) and "target_term_net_savings_account" in priced_row.columns)
+                   else 0.0)
+        except Exception:
+            _ti = 0.0
+        render_contact_panel("hospital", str(row["ccn"]).zfill(6), org_name=str(row["name"]),
+                             monthly_fee=float(result.monthly_fee), term_impact=_ti)
 
     s1, s2, s3, s4 = st.columns(4)
     s1.metric(
