@@ -7,7 +7,7 @@ Modules:
   ces_rn          — Monthly RN employment by state/MSA
   oews_refresh    — Annual May OEWS wage refresh
   cms_care_compare — Quarterly CMS Care Compare star + staffing changes
-  news_feeds      — RSS scrape of AHA News, Becker's, etc.
+  news_feeds      — RSS scrape of AHA News, Modern Healthcare, etc.
   briefing        — Weekly "what changed" summarizer
 
 Each module pulls fresh data and writes to data/surveillance/<feed>/YYYY-MM-DD.{csv,json}

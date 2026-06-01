@@ -1,5 +1,5 @@
 """
-Healthcare news RSS surveillance — AHA News, Becker's, Modern Healthcare.
+Healthcare news RSS surveillance — AHA News, Modern Healthcare, Fierce Healthcare.
 
 For each curated source, pull the RSS feed daily and:
   - Store new headlines
@@ -28,10 +28,6 @@ FEEDS = {
     "ahanews": {
         "url": "https://www.aha.org/news/news.rss",
         "title": "American Hospital Association News",
-    },
-    "beckers_hospital": {
-        "url": "https://www.beckershospitalreview.com/feed/",
-        "title": "Becker's Hospital Review",
     },
     "modern_healthcare": {
         "url": "https://www.modernhealthcare.com/news/feed",

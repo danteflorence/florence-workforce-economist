@@ -1911,7 +1911,7 @@ if view == "inpatient":
                         open_system_quick_actions(_pr["system_id"], placeholder_msp_markup_pct)
 
         # Tile grid — the rep's landing
-        # Toggle: Health systems (Becker ranked) vs Hospitals (by RN need)
+        # Toggle: Health systems (ranked by scale) vs Hospitals (by RN need)
         tile_mode = st.radio(
             "Show",
             ["Biggest health systems", "Biggest hospitals"],
@@ -1921,7 +1921,7 @@ if view == "inpatient":
         )
 
         if tile_mode == "Biggest health systems":
-            florence_eyebrow("Top U.S. health systems · Becker's 2026 ranking")
+            florence_eyebrow("Top U.S. health systems · by scale")
             search_q = st.text_input(
                 "Search systems",
                 placeholder="Search systems by name…",
@@ -1975,7 +1975,7 @@ if view == "inpatient":
             _unranked = system_tiles.render_unranked_count(st, sys_agg)
             with st.expander(
                 f":material/search: Search all systems "
-                f"({_unranked} not in the Becker directory)",
+                f"({_unranked} not in the ranked directory)",
                 expanded=False,
             ):
                 selected_label = st.selectbox(

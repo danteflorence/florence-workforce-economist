@@ -19,6 +19,11 @@ from __future__ import annotations
 import os
 from typing import Optional
 
+# The Florence workspace the tool is gated to. Overridable via
+# FLORENCE_ALLOWED_DOMAIN (env) or [auth].allowed_domain (secrets); this is the
+# fallback so the gate restricts to florenceeducation.com even if neither is set.
+DEFAULT_ALLOWED_DOMAIN = "florenceeducation.com"
+
 
 def is_configured(st) -> bool:
     """True iff a usable [auth] section is present in secrets."""
@@ -53,6 +58,8 @@ def _allowed_domains(st) -> set:
             raw = (st.secrets.get("auth") or {}).get("allowed_domain", "") or ""
         except Exception:
             raw = ""
+    if not raw:
+        raw = DEFAULT_ALLOWED_DOMAIN
     return {d.strip().lower() for d in raw.replace(";", ",").split(",") if d.strip()}
 
 

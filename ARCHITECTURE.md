@@ -46,7 +46,7 @@ U.S. nursing labor market.
          │   ces_rn             │  ← BLS CES monthly
          │   oews_state_rn      │  ← BLS OEWS annual
          │   cms_care_compare   │  ← CMS quality, quarterly
-         │   news_feeds         │  ← AHA News / Becker's, daily
+         │   news_feeds         │  ← AHA News / Fierce Healthcare, daily
          │   ownership_changes  │  ← Diff vs prior snapshot
          │   pricing_alerts     │  ← Pricing drift detection
          │   forecast           │  ← SARIMA 12-month projection
@@ -126,7 +126,7 @@ deltas.
 | CES nursing employment | Monthly | None | BLS Public Data API v2 |
 | OEWS state RN wages | Annual May | None | BLS Public Data API v2 |
 | CMS Care Compare | Quarterly | None | data.cms.gov Provider Data Catalog |
-| Healthcare news | Daily | None | AHA News + Becker's RSS feeds |
+| Healthcare news | Daily | None | AHA News + Fierce Healthcare RSS feeds |
 | Ownership changes | Daily | None | Self-diff vs prior universe snapshot |
 | Pricing alerts | Daily | None | Self-diff vs prior recommendations |
 | Forecasting | Monthly | None | SARIMA on JOLTS history (statsmodels) |

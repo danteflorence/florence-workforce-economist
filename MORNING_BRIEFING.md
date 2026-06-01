@@ -10,12 +10,12 @@ Pick up where you left off — or scan for anything that doesn't feel right and 
 | Module | Status | Notes |
 |---|---|---|
 | `surveillance/cms_care_compare.py` | ✓ | Quarterly CMS quality data refresh + delta detection |
-| `surveillance/news_feeds.py` | ✓ | Daily RSS scrape: AHA News, Becker's, Modern Healthcare, Fierce |
+| `surveillance/news_feeds.py` | ✓ | Daily RSS scrape: AHA News, Modern Healthcare, Fierce |
 | `surveillance/ownership_changes.py` | ✓ | Snapshot diff for hospital + non-hospital ownership |
 | `surveillance/pricing_alerts.py` | ✓ | Pricing drift detection across snapshots |
 
 **Tested live:**
-- News feeds pulled headlines from Becker's + Fierce Healthcare
+- News feeds pulled headlines from Modern Healthcare + Fierce Healthcare
 - Watchlist of 25 health systems for system-mention matching
 - Keyword filter: layoffs, strikes, mergers, staffing, agency, leadership changes, etc.
 - Ownership snapshots taken for 5,432 hospitals + 47,113 non-hospital facilities

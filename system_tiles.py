@@ -1,18 +1,18 @@
 """
 System tile grid — Inpatient landing page.
 
-Renders ranked tiles for U.S. health systems sorted by Becker's annual
-ranking. Each tile shows the system's logo (via Clearbit's free logo API),
+Renders ranked tiles for U.S. health systems sorted by scale
+(largest systems first). Each tile shows the system's logo (via Clearbit's free logo API),
 quick stats (facilities, RN need, savings), and an "Open →" button that
 drills the rep into the full proposal-building flow for that system.
 
 ═══════════════════════════════════════════════════════════════════════════
 DATA FILES
 ═══════════════════════════════════════════════════════════════════════════
-data/system_directory.csv  — becker_rank_2026, florence_system_id,
+data/system_directory.csv  — system_rank, florence_system_id,
                               display_name, domain, notes
 
-To update the rankings, edit the CSV. Rows without a becker_rank_2026
+To update the rankings, edit the CSV. Rows without a system_rank
 fall to the end of the grid (sorted by Florence RN need).
 
 ═══════════════════════════════════════════════════════════════════════════
@@ -45,27 +45,27 @@ DIRECTORY_FILE = DATA_DIR / "system_directory.csv"
 def load_directory() -> pd.DataFrame:
     if not DIRECTORY_FILE.exists():
         return pd.DataFrame(columns=[
-            "becker_rank_2026", "florence_system_id",
+            "system_rank", "florence_system_id",
             "display_name", "domain", "notes",
         ])
     df = pd.read_csv(DIRECTORY_FILE, dtype=str).fillna("")
-    df["becker_rank_2026"] = pd.to_numeric(
-        df["becker_rank_2026"], errors="coerce"
+    df["system_rank"] = pd.to_numeric(
+        df["system_rank"], errors="coerce"
     )
     return df
 
 
 def merged_systems(sys_agg: pd.DataFrame,
                    directory: Optional[pd.DataFrame] = None) -> pd.DataFrame:
-    """Join the Florence system aggregation with the Becker directory.
+    """Join the Florence system aggregation with the ranked system directory.
 
-    Adds: becker_rank_2026, display_name (override), domain, child_domains.
-    Sorts by Becker rank ASC, then by RN need DESC for unranked rows.
+    Adds: system_rank, display_name (override), domain, child_domains.
+    Sorts by system rank ASC, then by RN need DESC for unranked rows.
     """
     if directory is None:
         directory = load_directory()
     # Backwards-compat: child_domains column may be missing in older CSVs
-    dir_cols = ["florence_system_id", "becker_rank_2026",
+    dir_cols = ["florence_system_id", "system_rank",
                 "display_name", "domain"]
     if "child_domains" in directory.columns:
         dir_cols.append("child_domains")
@@ -88,7 +88,7 @@ def merged_systems(sys_agg: pd.DataFrame,
     # Drop the "independent" bucket from the tiles — it's not a system
     merged = merged[merged["health_system_id"] != "independent"]
     # Sort: ranked systems first (by rank), then unranked by RN need desc
-    merged["_rank_or_inf"] = merged["becker_rank_2026"].fillna(99999)
+    merged["_rank_or_inf"] = merged["system_rank"].fillna(99999)
     merged = merged.sort_values(
         ["_rank_or_inf", "rn_need"],
         ascending=[True, False],
@@ -176,7 +176,7 @@ def _tile_html(row: dict, idx: int = 0, status: Optional[str] = None) -> str:
     Deck-styled (Avila×Florence): white card with a colored accent rail + a
     serif initials badge in one of the two brand colors (teal / indigo,
     alternating across the grid), a Newsreader serif name, an uppercase tracked
-    Becker-rank pill, and a 2×2 stat grid whose 24-month-impact number is
+    rank pill, and a 2×2 stat grid whose 24-month-impact number is
     rendered in the accent color. A multi-badge strip replaces the single badge
     for consortium tiles (child_domains populated, e.g. UC Health).
 
@@ -191,13 +191,13 @@ def _tile_html(row: dict, idx: int = 0, status: Optional[str] = None) -> str:
         d.strip() for d in child_domains_raw.replace(",", ";").split(";")
         if d.strip()
     ]
-    rank = row.get("becker_rank_2026")
+    rank = row.get("system_rank")
     rank_html = ""
     if rank == rank and rank is not None:  # not NaN
         try:
             rank_html = (
                 f"<div class='fl-tile-rank'><span class='dot'></span>"
-                f"#{int(rank)} · Becker 2026</div>"
+                f"#{int(rank)} · by scale</div>"
             )
         except Exception:
             pass
@@ -503,9 +503,9 @@ def render_outpatient_tile_grid(st, nh_df: pd.DataFrame,
 
 
 def render_unranked_count(st, sys_agg: pd.DataFrame) -> int:
-    """Return the count of systems not in the Becker directory."""
+    """Return the count of systems not in the ranked directory."""
     merged = merged_systems(sys_agg)
-    unranked = merged["becker_rank_2026"].isna().sum()
+    unranked = merged["system_rank"].isna().sum()
     return int(unranked)
 
 
@@ -514,7 +514,7 @@ def main():
     print("--- system_tiles smoke test ---")
     d = load_directory()
     print(f"Directory: {len(d)} rows")
-    print(d[["becker_rank_2026", "florence_system_id", "display_name"]]
+    print(d[["system_rank", "florence_system_id", "display_name"]]
           .head(10).to_string(index=False))
 
 
