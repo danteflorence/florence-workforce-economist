@@ -797,6 +797,185 @@ def florence_headline(text: str, subhead: str | None = None):
 
 
 # ---------------------------------------------------------------------------
+# Per-system proposal bundle + quick-actions popup
+# ---------------------------------------------------------------------------
+
+def _recs_with_ownership() -> pd.DataFrame:
+    """recommendations.parquet with current ownership re-applied (same logic as
+    the inpatient view's _load_recs, but callable from module-level helpers)."""
+    rec_path = DATA_DIR / "recommendations.parquet"
+    if not rec_path.exists():
+        return pd.DataFrame()
+    df = pd.read_parquet(rec_path)
+    u = cached_universe(sysov.overrides_mtime())
+    u["ccn"] = u["ccn"].astype(str).str.zfill(6)
+    df["ccn"] = df["ccn"].astype(str).str.zfill(6)
+    df = df.drop(columns=["health_system_id", "health_system"], errors="ignore").merge(
+        u[["ccn", "health_system_id", "health_system"]], on="ccn", how="left"
+    )
+    return df
+
+
+@st.cache_data(show_spinner="Preparing the customer package…")
+def build_system_bundle_zip(system_id: str, placeholder_msp_markup_pct: float):
+    """Build ONE branded proposal ZIP (customer deck + exec summary PDF/HTML +
+    Excel workbook) for a system. Cached so the quick-actions popup and the
+    detail view share a single, consistent deliverable and re-opens are instant.
+    Returns (zip_bytes, filename); (b"", "bundle.zip") if no recommendations."""
+    df = _recs_with_ownership()
+    if df.empty:
+        return b"", "bundle.zip"
+    sys_recs = df[df["health_system_id"] == system_id].copy()
+    if sys_recs.empty:
+        return b"", "bundle.zip"
+    name = str(sys_recs.iloc[0]["health_system"])
+    safe = name.replace(" ", "_").replace("/", "_").replace("'", "")[:48]
+    offset = float(sys_recs["target_target_offset_pct"].median())
+    cal = Calibration(
+        target_offset_pct=offset,
+        placeholder_msp_markup_pct=placeholder_msp_markup_pct,
+    )
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        xlsx = write_system_workbook(system_id, tmp / f"{safe}.xlsx", cal, CohortMix(eta=1.0))
+        h, p = build_system_exec_summary(system_id, tmp, cal, CohortMix(eta=1.0))
+        pptx_buf = build_deck_from_system_recs(sys_recs, name, target_offset_pct=offset)
+        pptx_path = tmp / f"{safe}_customer_deck.pptx"
+        pptx_path.write_bytes(pptx_buf.getvalue())
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+            zf.write(pptx_path, pptx_path.name)
+            zf.write(Path(xlsx), Path(xlsx).name)
+            zf.write(Path(p), Path(p).name)
+            zf.write(Path(h), Path(h).name)
+        return buf.getvalue(), f"{safe}_recommendation_bundle.zip"
+
+
+@st.cache_data(show_spinner=False)
+def _bundle_system_metrics(system_id: str, overrides_mtime: float = 0.0) -> dict:
+    """Headline numbers for the quick-actions popup (cached)."""
+    df = _recs_with_ownership()
+    if df.empty:
+        return {}
+    rows = df[df["health_system_id"] == system_id]
+    if rows.empty:
+        return {}
+
+    def _sum(c):
+        return float(rows[c].sum()) if c in rows.columns else 0.0
+
+    return {
+        "name": str(rows.iloc[0]["health_system"]),
+        "n_facilities": int(len(rows)),
+        "rn_need": int(_sum("rn_need")),
+        "monthly_fee": _sum("target_monthly_florence_fee_account"),
+        "term_impact": _sum("target_term_net_savings_account"),
+    }
+
+
+def _money(v) -> str:
+    v = float(v or 0)
+    if v >= 1e9:
+        return f"${v / 1e9:.1f}B"
+    if v >= 1e6:
+        return f"${v / 1e6:,.0f}M"
+    if v >= 1e3:
+        return f"${v / 1e3:,.0f}K"
+    return f"${v:,.0f}"
+
+
+def _push_recent(system_id: str) -> None:
+    rec = st.session_state.setdefault("recent_systems", [])
+    if system_id in rec:
+        rec.remove(system_id)
+    rec.insert(0, system_id)
+    del rec[6:]
+
+
+@st.dialog("System quick actions", width="large")
+def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float):
+    """Popup from a system tile: preview the headline numbers + deal stage, then
+    open the full detail view or download the branded ZIP in one click."""
+    import workbench
+    m = _bundle_system_metrics(system_id, sysov.overrides_mtime())
+    if not m:
+        st.warning("This system has no current recommendations.")
+        return
+    florence_eyebrow(m["name"])
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Facilities", f"{m['n_facilities']:,}")
+    c2.metric("RN need", f"{m['rn_need']:,}")
+    c3.metric("Florence fee / mo", _money(m["monthly_fee"]))
+    c4.metric("24-mo impact", _money(m["term_impact"]))
+
+    stage = workbench.system_stage_map().get(system_id, "")
+    if stage:
+        lbl = workbench.STAGE_LABEL.get(stage, stage)
+        clr = workbench.STAGE_COLOR.get(stage, "#5B6675")
+        st.markdown(
+            f"<span style='display:inline-block;margin-top:4px;padding:2px 10px;"
+            f"border-radius:999px;font-size:0.72rem;font-weight:600;"
+            f"background:{clr}1A;color:{clr};'>&#9679; {lbl}</span>",
+            unsafe_allow_html=True,
+        )
+    st.divider()
+
+    a, b, d = st.columns([1.2, 1.2, 0.7])
+    with a:
+        if st.button("Open full detail →", type="primary", use_container_width=True,
+                     key=f"qa_detail_{system_id}"):
+            st.session_state["inpatient_active_system"] = system_id
+            st.rerun()
+    with b:
+        data, fname = build_system_bundle_zip(system_id, placeholder_msp_markup_pct)
+        st.download_button(
+            ":material/inventory_2: Download ZIP package",
+            data, file_name=fname, mime="application/zip",
+            use_container_width=True, disabled=not data,
+            key=f"qa_zipdl_{system_id}",
+        )
+    with d:
+        pinned = st.session_state.setdefault("pinned_systems", [])
+        is_pinned = system_id in pinned
+        # No st.rerun() here — the button's own rerun re-renders the open dialog.
+        if st.button("★" if is_pinned else "☆ Pin", use_container_width=True,
+                     key=f"qa_pin_{system_id}",
+                     help="Unpin" if is_pinned else "Pin for quick access"):
+            if is_pinned:
+                pinned.remove(system_id)
+            else:
+                pinned.append(system_id)
+    st.caption(
+        "ZIP includes the customer deck (.pptx), exec summary (PDF + HTML), and "
+        "the Excel workbook."
+    )
+
+
+def _render_quick_access_row(sys_agg, placeholder_msp_markup_pct: float) -> None:
+    """Compact 'Pinned & recent' quick-open chips above the tile grid."""
+    pinned = st.session_state.get("pinned_systems", [])
+    recent = st.session_state.get("recent_systems", [])
+    ids = list(dict.fromkeys(list(pinned) + list(recent)))[:8]
+    if not ids:
+        return
+    name_by_id = {}
+    if "health_system_id" in getattr(sys_agg, "columns", []):
+        for _, r in sys_agg.iterrows():
+            name_by_id[r["health_system_id"]] = r.get("health_system", r["health_system_id"])
+    st.markdown(
+        "<div class='florence-eyebrow' style='margin:2px 0 6px 0;'>Pinned &amp; recent</div>",
+        unsafe_allow_html=True,
+    )
+    cols = st.columns(4)
+    for i, sid in enumerate(ids):
+        label = ("★ " if sid in pinned else "") + str(name_by_id.get(sid, sid))[:22]
+        with cols[i % 4]:
+            if st.button(label, key=f"quick_open_{sid}", use_container_width=True):
+                _push_recent(sid)
+                open_system_quick_actions(sid, placeholder_msp_markup_pct)
+
+
+# ---------------------------------------------------------------------------
 # Cached data
 # ---------------------------------------------------------------------------
 
@@ -1426,11 +1605,28 @@ if view == "inpatient":
 
         if tile_mode == "Biggest health systems":
             florence_eyebrow("Top U.S. health systems · Becker's 2026 ranking")
-            st.caption(":material/touch_app: Click any tile to open the system.")
-            clicked = system_tiles.render_inpatient_tile_grid(st, sys_agg)
+            search_q = st.text_input(
+                "Search systems",
+                placeholder="Search systems by name…",
+                label_visibility="collapsed",
+                key="inpatient_search",
+            )
+            _render_quick_access_row(sys_agg, placeholder_msp_markup_pct)
+            st.caption(
+                ":material/touch_app: Click a tile to preview the numbers, "
+                "download the package, or open full detail."
+            )
+            try:
+                import workbench as _wb
+                _stage_map = _wb.system_stage_map()
+            except Exception:
+                _stage_map = {}
+            clicked = system_tiles.render_inpatient_tile_grid(
+                st, sys_agg, search=search_q, status_map=_stage_map,
+            )
             if clicked:
-                st.session_state["inpatient_active_system"] = clicked
-                st.rerun()
+                _push_recent(clicked)
+                open_system_quick_actions(clicked, placeholder_msp_markup_pct)
 
             # Fallback dropdown for unranked / "everything else"
             _unranked = system_tiles.render_unranked_count(st, sys_agg)
@@ -1762,34 +1958,18 @@ if view == "inpatient":
     with rc4:
         if st.button(":material/inventory_2:  Complete bundle (.zip)", key="reco_zip",
                      use_container_width=True):
-            with tempfile.TemporaryDirectory() as tmp:
-                tmp = Path(tmp)
-                bundle_cal = Calibration(
-                    target_offset_pct=float(sys_recs["target_target_offset_pct"].median()),
-                    placeholder_msp_markup_pct=placeholder_msp_markup_pct,
-                )
-                xlsx = write_system_workbook(selected_sys_id, tmp / f"{safe_sys}.xlsx", bundle_cal, CohortMix(eta=1.0))
-                h, p = build_system_exec_summary(selected_sys_id, tmp, bundle_cal, CohortMix(eta=1.0))
-                pptx_buf = build_deck_from_system_recs(
-                    sys_recs, selected_sys_name,
-                    target_offset_pct=float(sys_recs["target_target_offset_pct"].median()),
-                )
-                pptx_path = tmp / f"{safe_sys}_customer_deck.pptx"
-                pptx_path.write_bytes(pptx_buf.getvalue())
-                buf = io.BytesIO()
-                with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-                    zf.write(pptx_path, pptx_path.name)
-                    zf.write(xlsx, xlsx.name)
-                    zf.write(p, p.name)
-                    zf.write(h, h.name)
-                st.session_state[f"reco_zip_{safe_sys}"] = buf.getvalue()
+            # Shared builder — identical deliverable to the tile quick-actions popup.
+            data, fname = build_system_bundle_zip(selected_sys_id, placeholder_msp_markup_pct)
+            st.session_state[f"reco_zip_{safe_sys}"] = (data, fname)
         if f"reco_zip_{safe_sys}" in st.session_state:
+            _zbytes, _zname = st.session_state[f"reco_zip_{safe_sys}"]
             st.download_button(
                 ":material/download: Download bundle.zip",
-                st.session_state[f"reco_zip_{safe_sys}"],
-                file_name=f"{safe_sys}_recommendation_bundle.zip",
+                _zbytes,
+                file_name=_zname,
                 mime="application/zip",
                 use_container_width=True,
+                disabled=not _zbytes,
             )
 
     # ─────────────────────────────────────────────────────────────────

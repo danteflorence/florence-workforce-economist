@@ -85,6 +85,27 @@ def _now() -> str:
     return datetime.utcnow().isoformat(timespec="seconds")
 
 
+def system_stage_map() -> dict:
+    """Map health_system_id → latest deal stage, for tile status chips.
+
+    Returns the most recently touched deal's stage per system. Empty dict when
+    the pipeline file is missing/empty, so callers can no-op safely.
+    """
+    try:
+        df = _read()
+    except Exception:
+        return {}
+    if df.empty or "system_id" not in df.columns:
+        return {}
+    df = df[df["system_id"].astype(str) != ""]
+    if "last_touched_at" in df.columns:
+        df = df.sort_values("last_touched_at")
+    out: dict = {}
+    for _, r in df.iterrows():
+        out[str(r["system_id"])] = str(r.get("stage", ""))
+    return out
+
+
 # ─── CRUD ───────────────────────────────────────────────────────────
 def create_deal(rep_email: str, system_id: str, system_name: str) -> str:
     """Open a new deal at stage=prospect. Returns deal_id."""

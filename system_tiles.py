@@ -32,6 +32,11 @@ from typing import Optional
 
 import pandas as pd
 
+try:
+    from workbench import STAGE_LABEL, STAGE_COLOR
+except Exception:  # import-safe fallback if the pipeline module is unavailable
+    STAGE_LABEL, STAGE_COLOR = {}, {}
+
 DATA_DIR = Path(__file__).parent / "data"
 DIRECTORY_FILE = DATA_DIR / "system_directory.csv"
 
@@ -165,7 +170,7 @@ def _accent_for(idx: int) -> str:
     return "indigo" if idx % 2 else "teal"
 
 
-def _tile_html(row: dict, idx: int = 0) -> str:
+def _tile_html(row: dict, idx: int = 0, status: Optional[str] = None) -> str:
     """Build the HTML card for one inpatient system tile.
 
     Deck-styled (Avila×Florence): white card with a colored accent rail + a
@@ -197,6 +202,17 @@ def _tile_html(row: dict, idx: int = 0) -> str:
         except Exception:
             pass
 
+    status_html = ""
+    if status:
+        _lbl = STAGE_LABEL.get(status, status)
+        _clr = STAGE_COLOR.get(status, "#5B6675")
+        status_html = (
+            f"<div style='display:inline-block;margin-top:6px;padding:2px 9px;"
+            f"border-radius:999px;font-size:0.62rem;font-weight:700;"
+            f"letter-spacing:0.04em;text-transform:uppercase;"
+            f"background:{_clr}1A;color:{_clr};'>&#9679; {_safe(_lbl)}</div>"
+        )
+
     inits = _safe(_initials(name))
     n_fac = int(row.get("n_facilities", 0) or 0)
     rn_need = int(row.get("rn_need", 0) or 0)
@@ -216,7 +232,7 @@ def _tile_html(row: dict, idx: int = 0) -> str:
         head_html = (
             f"<div class='fl-tile-logo-strip'>{child_badges}</div>"
             f"<div class='fl-tile-name'>{name_s}</div>"
-            f"{rank_html}"
+            f"{rank_html}{status_html}"
             f"<div class='fl-tile-tag'>Multi-campus consortium</div>"
         )
     else:
@@ -224,7 +240,7 @@ def _tile_html(row: dict, idx: int = 0) -> str:
         head_html = (
             f"<div class='fl-tile-head'>{logo_html}"
             f"<div class='fl-tile-headtext'>"
-            f"<div class='fl-tile-name'>{name_s}</div>{rank_html}</div>"
+            f"<div class='fl-tile-name'>{name_s}</div>{rank_html}{status_html}</div>"
             f"</div>"
         )
 
@@ -246,15 +262,27 @@ def _tile_html(row: dict, idx: int = 0) -> str:
 
 # ─── Streamlit grid renderer ────────────────────────────────────────
 def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
-                               max_tiles: int = 30) -> Optional[str]:
+                               max_tiles: int = 30,
+                               search: str = "",
+                               status_map: Optional[dict] = None) -> Optional[str]:
     """Render the tile grid for the Inpatient landing page.
+
+    `search` filters by system name (case-insensitive); `status_map` maps
+    health_system_id → deal stage, rendered as a chip on each tile.
 
     Returns the clicked system_id if a tile's button was pressed this rerun,
     else None.
     """
     merged = merged_systems(sys_agg)
+    status_map = status_map or {}
+    q = (search or "").strip().lower()
+    if q:
+        merged = merged[merged.apply(
+            lambda r: q in str(r.get("display_name") or r.get("health_system") or "").lower(),
+            axis=1,
+        )]
     if merged.empty:
-        st.info("No systems match the current filter.")
+        st.info("No systems match your search." if q else "No systems match the current filter.")
         return None
 
     visible = merged.head(max_tiles)
@@ -270,7 +298,8 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
             row = visible.iloc[idx]
             with cols[c]:
                 sys_id = row["health_system_id"]
-                st.markdown(_tile_html(row.to_dict(), idx),
+                st.markdown(_tile_html(row.to_dict(), idx,
+                                       status=status_map.get(str(sys_id))),
                             unsafe_allow_html=True)
                 name = row.get("display_name") or row.get("health_system")
                 if st.button(
