@@ -1010,21 +1010,38 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
 
     # ── Direct mail (Lob) — the AI SDR drafts; a human sends ──────────
     import lob_mailer as _mail
+    from streamlit.components.v1 import html as _components_html
     mst = _mail.status_for("system", system_id)
     with st.expander("Direct mail" + (f" · {mst['status']}" if mst else "")):
         st.caption(
             ("Lob connected." if _mail.is_configured()
              else "Lob not connected — drafts a preview only; set LOB_API_KEY to send.")
         )
+        _ptype = st.radio(
+            "Format", ["Postcard", "Letter"], horizontal=True,
+            key=f"qa_ptype_{system_id}",
+        ).lower()
+        _code_now = (mst or {}).get("retrieval_code", "") if mst else ""
+        _prev = _mail.preview_html(
+            _ptype, org_name=m["name"], contact_name=cc.get("contact_name", ""),
+            title=cc.get("title", ""), address1=cc.get("address1", ""),
+            city=cc.get("city", ""), state=cc.get("state", ""), zip=cc.get("zip", ""),
+            monthly_fee=m["monthly_fee"], term_impact=m["term_impact"],
+            rn_need=m["rn_need"], code=_code_now,
+            rep_email=(st.session_state.get("current_user_email") or ""),
+        )
+        _components_html(_prev, height=(720 if _ptype == "letter" else 840), scrolling=True)
         if not cc.get("mailable"):
-            st.caption("Add a street address + ZIP on the contact to enable mail.")
-        if st.button("Draft postcard", key=f"qa_mail_{system_id}",
+            st.caption("Add a street address + ZIP on the contact to enable a send.")
+        if st.button(f"Draft {_ptype}", key=f"qa_mail_{system_id}",
                      disabled=not cc.get("mailable")):
             st.session_state[f"qa_mailres_{system_id}"] = _mail.draft_and_send(
                 "system", system_id, org_name=m["name"],
                 to_name=cc.get("contact_name", ""), address1=cc.get("address1", ""),
                 city=cc.get("city", ""), state=cc.get("state", ""), zip=cc.get("zip", ""),
                 monthly_fee=m["monthly_fee"], term_impact=m["term_impact"],
+                rn_need=m["rn_need"], piece_type=_ptype, title=cc.get("title", ""),
+                rep_email=(st.session_state.get("current_user_email") or ""),
                 by=(st.session_state.get("current_user_email") or ""), live=False,
             )
         res = st.session_state.get(f"qa_mailres_{system_id}")
