@@ -965,18 +965,62 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
         with st.form(f"qa_contact_{system_id}"):
             f_name = st.text_input("Contact name", value=cc.get("contact_name", ""))
             f_title = st.text_input("Title", value=cc.get("title", ""))
-            f_email = st.text_input("Email", value=cc.get("email", ""))
-            f_phone = st.text_input("Phone", value=cc.get("phone", ""))
+            ce, cp = st.columns(2)
+            with ce:
+                f_email = st.text_input("Email", value=cc.get("email", ""))
+            with cp:
+                f_phone = st.text_input("Phone", value=cc.get("phone", ""))
+            f_addr = st.text_input("Street address", value=cc.get("address1", ""))
+            a1, a2, a3 = st.columns([2, 1, 1])
+            with a1:
+                f_city = st.text_input("City", value=cc.get("city", ""))
+            with a2:
+                f_state = st.text_input("State", value=cc.get("state", ""))
+            with a3:
+                f_zip = st.text_input("ZIP", value=cc.get("zip", ""))
             f_notes = st.text_area("Notes", value=cc.get("notes", ""), height=72)
             if st.form_submit_button("Save contact", type="primary"):
                 rep = (st.session_state.get("current_user_email")
                        or st.session_state.get("rep_email") or "")
                 _contacts.save_contact(
                     "system", system_id, org_name=m["name"],
-                    contact_name=f_name, title=f_title, email=f_email,
-                    phone=f_phone, notes=f_notes, by=rep,
+                    contact_name=f_name, title=f_title, email=f_email, phone=f_phone,
+                    address1=f_addr, city=f_city, state=f_state, zip=f_zip,
+                    notes=f_notes, by=rep,
                 )
                 st.success("Contact saved.")
+
+    # ── Direct mail (Lob) — the AI SDR drafts; a human sends ──────────
+    import lob_mailer as _mail
+    mst = _mail.status_for("system", system_id)
+    with st.expander("Direct mail" + (f" · {mst['status']}" if mst else "")):
+        st.caption(
+            ("Lob connected." if _mail.is_configured()
+             else "Lob not connected — drafts a preview only; set LOB_API_KEY to send.")
+        )
+        if not cc.get("mailable"):
+            st.caption("Add a street address + ZIP on the contact to enable mail.")
+        if st.button("Draft postcard", key=f"qa_mail_{system_id}",
+                     disabled=not cc.get("mailable")):
+            st.session_state[f"qa_mailres_{system_id}"] = _mail.draft_and_send(
+                "system", system_id, org_name=m["name"],
+                to_name=cc.get("contact_name", ""), address1=cc.get("address1", ""),
+                city=cc.get("city", ""), state=cc.get("state", ""), zip=cc.get("zip", ""),
+                monthly_fee=m["monthly_fee"], term_impact=m["term_impact"],
+                by=(st.session_state.get("current_user_email") or ""), live=False,
+            )
+        res = st.session_state.get(f"qa_mailres_{system_id}")
+        if res:
+            st.markdown(
+                f"**Retrieval code:** `{res['code']}`\n\n"
+                f"**{res['preview']['headline']}** — {res['preview']['body']}\n\n"
+                f"_{res['preview']['cta']}_"
+            )
+            if res.get("detail"):
+                st.caption(res["detail"])
+        if mst and mst.get("status") in ("drafted", "sent"):
+            if st.button("Mark responded", key=f"qa_resp_{system_id}"):
+                _mail.record_response("system", system_id)
 
     st.caption(
         "ZIP includes the customer deck (.pptx), exec summary (PDF + HTML), and "
