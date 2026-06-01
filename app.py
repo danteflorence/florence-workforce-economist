@@ -939,6 +939,25 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
             f"background:{clr}1A;color:{clr};'>&#9679; {lbl}</span>",
             unsafe_allow_html=True,
         )
+    # Outreach status — system-level de-dupe + the next coordinated touch.
+    import sales_intel as _si
+    _touched = _si.already_touched("system", system_id)
+    if _touched:
+        _resp = " · responded" if _touched["responded"] else ""
+        st.caption(
+            f":material/history: Last touch: {_touched['piece_type'] or 'mail'} "
+            f"({_touched['status']}{_resp}) on {_touched['when']} · {_touched['count']} "
+            f"total — coordinate, don't duplicate."
+        )
+    _cad = _si.cadence_next("system", system_id)
+    if not _cad.get("done"):
+        _due = ("due now" if _cad.get("ready")
+                else (f"in {_cad['due_in_days']}d" if _cad.get("due_in_days") else ""))
+        st.markdown(
+            f"<div style='font-size:.82rem;color:var(--f-muted);margin-top:2px;'>"
+            f"<b>Next touch:</b> {_cad['label']}{(' · ' + _due) if _due else ''}</div>",
+            unsafe_allow_html=True,
+        )
     st.divider()
 
     a, b, d = st.columns([1.2, 1.2, 0.7])
@@ -1806,6 +1825,43 @@ if view == "inpatient":
     active_sys = st.session_state.get("inpatient_active_system")
 
     if active_sys is None:
+        # ── Priority outreach queue — savings × reachability ───────────
+        import sales_intel as _si_rank
+        import contacts as _ct_rank
+        with st.expander(":material/bolt: Priority outreach queue — work these first",
+                         expanded=False):
+            st.caption(
+                "Ranked by 24-mo customer impact weighted by how reachable the account "
+                "is. A high-impact system with no contact yet is your cue to go find one."
+            )
+            _ranked = _si_rank.rank_systems(
+                sys_agg.to_dict("records"), _ct_rank.get_contact, limit=30)[:12]
+            for _pr in _ranked:
+                _c1, _c2, _c3, _c4 = st.columns([3, 1.3, 1.5, 1.0])
+                with _c1:
+                    st.markdown(
+                        f"**{_pr['name']}**<br>"
+                        f"<span style='color:var(--f-muted);font-size:.8rem;'>"
+                        f"{_pr['rn_need']:,} RN need · {_money(_pr['monthly_fee'])}/mo fee</span>",
+                        unsafe_allow_html=True,
+                    )
+                _c2.metric("24-mo impact", _money(_pr["term_savings"]))
+                _rc = {"Reachable": "#067F7B", "Partial": "#B7791F",
+                       "No contact": "#B33A3A"}.get(_pr["reach_label"], "#475467")
+                _miss = (f"<div style='font-size:.7rem;color:var(--f-muted);margin-top:2px;'>"
+                         f"needs {', '.join(_pr['missing'][:2])}</div>" if _pr["missing"] else "")
+                _c3.markdown(
+                    f"<div style='margin-top:6px;'><span style='font-size:.72rem;"
+                    f"font-weight:600;padding:2px 8px;border-radius:999px;"
+                    f"background:{_rc}1A;color:{_rc};'>{_pr['reach_label']} "
+                    f"{_pr['reach_pct']}%</span>{_miss}</div>",
+                    unsafe_allow_html=True,
+                )
+                with _c4:
+                    if st.button("Open →", key=f"prio_open_{_pr['system_id']}",
+                                 use_container_width=True):
+                        open_system_quick_actions(_pr["system_id"], placeholder_msp_markup_pct)
+
         # Tile grid — the rep's landing
         # Toggle: Health systems (Becker ranked) vs Hospitals (by RN need)
         tile_mode = st.radio(
