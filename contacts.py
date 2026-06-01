@@ -101,6 +101,20 @@ def get_contact(entity_type: str, entity_id: str) -> dict:
             base["state"] = str(r.get("state", "") or "")
             base["source"] = "cms"
 
+    # NPPES-enriched street address (batch or on-demand), keyed by CCN.
+    if entity_type in ("facility", "hospital"):
+        try:
+            import nppes_enrich
+            na = nppes_enrich.address_for_ccn(entity_id)
+            if na and str(na.get("address1", "")).strip():
+                base["address1"] = base["address1"] or na.get("address1", "")
+                base["city"] = base["city"] or na.get("city", "")
+                base["state"] = base["state"] or na.get("state", "")
+                base["zip"] = base["zip"] or na.get("zip", "")
+                base["source"] = "cms+nppes" if base["source"] == "cms" else "nppes"
+        except Exception:
+            pass
+
     ov = _read_overrides()
     if not ov.empty:
         m = ov[(ov["entity_type"] == entity_type)

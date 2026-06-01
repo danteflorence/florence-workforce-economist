@@ -1689,6 +1689,27 @@ if view == "inpatient":
                 key="inpatient_search",
             )
             _render_quick_access_row(sys_agg, placeholder_msp_markup_pct)
+            with st.expander(":material/inventory_2: Bulk download — bundles for several systems"):
+                _opts = {str(r["health_system"]): str(r["health_system_id"])
+                         for _, r in sys_agg.iterrows()
+                         if str(r.get("health_system", "")).strip()}
+                _picks = st.multiselect("Systems", list(_opts.keys()), key="bulk_picks")
+                if _picks and st.button(f"Build {len(_picks)} bundle(s) (.zip)", key="bulk_build"):
+                    with st.spinner("Building bundles…"):
+                        _buf = io.BytesIO()
+                        with zipfile.ZipFile(_buf, "w", zipfile.ZIP_DEFLATED) as _zf:
+                            for _nm in _picks:
+                                _data, _fn = build_system_bundle_zip(_opts[_nm], placeholder_msp_markup_pct)
+                                if _data:
+                                    _zf.writestr(f"{_nm.replace('/', '_')}/{_fn}", _data)
+                        st.session_state["bulk_zip"] = _buf.getvalue()
+                if st.session_state.get("bulk_zip"):
+                    st.download_button(
+                        ":material/download: Download all bundles (.zip)",
+                        st.session_state["bulk_zip"],
+                        file_name="florence_proposal_bundles.zip",
+                        mime="application/zip", key="bulk_dl",
+                    )
             st.caption(
                 ":material/touch_app: Click a tile to preview the numbers, "
                 "download the package, or open full detail."
