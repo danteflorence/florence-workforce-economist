@@ -8,6 +8,8 @@ data/auth_otp_codes.csv
 data/contact_overrides.csv
 # Direct-mail send/response log (mutable)
 data/mail_log.csv
+# Customer activation signups (mutable)
+data/activations.csv
 .env
 .env.*
 secrets.toml

@@ -195,6 +195,15 @@ def status_for(entity_type: str, entity_id: str) -> dict | None:
     return df[mask].iloc[-1].to_dict()
 
 
+def find_by_code(code: str) -> dict | None:
+    """Look up the mailpiece for a retrieval code (used by the activation portal)."""
+    df = _read()
+    if df.empty:
+        return None
+    m = df[df["retrieval_code"].astype(str).str.upper() == str(code).strip().upper()]
+    return m.iloc[-1].to_dict() if not m.empty else None
+
+
 def summary() -> dict:
     df = _read()
     if df.empty:
