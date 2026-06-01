@@ -42,6 +42,8 @@ import io
 import tempfile
 import zipfile
 
+from florence_theme import inject_theme, kpi_strip, section_head  # editorial design system
+
 DATA_DIR = Path(__file__).parent / "data"
 
 st.set_page_config(
@@ -54,30 +56,30 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 # Florence brand design system — matches the customer-facing deck language
 # ---------------------------------------------------------------------------
-FLORENCE_TEAL = "#0BC5A0"
-FLORENCE_TEAL_DARK = "#089478"
-FLORENCE_NAVY = "#0F1B2D"
-FLORENCE_NAVY_SOFT = "#1A2A44"
-FLORENCE_GRAY = "#F4F6F8"
-FLORENCE_GRAY_BORDER = "#E5E8EE"
-FLORENCE_INK = "#0F1B2D"
-FLORENCE_INK_MUTED = "#5B6675"
+FLORENCE_TEAL = "#0ABAB5"          # editorial brand teal (corrects legacy #0BC5A0)
+FLORENCE_TEAL_DARK = "#067F7B"     # teal that passes contrast on white
+FLORENCE_NAVY = "#101828"
+FLORENCE_NAVY_SOFT = "#1D2939"
+FLORENCE_GRAY = "#FAFBFB"
+FLORENCE_GRAY_BORDER = "#E4E7EC"
+FLORENCE_INK = "#101828"
+FLORENCE_INK_MUTED = "#475467"
 
 FLORENCE_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
 :root {
-    --f-teal: #0BC5A0;
-    --f-teal-dark: #089478;
-    --f-indigo: #3E2D8F;        /* Avila×Florence deck accent */
-    --f-indigo-dark: #2E2270;
-    --f-navy: #0F1B2D;
-    --f-navy-soft: #1A2A44;
-    --f-gray: #F4F6F8;
-    --f-border: #E5E8EE;
-    --f-ink: #0F1B2D;
-    --f-muted: #5B6675;
+    --f-teal: #0ABAB5;
+    --f-teal-dark: #067F7B;
+    --f-indigo: #7340C4;        /* Florence Capital — royal purple (financing/docs) */
+    --f-indigo-dark: #5B2DA8;
+    --f-navy: #101828;
+    --f-navy-soft: #1D2939;
+    --f-gray: #FAFBFB;
+    --f-border: #E4E7EC;
+    --f-ink: #101828;
+    --f-muted: #475467;
 }
 
 /* Base typography — Inter for body. Apply only to root elements;
@@ -99,7 +101,7 @@ h1, h2, h3, h4,
 [data-testid="stMarkdownContainer"] h2,
 [data-testid="stMarkdownContainer"] h3,
 [data-testid="stMarkdownContainer"] h4 {
-    font-family: 'Newsreader', 'Source Serif Pro', Georgia, serif !important;
+    font-family: 'Playfair Display', 'Source Serif Pro', Georgia, serif !important;
     color: var(--f-navy);
     font-weight: 600;
     letter-spacing: -0.015em;
@@ -124,7 +126,7 @@ h3 { font-size: 1.45rem; line-height: 1.2; }
 }
 .florence-mark {
     display: flex; align-items: center; gap: 10px;
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.25rem; font-weight: 600; color: var(--f-navy);
 }
 .florence-mark .f-box {
@@ -173,7 +175,7 @@ h3 { font-size: 1.45rem; line-height: 1.2; }
 }
 .florence-card.with-florence .card-label { color: rgba(255,255,255,0.85); }
 .florence-card .card-number {
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 3.6rem; font-weight: 600;
     line-height: 1;
     color: var(--f-navy);
@@ -181,13 +183,13 @@ h3 { font-size: 1.45rem; line-height: 1.2; }
 }
 .florence-card.with-florence .card-number { color: white; }
 .florence-card .card-unit {
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.4rem; font-weight: 400;
     color: var(--f-muted);
 }
 .florence-card.with-florence .card-unit { color: rgba(255,255,255,0.9); }
 .florence-card .card-headline {
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.25rem; font-weight: 600;
     color: var(--f-navy);
     margin: 18px 0 6px 0;
@@ -216,7 +218,7 @@ h3 { font-size: 1.45rem; line-height: 1.2; }
     line-height: 1.5;
 }
 .florence-banner .banner-value {
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 2.4rem; font-weight: 600;
     color: var(--f-teal);
     white-space: nowrap;
@@ -231,7 +233,7 @@ h3 { font-size: 1.45rem; line-height: 1.2; }
 
 /* === Headline + subhead pair (editorial-style serif) === */
 .florence-headline {
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 2.6rem; font-weight: 600;
     line-height: 1.08; letter-spacing: -0.018em;
     color: var(--f-navy);
@@ -279,7 +281,7 @@ h3 { font-size: 1.45rem; line-height: 1.2; }
     text-transform: uppercase;
 }
 [data-testid="stMetricValue"] {
-    font-family: 'Newsreader', Georgia, serif !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
     color: var(--f-navy) !important;
     font-weight: 600 !important;
 }
@@ -364,7 +366,7 @@ footer { visibility: hidden; }
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1rem;
     font-weight: 600;
     color: var(--f-teal-dark);
@@ -372,7 +374,7 @@ footer { visibility: hidden; }
 .fl-timeline-node.start .dot { background: var(--f-teal); color: white; }
 .fl-timeline-node.end .dot { background: var(--f-navy); color: white; border-color: var(--f-navy); }
 .fl-timeline-node .amount {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1.6rem;
     font-weight: 600;
     color: var(--f-navy);
@@ -423,7 +425,7 @@ footer { visibility: hidden; }
 }
 .fl-delta-item.on-teal .icon { color: white; }
 .fl-delta-item .metric {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1.25rem;
     font-weight: 600;
     color: var(--f-navy);
@@ -535,7 +537,7 @@ footer { visibility: hidden; }
     display: flex; align-items: center; justify-content: center;
 }
 .fl-persona-card .head .name {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1.2rem;
     font-weight: 600;
     color: var(--f-navy);
@@ -626,7 +628,7 @@ footer { visibility: hidden; }
     background: var(--accent);
     color: white;
     border-radius: 12px;
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1.45rem;
     font-weight: 600;
     display: flex;
@@ -634,7 +636,7 @@ footer { visibility: hidden; }
     flex-shrink: 0;
 }
 .fl-tile-name {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1.18rem;
     font-weight: 600;
     color: var(--f-navy);
@@ -685,7 +687,7 @@ footer { visibility: hidden; }
     padding: 1px 0 1px 11px;
 }
 .fl-tile-stat .v {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1.1rem;
     font-weight: 600;
     color: var(--f-navy);
@@ -751,7 +753,7 @@ section[data-testid="stMain"] .stButton > button[kind="secondary"]:hover {
     color: var(--f-teal-dark);
 }
 .fl-stat .value {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 1.1rem;
     font-weight: 600;
     color: var(--f-navy);
@@ -765,6 +767,7 @@ section[data-testid="stMain"] .stButton > button[kind="secondary"]:hover {
 """
 
 st.markdown(FLORENCE_CSS, unsafe_allow_html=True)
+inject_theme(st)  # editorial design-system layer — restyles metrics/buttons/tabs/sidebar/dataframe
 
 
 def florence_brand_strip(section_tag: str = "PRICING ENGINE · INTERNAL"):
@@ -1345,9 +1348,9 @@ st.sidebar.markdown(
     "padding:6px 0 4px 0; margin-bottom:6px;'>"
     "<span style='display:inline-block; width:32px; height:32px; "
     "background:#0BC5A0; color:#fff; border-radius:7px; text-align:center; "
-    "line-height:32px; font-family:Newsreader,Georgia,serif; "
+    "line-height:32px; font-family:Playfair Display,Georgia,serif; "
     "font-size:1.15rem; font-weight:500;'>F</span>"
-    "<span style='font-family:Newsreader,Georgia,serif; font-size:1.05rem; "
+    "<span style='font-family:Playfair Display,Georgia,serif; font-size:1.05rem; "
     "color:#0F1B2D; font-weight:500; line-height:1.1;'>"
     "Workforce<br>Economist</span></div>"
     "<div style='font-family:Inter,sans-serif; font-size:0.7rem; "
@@ -1742,7 +1745,7 @@ if view == "inpatient":
         <div style="display:flex; align-items:baseline; gap:14px; margin: 6px 0 22px 0;">
           <div style="font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600;
                       letter-spacing:0.22em; text-transform:uppercase; color:#5B6675;">SAME</div>
-          <div style="font-family:'Newsreader',serif; font-size:1.9rem; font-weight:600;
+          <div style="font-family:'Playfair Display',serif; font-size:1.9rem; font-weight:600;
                       color:#0F1B2D;">{annual_rn_hours/1e6:,.1f}M</div>
           <div style="font-family:'Inter',sans-serif; font-size:0.95rem; color:#5B6675;">
             RN hours per year · {selected_sys_name} baseline, expected to recur
@@ -1770,7 +1773,7 @@ if view == "inpatient":
         )
     with card_arrow:
         st.markdown(
-            "<div style='font-family:Newsreader,serif; font-size:2rem; color:#0BC5A0;"
+            "<div style='font-family:Playfair Display,serif; font-size:2rem; color:#0BC5A0;"
             " text-align:center; padding-top:75px;'>→</div>",
             unsafe_allow_html=True,
         )
@@ -2585,7 +2588,7 @@ if view == "market_intel":
                   <div style="font-family:Inter,sans-serif; font-size:0.72rem;
                               font-weight:600; letter-spacing:0.12em; text-transform:uppercase;
                               color:#5B6675;">{ins['metric'].upper()}</div>
-                  <div style="font-family:Newsreader,serif; font-size:1.65rem;
+                  <div style="font-family:Playfair Display,serif; font-size:1.65rem;
                               font-weight:600; color:#0F1B2D; margin-top:6px;">
                     {ins['current']:,.1f}
                   </div>
@@ -2745,7 +2748,7 @@ if view == "forecast":
                           letter-spacing: 0.08em; color: #5A6B82; text-transform: uppercase;">
                 Forward-looking headline
               </div>
-              <div style="font-family: Newsreader, Georgia, serif; font-size: 24px;
+              <div style="font-family: Playfair Display, Georgia, serif; font-size: 24px;
                           color: #0F1B2D; font-weight: 500; margin: 6px 0 4px 0;">
                 Healthcare labor market projected to be <b>{direction}</b> over the next {horizon} months.
               </div>
@@ -2831,7 +2834,7 @@ if view == "forecast":
             ))
         fig.update_layout(
             title=dict(text=label,
-                       font=dict(family="Newsreader, Georgia, serif",
+                       font=dict(family="Playfair Display, Georgia, serif",
                                  size=18, color=_FL_NAVY),
                        x=0, xanchor="left"),
             font=dict(family="Inter, sans-serif", color=_FL_NAVY, size=12),
@@ -3064,7 +3067,7 @@ if view == "outpatient":
         <div style="display:flex; align-items:baseline; gap:14px; margin: 6px 0 22px 0;">
           <div style="font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600;
                       letter-spacing:0.22em; text-transform:uppercase; color:#5B6675;">UNIVERSE</div>
-          <div style="font-family:'Newsreader',serif; font-size:1.9rem; font-weight:600;
+          <div style="font-family:'Playfair Display',serif; font-size:1.9rem; font-weight:600;
                       color:#0F1B2D;">{total_facilities:,}</div>
           <div style="font-family:'Inter',sans-serif; font-size:0.95rem; color:#5B6675;">
             facilities · {total_rns:,} placeable RNs · {type_label}
@@ -3090,7 +3093,7 @@ if view == "outpatient":
         )
     with card_arrow:
         st.markdown(
-            "<div style='font-family:Newsreader,serif; font-size:2rem; color:#0BC5A0;"
+            "<div style='font-family:Playfair Display,serif; font-size:2rem; color:#0BC5A0;"
             " text-align:center; padding-top:75px;'>→</div>",
             unsafe_allow_html=True,
         )

@@ -2,20 +2,20 @@
 # (Newsreader serif headlines, Inter body, teal/navy palette)
 
 [theme]
-# Primary action color — Florence teal/mint (used in deck for "WITH FLORENCE" callouts)
-primaryColor = "#0BC5A0"
+# Primary action color — Florence editorial teal (#0ABAB5 corrects the legacy #0BC5A0)
+primaryColor = "#0ABAB5"
 
 # Page background — clean white
 backgroundColor = "#FFFFFF"
 
-# Secondary background — cool gray for cards / containers
-secondaryBackgroundColor = "#F4F6F8"
+# Secondary background — warm off-white for cards / containers
+secondaryBackgroundColor = "#FAFBFB"
 
-# Body text — Florence deep navy
-textColor = "#0F1B2D"
+# Body text — editorial ink
+textColor = "#101828"
 
-# Body font (sans-serif) — overridden by CSS to load Inter via Google Fonts
-font = "sans serif"
+# Editorial serif headings (CSS loads GT Sectra / Playfair Display + Inter body + JetBrains Mono)
+font = "serif"
 
 [server]
 headless = true
