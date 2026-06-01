@@ -998,13 +998,36 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
         f"Tel {cc.get('phone') or '—'} &nbsp;·&nbsp; Email {cc.get('email') or '—'}</div>",
         unsafe_allow_html=True,
     )
+    # ── Find email — derive from the contact's name + the system's domain ─
+    import email_discovery as _ed
+    _sugg_key = f"sugg_email_{system_id}"
+    if not cc.get("email") and cc.get("contact_name"):
+        with st.expander("Find email"):
+            _sug = _ed.suggest_for(name=cc.get("contact_name", ""), system_id=system_id)
+            if not _sug["domain"]:
+                st.caption("No email domain on file for this system — add one to the "
+                           "directory to enable suggestions.")
+            elif not _sug["candidates"]:
+                st.caption("Need a first + last name to derive an email.")
+            else:
+                _mxtxt = ("domain accepts mail ✓" if _sug["mx"] is True
+                          else "domain may not accept mail" if _sug["mx"] is False
+                          else "deliverability unknown")
+                st.caption(f"Likely emails at {_sug['domain']} · {_mxtxt}")
+                for _c in _sug["candidates"]:
+                    st.code(_c["email"], language=None)
+                if st.button("Use top suggestion", key=f"qa_useemail_{system_id}"):
+                    st.session_state[_sugg_key] = _sug["top"]
     with st.expander("Edit contact"):
         with st.form(f"qa_contact_{system_id}"):
             f_name = st.text_input("Contact name", value=cc.get("contact_name", ""))
             f_title = st.text_input("Title", value=cc.get("title", ""))
             ce, cp = st.columns(2)
             with ce:
-                f_email = st.text_input("Email", value=cc.get("email", ""))
+                f_email = st.text_input(
+                    "Email",
+                    value=cc.get("email") or st.session_state.get(_sugg_key, ""),
+                )
             with cp:
                 f_phone = st.text_input("Phone", value=cc.get("phone", ""))
             f_addr = st.text_input("Street address", value=cc.get("address1", ""))
