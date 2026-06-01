@@ -1096,6 +1096,35 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
         st.code(_email["body"], language=None)  # the code block has a copy button
         st.markdown(f"[Open prefilled in your email client →]({_email['mailto']})")
 
+    # ── CRM + Gmail sync (dormant until keys are provisioned) ─────────
+    import crm_sync as _crm
+    _gok, _sok = _crm.gmail_is_configured(), _crm.streak_is_configured()
+    with st.expander("Sync · Gmail draft + Streak CRM"):
+        _gc, _sc = st.columns(2)
+        with _gc:
+            st.caption(f"Gmail: {'connected' if _gok else 'not connected'}")
+            if st.button("Create Gmail draft", key=f"qa_gmail_{system_id}",
+                         disabled=not cc.get("email"), use_container_width=True):
+                st.session_state[f"qa_gmailres_{system_id}"] = _crm.create_gmail_draft(
+                    to=cc.get("email", ""), subject=_email["subject"], body=_email["body"])
+            if not cc.get("email"):
+                st.caption("Add a contact email to draft.")
+            _gr = st.session_state.get(f"qa_gmailres_{system_id}")
+            if _gr:
+                (st.success if _gr.get("ok") else st.caption)(_gr.get("detail", ""))
+        with _sc:
+            st.caption(f"Streak: {'connected' if _sok else 'not connected'}")
+            if st.button("Log to Streak", key=f"qa_streak_{system_id}",
+                         use_container_width=True):
+                st.session_state[f"qa_streakres_{system_id}"] = _crm.streak_upsert_box(
+                    name=m["name"], fields={
+                        "annual_savings": m["term_impact"] / 2, "monthly_fee": m["monthly_fee"],
+                        "rn_need": m["rn_need"], "stage": stage, "code": _code_now,
+                    })
+            _sr = st.session_state.get(f"qa_streakres_{system_id}")
+            if _sr:
+                (st.success if _sr.get("ok") else st.caption)(_sr.get("detail", ""))
+
     st.caption(
         "ZIP includes the customer deck (.pptx), exec summary (PDF + HTML), the "
         "Excel workbook, and a ready-to-send outreach email (outreach_email.txt)."
