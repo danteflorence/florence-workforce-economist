@@ -151,6 +151,10 @@ h3 {{ font-size:1.4rem; }}
 .fl-eyebrow.pur {{ color:var(--pur-text); }}
 .fl-sectitle {{ font-family:var(--f-disp); font-weight:700; font-size:1.6rem; letter-spacing:-.018em; color:var(--ink); margin:3px 0 2px; }}
 .fl-subhead {{ font-family:var(--f-serif); font-style:italic; font-size:.92rem; color:var(--ink-2); }}
+
+/* Capital-purple document actions (Generate documents / direct mail / bundle) */
+[class*="st-key-tile_docs"] button, [class*="st-key-cp_mail"] button, [class*="st-key-qa_zipdl"] button, [class*="st-key-bulk_dl"] button {{ background:var(--pur) !important; color:#fff !important; border-color:var(--pur) !important; }}
+[class*="st-key-tile_docs"] button:hover, [class*="st-key-cp_mail"] button:hover, [class*="st-key-qa_zipdl"] button:hover, [class*="st-key-bulk_dl"] button:hover {{ background:var(--pur-text) !important; }}
 </style>""", unsafe_allow_html=True)
 
 
