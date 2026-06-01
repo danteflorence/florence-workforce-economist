@@ -136,6 +136,99 @@ def batch_enrich(limit: int = 400, sleep: float = 0.12, only_missing: bool = Tru
     return {"attempted": attempted, "resolved": len(rows), "total_addresses": len(_load_addr())}
 
 
+# CMS facility files that carry CCN + street address (local, authoritative).
+_CMS_FILES = [
+    ("NH_Provider.csv", "CMS Certification Number (CCN)", "Provider Address", "City/Town", "State", "ZIP Code"),
+    ("Dialysis_Facility.csv", "CMS Certification Number (CCN)", "Address Line 1", "City/Town", "State", "ZIP Code"),
+    ("HH_Provider.csv", "CMS Certification Number (CCN)", "Address", "City/Town", "State", "ZIP Code"),
+    ("Hospice_General.csv", "CMS Certification Number (CCN)", "Address Line 1", "City/Town", "State", "ZIP Code"),
+]
+
+
+def cms_addresses() -> pd.DataFrame:
+    """Extract CCN→street address from the raw CMS facility files (no network).
+    Covers SNF / dialysis / home-health / hospice — the bulk of the universe."""
+    base = DATA_DIR / "raw_cms_non_hospital"
+    frames = []
+    for fname, ccn_c, a1_c, city_c, state_c, zip_c in _CMS_FILES:
+        p = base / fname
+        if not p.exists():
+            continue
+        want = {ccn_c, a1_c, city_c, state_c, zip_c}
+        try:
+            d = pd.read_csv(p, dtype=str, usecols=lambda c: c in want, encoding_errors="replace")
+        except Exception:
+            try:
+                d = pd.read_csv(p, dtype=str, encoding_errors="replace")
+            except Exception:
+                continue
+        d = d.rename(columns={ccn_c: "ccn", a1_c: "address1", city_c: "city",
+                              state_c: "state", zip_c: "zip"})
+        for c in ["ccn", "address1", "city", "state", "zip"]:
+            if c not in d.columns:
+                d[c] = ""
+        d["source"] = "cms_file"
+        d["npi"] = ""
+        frames.append(d[["ccn", "npi", "address1", "city", "state", "zip", "source"]])
+    if not frames:
+        return pd.DataFrame(columns=COLS)
+    out = pd.concat(frames, ignore_index=True)
+    out["ccn"] = out["ccn"].astype(str).str.strip()
+    out["zip"] = out["zip"].astype(str).str.strip().str[:5]
+    out = out[out["ccn"].ne("") & out["address1"].astype(str).str.strip().ne("")]
+    return out.drop_duplicates("ccn", keep="first")
+
+
+def enrich_from_cms() -> dict:
+    """Merge local CMS-file addresses into facility_addresses.parquet. Existing
+    rows (e.g. NPPES-resolved) win; CMS fills everything else."""
+    cms = cms_addresses()
+    existing = _load_addr()
+    if cms.empty and existing.empty:
+        return {"cms_rows": 0, "total_addresses": 0}
+    merged = pd.concat([existing, cms], ignore_index=True).drop_duplicates("ccn", keep="first")
+    merged.to_parquet(ADDR_FILE, index=False)
+    return {"cms_rows": int(len(cms)), "total_addresses": int(len(merged))}
+
+
+def batch_enrich_parallel(workers: int = 12, limit: int | None = None,
+                          only_missing: bool = True, chunk: int = 1000) -> dict:
+    """Full-universe enrichment with bounded concurrency (public CMS API — modest
+    worker count). Checkpoints data/facility_addresses.parquet after each chunk so
+    partial progress survives interruption."""
+    from concurrent.futures import ThreadPoolExecutor
+    if not CONTACTS_FILE.exists():
+        return {"attempted": 0, "resolved": 0, "total_addresses": 0, "error": "no contacts"}
+    fc = pd.read_parquet(CONTACTS_FILE)
+    fc = fc[fc["npi"].astype(str).str.fullmatch(r"\d{10}")]
+    existing = _load_addr()
+    done = set(existing["ccn"].astype(str)) if not existing.empty else set()
+    todo = [(str(r["ccn"]), str(r["npi"])) for _, r in fc.iterrows()
+            if not (only_missing and str(r["ccn"]) in done)]
+    if limit:
+        todo = todo[:limit]
+
+    acc = {r["ccn"]: r for r in existing.to_dict("records")} if not existing.empty else {}
+
+    def _one(ccn_npi):
+        ccn, npi = ccn_npi
+        a = lookup_npi(npi)
+        if a:
+            a["ccn"] = ccn
+        return ccn, a
+
+    attempted = resolved = 0
+    for i in range(0, len(todo), chunk):
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            for ccn, a in ex.map(_one, todo[i:i + chunk]):
+                attempted += 1
+                if a:
+                    acc[ccn] = a
+                    resolved += 1
+        pd.DataFrame(list(acc.values())).to_parquet(ADDR_FILE, index=False)  # checkpoint
+    return {"attempted": attempted, "resolved": resolved, "total_addresses": len(acc)}
+
+
 if __name__ == "__main__":
     import sys
     n = int(sys.argv[1]) if len(sys.argv) > 1 else 50
