@@ -3,7 +3,7 @@ Customer-facing presentation generator.
 
 Produces an 8-slide editable PowerPoint (.pptx) per health system, mirroring
 the Florence + AMN + Kaiser Permanente reference deck. Brand-aligned with the
-Streamlit app (Florence Teal #0BC5A0, Navy #0F1B2D, Newsreader serif headlines,
+Streamlit app (Florence Teal #0ABAB5, Navy #101828, Playfair Display serif headlines,
 Inter body sans).
 
 Slide structure:
@@ -113,12 +113,12 @@ def _eyebrow(slide, x, y, text):
 def _h1(slide, x, y, text, w_in=10):
     """Big editorial serif headline."""
     return _add_text(slide, x, y, Inches(w_in), Inches(1.6),
-                     text, font="Newsreader", size=44, bold=True, color=NAVY)
+                     text, font="Playfair Display", size=44, bold=True, color=NAVY)
 
 
 def _h3(slide, x, y, text, w_in=10):
     return _add_text(slide, x, y, Inches(w_in), Inches(0.7),
-                     text, font="Newsreader", size=22, bold=True, color=NAVY)
+                     text, font="Playfair Display", size=22, bold=True, color=NAVY)
 
 
 def _body(slide, x, y, text, w_in=10, color=MUTED, size=14):
@@ -146,7 +146,7 @@ def _brand_strip(slide):
     r.font.color.rgb = WHITE
     # Wordmark
     _add_text(slide, Inches(0.95), Inches(0.32), Inches(2), Inches(0.4),
-              "Florence", font="Newsreader", size=16, bold=True, color=NAVY)
+              "Florence", font="Playfair Display", size=16, bold=True, color=NAVY)
 
 
 def _section_tag(slide, text):
@@ -188,11 +188,11 @@ def _slide_same_hours(prs, d: DeckInputs):
     _add_text(s, Inches(0.8), Inches(3.85), Inches(3), Inches(0.3),
               "TODAY", font="Inter", size=9, bold=True, color=MUTED)
     _add_text(s, Inches(0.8), Inches(4.15), Inches(5), Inches(1.1),
-              f"${d.agency_hourly:,.2f}", font="Newsreader", size=48, bold=True, color=NAVY)
+              f"${d.agency_hourly:,.2f}", font="Playfair Display", size=48, bold=True, color=NAVY)
     _add_text(s, Inches(3.9), Inches(4.55), Inches(2), Inches(0.5),
-              "/hour", font="Newsreader", size=20, color=MUTED)
+              "/hour", font="Playfair Display", size=20, color=MUTED)
     _add_text(s, Inches(0.8), Inches(5.2), Inches(5), Inches(0.4),
-              "Agency staffing premium.", font="Newsreader", size=14, bold=True, color=NAVY)
+              "Agency staffing premium.", font="Playfair Display", size=14, bold=True, color=NAVY)
     _add_text(s, Inches(0.8), Inches(5.55), Inches(5), Inches(1),
               "Contingent labor. No continuity of unit, panel, or workforce planning. "
               "Premium recurs every cycle.",
@@ -200,18 +200,18 @@ def _slide_same_hours(prs, d: DeckInputs):
 
     # Arrow
     _add_text(s, Inches(6.2), Inches(4.7), Inches(0.8), Inches(0.6),
-              "→", font="Newsreader", size=32, color=TEAL, align=PP_ALIGN.CENTER)
+              "→", font="Playfair Display", size=32, color=TEAL, align=PP_ALIGN.CENTER)
 
     # WITH FLORENCE (teal)
     with_f = _add_rect(s, Inches(7.0), y, Inches(5.8), h, fill=TEAL)
     _add_text(s, Inches(7.3), Inches(3.85), Inches(3), Inches(0.3),
               "WITH FLORENCE", font="Inter", size=9, bold=True, color=WHITE)
     _add_text(s, Inches(7.3), Inches(4.15), Inches(5), Inches(1.1),
-              f"${d.florence_hourly_net:,.2f}", font="Newsreader", size=48, bold=True, color=WHITE)
+              f"${d.florence_hourly_net:,.2f}", font="Playfair Display", size=48, bold=True, color=WHITE)
     _add_text(s, Inches(10.4), Inches(4.55), Inches(2), Inches(0.5),
-              "/hour", font="Newsreader", size=20, color=WHITE)
+              "/hour", font="Playfair Display", size=20, color=WHITE)
     _add_text(s, Inches(7.3), Inches(5.2), Inches(5), Inches(0.4),
-              "Permanent RN capacity.", font="Newsreader", size=14, bold=True, color=WHITE)
+              "Permanent RN capacity.", font="Playfair Display", size=14, bold=True, color=WHITE)
     _add_text(s, Inches(7.3), Inches(5.55), Inches(5), Inches(1),
               f"Full-time {d.system_name} employees on multi-year contracts. "
               "Fee payable on successful employment start; replacement protection for early attrition.",
@@ -224,7 +224,7 @@ def _slide_same_hours(prs, d: DeckInputs):
               font="Inter", size=11, color=WHITE)
     _add_text(s, Inches(9.5), Inches(6.6), Inches(3.3), Inches(0.5),
               _fmt_big(d.annual_savings),
-              font="Newsreader", size=22, bold=True, color=TEAL, align=PP_ALIGN.RIGHT)
+              font="Playfair Display", size=22, bold=True, color=TEAL, align=PP_ALIGN.RIGHT)
 
 
 def _slide_conversion(prs, d: DeckInputs):
@@ -243,7 +243,7 @@ def _slide_conversion(prs, d: DeckInputs):
               "THE AGENCY MODEL TODAY", font="Inter", size=9, bold=True, color=MUTED)
     _add_text(s, Inches(0.85), Inches(4.25), Inches(5), Inches(0.5),
               "Contingent.\nRecycled.\nPremium-priced.",
-              font="Newsreader", size=18, bold=True, color=NAVY)
+              font="Playfair Display", size=18, bold=True, color=NAVY)
     bullets1 = [
         "• No continuity of unit, team, or panel",
         f"• ${d.agency_hourly:.2f}/hr staffing premium on every RN hour",
@@ -259,7 +259,7 @@ def _slide_conversion(prs, d: DeckInputs):
               "THE FLORENCE PATHWAY", font="Inter", size=9, bold=True, color=WHITE)
     _add_text(s, Inches(7.35), Inches(4.25), Inches(5), Inches(0.5),
               "Permanent.\nAligned.\nRepeatable.",
-              font="Newsreader", size=18, bold=True, color=WHITE)
+              font="Playfair Display", size=18, bold=True, color=WHITE)
     bullets2 = [
         f"• {d.system_name}'s standard hiring & onboarding",
         f"• Full-time {d.system_name} employee, {d.system_name} comp & benefits",
@@ -310,7 +310,7 @@ def _slide_top_facilities(prs, d: DeckInputs):
                   font="Inter", size=12, color=NAVY)
         _add_text(s, Inches(8.0), ry, Inches(2.0), Inches(0.35),
                   _fmt_big(float(r.get("target_term_net_savings_account", 0))),
-                  font="Newsreader", size=14, bold=True, color=TEAL_DARK)
+                  font="Playfair Display", size=14, bold=True, color=TEAL_DARK)
         _add_text(s, Inches(10.1), ry, Inches(1.6), Inches(0.35),
                   _fmt_big(float(r.get("target_term_florence_fee_account", 0))),
                   font="Inter", size=12, color=NAVY)
@@ -343,7 +343,7 @@ def _slide_roi(prs, d: DeckInputs):
         _add_text(s, x + Inches(0.3), Inches(4.4), Inches(3.5), Inches(0.3),
                   label.upper(), font="Inter", size=9, bold=True, color=MUTED)
         _add_text(s, x + Inches(0.3), Inches(4.8), Inches(3.5), Inches(1),
-                  val, font="Newsreader", size=36, bold=True, color=NAVY)
+                  val, font="Playfair Display", size=36, bold=True, color=NAVY)
         _add_text(s, x + Inches(0.3), Inches(5.9), Inches(3.5), Inches(0.4),
                   suffix, font="Inter", size=11, color=MUTED)
 
@@ -372,7 +372,7 @@ def _slide_implementation(prs, d: DeckInputs):
         _add_text(s, x + Inches(0.25), Inches(4.2), Inches(2.5), Inches(0.3),
                   when.upper(), font="Inter", size=9, bold=True, color=TEAL_DARK)
         _add_text(s, x + Inches(0.25), Inches(4.6), Inches(2.5), Inches(0.5),
-                  what, font="Newsreader", size=16, bold=True, color=NAVY)
+                  what, font="Playfair Display", size=16, bold=True, color=NAVY)
         _add_text(s, x + Inches(0.25), Inches(5.4), Inches(2.5), Inches(1.1),
                   detail, font="Inter", size=10, color=MUTED)
 
@@ -393,7 +393,7 @@ def _slide_closing(prs, d: DeckInputs):
               f"across {d.n_facilities} facilities. Same hours. Different price. "
               f"Different outcome — {_fmt_big(d.term_savings)} in net savings "
               f"on a {_fmt_big(d.term_florence_fee)} investment.",
-              font="Newsreader", size=20, color=WHITE)
+              font="Playfair Display", size=20, color=WHITE)
 
 
 def _slide_compliance(prs, d: DeckInputs):

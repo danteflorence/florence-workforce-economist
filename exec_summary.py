@@ -36,12 +36,12 @@ from pricing_engine import (
 from pricing_batch import load_universe, price_batch
 
 # Brand palette
-NAVY = colors.HexColor("#0B2545")
-TEAL = colors.HexColor("#1E6091")
-ACCENT = colors.HexColor("#2DB8A3")
+NAVY = colors.HexColor("#101828")
+TEAL = colors.HexColor("#067F7B")
+ACCENT = colors.HexColor("#0ABAB5")
 LIGHT_BG = colors.HexColor("#F0F5FA")
 WARN_BG = colors.HexColor("#FFF8E6")
-MUTED = colors.HexColor("#6B7280")
+MUTED = colors.HexColor("#475467")
 BORDER = colors.HexColor("#E2E6EE")
 
 
@@ -135,35 +135,35 @@ def _render_html(target_name: str, target_type: str, scope_desc: str,
 * {{ box-sizing: border-box; }}
 body {{ font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
        margin: 0; padding: 0.5in; color: #1A2230; line-height: 1.4; font-size: 11px; }}
-h1 {{ color: #0B2545; font-size: 22px; margin: 0 0 6px 0; letter-spacing: -0.01em; }}
-h2 {{ color: #0B2545; font-size: 14px; margin: 18px 0 6px 0; }}
-.subtitle {{ color: #6B7280; font-size: 11px; margin-bottom: 14px; }}
-.tagline {{ background: linear-gradient(135deg,#0B2545,#1E6091); color:white;
+h1 {{ color: #101828; font-size: 22px; margin: 0 0 6px 0; letter-spacing: -0.01em; }}
+h2 {{ color: #101828; font-size: 14px; margin: 18px 0 6px 0; }}
+.subtitle {{ color: #475467; font-size: 11px; margin-bottom: 14px; }}
+.tagline {{ background: linear-gradient(135deg,#101828,#067F7B); color:white;
             border-radius:6px; padding:12px 16px; margin:12px 0 18px; font-size:13px; }}
 .kpi-grid {{ display:grid; grid-template-columns: repeat(5,1fr); gap:8px; margin:8px 0 16px; }}
 .kpi {{ border:1px solid #E2E6EE; border-radius:6px; padding:10px 12px; background:#F7F8FB; }}
-.kpi-label {{ font-size:9px; color:#6B7280; text-transform:uppercase; letter-spacing:.5px; }}
-.kpi-value {{ font-size:20px; font-weight:700; color:#0B2545; margin-top:4px; }}
-.kpi-sub {{ font-size:9px; color:#6B7280; margin-top:2px; }}
+.kpi-label {{ font-size:9px; color:#475467; text-transform:uppercase; letter-spacing:.5px; }}
+.kpi-value {{ font-size:20px; font-weight:700; color:#101828; margin-top:4px; }}
+.kpi-sub {{ font-size:9px; color:#475467; margin-top:2px; }}
 .split-grid {{ display:grid; grid-template-columns: repeat(4,1fr); gap:8px; margin:8px 0 18px; }}
-.split {{ border-top:3px solid #1E6091; border-radius:6px; padding:12px;
+.split {{ border-top:3px solid #067F7B; border-radius:6px; padding:12px;
           background:white; border-left:1px solid #E2E6EE; border-right:1px solid #E2E6EE;
           border-bottom:1px solid #E2E6EE; }}
-.split.fica {{ border-top-color:#2DB8A3; }}
+.split.fica {{ border-top-color:#0ABAB5; }}
 .split.agency {{ border-top-color:#C97A3B; }}
-.split.net {{ border-top-color:#0B2545; background:#F0F5FA; }}
-.split-label {{ font-size:10px; color:#6B7280; text-transform:uppercase; letter-spacing:.5px; }}
-.split-value {{ font-size:18px; font-weight:700; color:#0B2545; margin-top:6px; }}
-.split-sub {{ font-size:10px; color:#6B7280; margin-top:4px; }}
+.split.net {{ border-top-color:#101828; background:#F0F5FA; }}
+.split-label {{ font-size:10px; color:#475467; text-transform:uppercase; letter-spacing:.5px; }}
+.split-value {{ font-size:18px; font-weight:700; color:#101828; margin-top:6px; }}
+.split-sub {{ font-size:10px; color:#475467; margin-top:4px; }}
 table {{ width:100%; border-collapse:collapse; margin-top:6px; font-size:10px; }}
 th, td {{ padding:6px 8px; text-align:left; border-bottom:1px solid #E2E6EE; }}
-th {{ background:#F0F5FA; font-weight:600; color:#0B2545; font-size:9px;
+th {{ background:#F0F5FA; font-weight:600; color:#101828; font-size:9px;
       text-transform:uppercase; letter-spacing:.5px; }}
 td.num {{ text-align:right; font-variant-numeric:tabular-nums; }}
-.muted {{ color:#6B7280; font-size:9px; }}
+.muted {{ color:#475467; font-size:9px; }}
 .compliance {{ background:#FFF8E6; border-left:3px solid #C97A3B; border-radius:4px;
                padding:10px 14px; font-size:9px; color:#6B5824; margin-top:14px; line-height:1.5; }}
-.footer {{ font-size:8px; color:#6B7280; border-top:1px solid #E2E6EE;
+.footer {{ font-size:8px; color:#475467; border-top:1px solid #E2E6EE;
            padding-top:6px; margin-top:14px; }}
 .page-break {{ page-break-before: always; }}
 </style>
@@ -388,11 +388,11 @@ def _render_pdf(output_path: Path, target_name: str, target_type: str,
             Paragraph("⑤  Net Mo Savings / RN", body_small),
         ],
         [
-            Paragraph(f"<b>${m['median_monthly_fee']:,.0f}</b><br/><font size=8 color='#6B7280'>per RN per month</font>", body),
-            Paragraph(f"<b>${m['median_fica_savings']:,.0f}</b><br/><font size=8 color='#6B7280'>per RN per month</font>", body),
-            Paragraph(f"<b>${m['median_effective_cost']:,.0f}</b><br/><font size=8 color='#6B7280'>fee − FICA offset</font>", body),
-            Paragraph(f"<b>{m['median_offset_pct']*100:.1f}%</b><br/><font size=8 color='#6B7280'>target {cal.target_offset_pct*100:.0f}%</font>", body),
-            Paragraph(f"<b>${m['median_net_savings']:,.0f}</b><br/><font size=8 color='#6B7280'>agency + FICA − fee</font>", body),
+            Paragraph(f"<b>${m['median_monthly_fee']:,.0f}</b><br/><font size=8 color='#475467'>per RN per month</font>", body),
+            Paragraph(f"<b>${m['median_fica_savings']:,.0f}</b><br/><font size=8 color='#475467'>per RN per month</font>", body),
+            Paragraph(f"<b>${m['median_effective_cost']:,.0f}</b><br/><font size=8 color='#475467'>fee − FICA offset</font>", body),
+            Paragraph(f"<b>{m['median_offset_pct']*100:.1f}%</b><br/><font size=8 color='#475467'>target {cal.target_offset_pct*100:.0f}%</font>", body),
+            Paragraph(f"<b>${m['median_net_savings']:,.0f}</b><br/><font size=8 color='#475467'>agency + FICA − fee</font>", body),
         ],
     ]
     kpi_table = Table(kpi_data, colWidths=[doc.width/5]*5, rowHeights=[18, 50])
@@ -411,16 +411,16 @@ def _render_pdf(output_path: Path, target_name: str, target_type: str,
     story.append(Paragraph("Aggregate financial picture — what each party gets", h2))
     split_data = [
         [
-            Paragraph("<font size=8 color='#6B7280'><b>HOSPITAL PAYS FLORENCE</b></font>", body_small),
-            Paragraph("<font size=8 color='#6B7280'><b>HOSPITAL FICA OFFSET</b></font>", body_small),
-            Paragraph("<font size=8 color='#6B7280'><b>AGENCY PREMIUM AVOIDED</b></font>", body_small),
-            Paragraph("<font size=8 color='#6B7280'><b>HOSPITAL NET SAVINGS</b></font>", body_small),
+            Paragraph("<font size=8 color='#475467'><b>HOSPITAL PAYS FLORENCE</b></font>", body_small),
+            Paragraph("<font size=8 color='#475467'><b>HOSPITAL FICA OFFSET</b></font>", body_small),
+            Paragraph("<font size=8 color='#475467'><b>AGENCY PREMIUM AVOIDED</b></font>", body_small),
+            Paragraph("<font size=8 color='#475467'><b>HOSPITAL NET SAVINGS</b></font>", body_small),
         ],
         [
-            Paragraph(f"<b>{_fmt_money(m['total_monthly_fee'])}</b> / mo<br/><font size=8 color='#6B7280'>{_fmt_money(m['term_florence_fee'])} over {m['term_months']}mo</font>", body),
-            Paragraph(f"<b>{_fmt_money(m['total_monthly_fica'])}</b> / mo<br/><font size=8 color='#6B7280'>visible on payroll tax</font>", body),
-            Paragraph(f"<b>{_fmt_money(m['total_monthly_agency_avoided'])}</b> / mo<br/><font size=8 color='#6B7280'>contracted-labor displacement</font>", body),
-            Paragraph(f"<b>{_fmt_money(m['total_monthly_net_savings'])}</b> / mo<br/><font size=8 color='#6B7280'>{_fmt_money(m['term_net_savings'])} over {m['term_months']}mo</font>", body),
+            Paragraph(f"<b>{_fmt_money(m['total_monthly_fee'])}</b> / mo<br/><font size=8 color='#475467'>{_fmt_money(m['term_florence_fee'])} over {m['term_months']}mo</font>", body),
+            Paragraph(f"<b>{_fmt_money(m['total_monthly_fica'])}</b> / mo<br/><font size=8 color='#475467'>visible on payroll tax</font>", body),
+            Paragraph(f"<b>{_fmt_money(m['total_monthly_agency_avoided'])}</b> / mo<br/><font size=8 color='#475467'>contracted-labor displacement</font>", body),
+            Paragraph(f"<b>{_fmt_money(m['total_monthly_net_savings'])}</b> / mo<br/><font size=8 color='#475467'>{_fmt_money(m['term_net_savings'])} over {m['term_months']}mo</font>", body),
         ],
     ]
     split_table = Table(split_data, colWidths=[doc.width/4]*4, rowHeights=[18, 50])
@@ -474,7 +474,7 @@ def _render_pdf(output_path: Path, target_name: str, target_type: str,
     rows = [["Hospital", "RN Need", "Fee/RN/mo", "FICA/RN/mo", "Offset %", "Net Sav/RN/mo", "Total Mo Fee"]]
     for _, h in feas.iterrows():
         rows.append([
-            Paragraph(f"<b>{h['name'][:38]}</b><br/><font size=7 color='#6B7280'>{h['city']}, {h['state']}</font>", body_small),
+            Paragraph(f"<b>{h['name'][:38]}</b><br/><font size=7 color='#475467'>{h['city']}, {h['state']}</font>", body_small),
             f"{h['rn_need']:,.0f}",
             f"${h['florence_monthly_fee_per_rn']:,.0f}",
             f"${h['employer_fica_savings_per_rn_per_month']:,.0f}",

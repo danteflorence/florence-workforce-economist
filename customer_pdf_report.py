@@ -19,13 +19,13 @@ from reportlab.platypus import (
     Paragraph, Spacer, Table, TableStyle, SimpleDocTemplate,
 )
 
-TEAL = colors.HexColor("#0BC5A0")
-TEAL_DARK = colors.HexColor("#089478")
-NAVY = colors.HexColor("#0F1B2D")
+TEAL = colors.HexColor("#0ABAB5")
+TEAL_DARK = colors.HexColor("#067F7B")
+NAVY = colors.HexColor("#101828")
 GRAY = colors.HexColor("#F4F6F8")
 BORDER = colors.HexColor("#E5E8EE")
-INK = colors.HexColor("#0F1B2D")
-MUTED = colors.HexColor("#5B6675")
+INK = colors.HexColor("#101828")
+MUTED = colors.HexColor("#475467")
 
 
 def _fmt_big(v: float) -> str:
