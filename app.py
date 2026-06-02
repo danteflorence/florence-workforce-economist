@@ -872,6 +872,49 @@ def build_system_bundle_zip(system_id: str, placeholder_msp_markup_pct: float):
         return buf.getvalue(), f"{safe}_recommendation_bundle.zip"
 
 
+def build_outreach_pack_zip(system_ids, placeholder_msp_markup_pct):
+    """Bulk 'work my queue': for each selected system, emit a folder with the
+    ready-to-send outreach_email.txt + branded postcard/letter HTML, plus a
+    manifest.csv. NOT cached (depends on mutable contacts). Returns
+    (zip_bytes, manifest_df)."""
+    import outreach_email as _oe
+    import lob_mailer as _mail
+    import contacts as _contacts
+    rows, buf = [], io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for sid in system_ids:
+            m = _bundle_system_metrics(sid, sysov.overrides_mtime())
+            if not m:
+                continue
+            cc = _contacts.get_contact("system", sid)
+            annual = m["term_impact"] / 2
+            email = _oe.compose_email(
+                system_name=m["name"], annual_savings=annual, term_impact=m["term_impact"],
+                rn_need=m["rn_need"], monthly_fee=m["monthly_fee"],
+                contact_name=cc.get("contact_name", ""),
+            )
+            safe = ("".join(c for c in m["name"] if c.isalnum() or c in " _-")
+                    .strip().replace(" ", "_")[:48] or str(sid))
+            common = dict(org_name=m["name"], contact_name=cc.get("contact_name", ""),
+                          address1=cc.get("address1", ""), city=cc.get("city", ""),
+                          state=cc.get("state", ""), zip=cc.get("zip", ""),
+                          monthly_fee=m["monthly_fee"], term_impact=m["term_impact"],
+                          rn_need=m["rn_need"])
+            pc = _mail.mailpiece_html("postcard", **common)
+            ltr = _mail.mailpiece_html("letter", title=cc.get("title", ""), **common)
+            zf.writestr(f"{safe}/outreach_email.txt", _oe.as_txt(email))
+            zf.writestr(f"{safe}/postcard_front.html", pc["front"])
+            zf.writestr(f"{safe}/postcard_back.html", pc["back"])
+            zf.writestr(f"{safe}/letter.html", ltr["letter"])
+            rows.append({"system": m["name"], "annual_savings": annual,
+                         "has_email": bool(cc.get("email")), "mailable": bool(cc.get("mailable")),
+                         "contact": cc.get("contact_name", "")})
+        man = pd.DataFrame(rows) if rows else pd.DataFrame(
+            columns=["system", "annual_savings", "has_email", "mailable", "contact"])
+        zf.writestr("manifest.csv", man.to_csv(index=False))
+    return buf.getvalue(), man
+
+
 @st.cache_data(show_spinner=False)
 def _bundle_system_metrics(system_id: str, overrides_mtime: float = 0.0) -> dict:
     """Headline numbers for the quick-actions popup (cached)."""
@@ -1932,6 +1975,62 @@ if view == "inpatient":
             )
             _ranked = _si_rank.rank_systems(
                 sys_agg.to_dict("records"), _ct_rank.get_contact, limit=30)[:12]
+
+            # Bulk — work my queue: one outreach pack for several systems.
+            _opt_map = {p["name"]: p["system_id"] for p in _ranked}
+            with st.container(border=True):
+                st.markdown("**Bulk — work my queue**")
+                _pick = st.multiselect(
+                    "Systems to pack", list(_opt_map.keys()),
+                    default=list(_opt_map.keys())[:5], key="bulk_queue_pick",
+                    label_visibility="collapsed",
+                )
+                _ids = [_opt_map[n] for n in _pick]
+                _bk1, _bk2 = st.columns([1.4, 1])
+                with _bk1:
+                    if _ids:
+                        _pack, _man = build_outreach_pack_zip(_ids, placeholder_msp_markup_pct)
+                        st.download_button(
+                            f":material/inventory_2: Outreach pack ({len(_ids)} systems)",
+                            _pack, file_name="florence_outreach_pack.zip",
+                            mime="application/zip", use_container_width=True,
+                            key="bulk_queue_dl",
+                        )
+                        st.caption(
+                            f"{int(_man['has_email'].sum())} of {len(_man)} have an email · "
+                            f"{int(_man['mailable'].sum())} mailable · "
+                            "each folder: email + postcard + letter"
+                        )
+                    else:
+                        st.caption("Pick at least one system above.")
+                with _bk2:
+                    import crm_sync as _crm_bulk
+                    import outreach_email as _oe_bulk
+                    _gok, _sok = _crm_bulk.gmail_is_configured(), _crm_bulk.streak_is_configured()
+                    if st.button("Queue Gmail + Streak", key="bulk_queue_crm",
+                                 use_container_width=True, disabled=not (_ids and (_gok or _sok))):
+                        _gn = _sn = 0
+                        for _sid in _ids:
+                            _mm = _bundle_system_metrics(_sid, sysov.overrides_mtime())
+                            if not _mm:
+                                continue
+                            _cc2 = _ct_rank.get_contact("system", _sid)
+                            _em = _oe_bulk.compose_email(
+                                system_name=_mm["name"], annual_savings=_mm["term_impact"] / 2,
+                                term_impact=_mm["term_impact"], rn_need=_mm["rn_need"],
+                                monthly_fee=_mm["monthly_fee"], contact_name=_cc2.get("contact_name", ""))
+                            if _gok and _cc2.get("email") and _crm_bulk.create_gmail_draft(
+                                    to=_cc2["email"], subject=_em["subject"], body=_em["body"]).get("ok"):
+                                _gn += 1
+                            if _sok and _crm_bulk.streak_upsert_box(
+                                    name=_mm["name"], fields={"annual_savings": _mm["term_impact"] / 2,
+                                                              "rn_need": _mm["rn_need"]}).get("ok"):
+                                _sn += 1
+                        st.success(f"Queued {_gn} Gmail drafts · {_sn} Streak boxes")
+                    if not (_gok or _sok):
+                        st.caption("Connect Gmail / Streak to queue drafts here.")
+            st.divider()
+
             for _pr in _ranked:
                 _c1, _c2, _c3, _c4 = st.columns([3, 1.3, 1.5, 1.0])
                 with _c1:
