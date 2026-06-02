@@ -10,6 +10,8 @@ data/contact_overrides.csv
 data/mail_log.csv
 # Customer activation signups (mutable)
 data/activations.csv
+# Account activity log — calls/notes/timeline (mutable)
+data/activity_log.csv
 .env
 .env.*
 secrets.toml

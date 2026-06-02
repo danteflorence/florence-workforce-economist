@@ -1247,6 +1247,34 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
             file_name="call_script.txt", mime="text/plain",
             key=f"qa_callscript_{system_id}", use_container_width=True)
 
+    # ── Activity & notes — a real per-account timeline ───────────────
+    import activity as _act
+    with st.expander("Activity & notes"):
+        _note = st.text_input("Log a call or note", key=f"qa_note_{system_id}",
+                              placeholder="e.g. Left VM with CNO office — call back Thursday")
+        _act_rep = st.session_state.get("current_user_email") or ""
+        _na, _nb = st.columns(2)
+        if _na.button("Log call", key=f"qa_logcall_{system_id}",
+                      use_container_width=True, disabled=not _note.strip()):
+            _act.log("system", system_id, "call", _note.strip(), org_name=m["name"], by=_act_rep)
+            st.toast("Call logged")
+        if _nb.button("Log note", key=f"qa_lognote_{system_id}",
+                      use_container_width=True, disabled=not _note.strip()):
+            _act.log("system", system_id, "note", _note.strip(), org_name=m["name"], by=_act_rep)
+            st.toast("Note logged")
+        _tl = _act.timeline("system", system_id)
+        if not _tl:
+            st.caption("No activity yet — touches, outcomes, and notes will appear here.")
+        for _e in _tl[:15]:
+            _when = str(_e.get("ts", ""))[:16].replace("T", " ")
+            st.markdown(
+                f"<div style='font-size:.82rem;border-left:2px solid #E4E7EC;"
+                f"padding:1px 0 6px 10px;margin:0 0 2px 2px;'>"
+                f"<span style='font-family:var(--f-mono);font-size:.72rem;color:var(--f-muted);'>"
+                f"{_when}</span> · <b>{_e.get('kind', '')}</b> — {_e.get('detail', '')}</div>",
+                unsafe_allow_html=True,
+            )
+
     # ── CRM + Gmail sync (dormant until keys are provisioned) ─────────
     import crm_sync as _crm
     _gok, _sok = _crm.gmail_is_configured(), _crm.streak_is_configured()
@@ -2812,6 +2840,18 @@ if view == "contacts":
                     if _res["skipped"]:
                         st.caption("Skipped rows had no entity_id and no org/system name we "
                                    "could match to a known system.")
+
+    st.divider()
+    st.markdown("#### Activity log")
+    import activity as _act_io
+    _aq = st.text_input("Search calls / notes / activity", key="activity_search",
+                        placeholder="e.g. CNO, voicemail, callback")
+    _adf = _act_io.search(_aq)
+    if _adf.empty:
+        st.caption("No activity logged yet. Log calls + notes from any system's popup.")
+    else:
+        st.dataframe(_adf[["ts", "org_name", "kind", "detail", "by"]],
+                     use_container_width=True, hide_index=True)
 
 
 # =====================================================================
