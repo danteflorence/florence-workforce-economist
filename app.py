@@ -854,7 +854,7 @@ def build_system_bundle_zip(system_id: str, placeholder_msp_markup_pct: float):
             return float(sys_recs[c].sum()) if c in sys_recs.columns else 0.0
         _term_impact = _sum("target_term_net_savings_account")
         _rn_need = int(_sum("rn_need"))
-        _email = _oe.compose_email(
+        _seq = _oe.compose_sequence(
             system_name=name,
             annual_savings=_term_impact / 2,
             term_impact=_term_impact,
@@ -872,7 +872,7 @@ def build_system_bundle_zip(system_id: str, placeholder_msp_markup_pct: float):
             zf.write(Path(xlsx), Path(xlsx).name)
             zf.write(Path(p), Path(p).name)
             zf.write(Path(h), Path(h).name)
-            zf.writestr("outreach_email.txt", _oe.as_txt(_email))
+            zf.writestr("outreach_email.txt", _oe.sequence_as_txt(_seq))
             zf.writestr("call_script.txt", _cs.as_text(_script))
         return buf.getvalue(), f"{safe}_recommendation_bundle.zip"
 
@@ -893,7 +893,7 @@ def build_outreach_pack_zip(system_ids, placeholder_msp_markup_pct):
                 continue
             cc = _contacts.get_contact("system", sid)
             annual = m["term_impact"] / 2
-            email = _oe.compose_email(
+            email_seq = _oe.compose_sequence(
                 system_name=m["name"], annual_savings=annual, term_impact=m["term_impact"],
                 rn_need=m["rn_need"], monthly_fee=m["monthly_fee"],
                 contact_name=cc.get("contact_name", ""),
@@ -907,7 +907,7 @@ def build_outreach_pack_zip(system_ids, placeholder_msp_markup_pct):
                           rn_need=m["rn_need"])
             pc = _mail.mailpiece_html("postcard", **common)
             ltr = _mail.mailpiece_html("letter", title=cc.get("title", ""), **common)
-            zf.writestr(f"{safe}/outreach_email.txt", _oe.as_txt(email))
+            zf.writestr(f"{safe}/outreach_email.txt", _oe.sequence_as_txt(email_seq))
             zf.writestr(f"{safe}/postcard_front.html", pc["front"])
             zf.writestr(f"{safe}/postcard_back.html", pc["back"])
             zf.writestr(f"{safe}/letter.html", ltr["letter"])
@@ -1204,18 +1204,28 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
     import outreach_email as _oe
     _code = (mst or {}).get("retrieval_code", "") if mst else ""
     _au = f"{_mail.SIGNUP_BASE}?code={_code}" if _code else ""
-    _email = _oe.compose_email(
+    _seq = _oe.compose_sequence(
         system_name=m["name"], annual_savings=m["term_impact"] / 2,
         term_impact=m["term_impact"], rn_need=m["rn_need"],
         monthly_fee=m["monthly_fee"], code=_code, activation_url=_au,
         contact_name=cc.get("contact_name", ""),
         rep_email=(st.session_state.get("current_user_email") or ""),
     )
+    # Default the step selector to where the cadence says this account is.
+    _em_default = 0
+    if not _cad.get("done") and _cad.get("step"):
+        _em_default = min(int(_cad["step"]), len(_seq)) - 1
     with st.expander("Outreach email · ready to send"):
         st.caption(
-            "Pre-filled with this system's hero savings + pricing. Drop in "
-            "[First name] and your sign-off, then send from your own inbox."
+            "Pick the sequence step (defaults to where the cadence is). Numbers are "
+            "pre-filled — drop in [First name] + your sign-off, send from your inbox."
         )
+        _em_i = st.radio(
+            "Step", list(range(len(_seq))), index=_em_default,
+            format_func=lambda i: _seq[i]["label"], horizontal=True,
+            key=f"qa_em_step_{system_id}", label_visibility="collapsed",
+        )
+        _email = _seq[_em_i]
         st.text_input("Subject", value=_email["subject"], key=f"qa_em_subj_{system_id}")
         st.code(_email["body"], language=None)  # the code block has a copy button
         st.markdown(f"[Open prefilled in your email client →]({_email['mailto']})")

@@ -31,6 +31,17 @@ def test_outreach_email_numbers_and_greeting():
     assert "SUBJECT OPTIONS" in txt and "BODY" in txt
 
 
+def test_outreach_sequence_four_steps():
+    import outreach_email as oe
+    seq = oe.compose_sequence(system_name="Banner Health", annual_savings=18.4e6,
+                              term_impact=36.8e6, rn_need=420, monthly_fee=2.94e6,
+                              contact_name="Dana Reyes")
+    assert [s["step"] for s in seq] == [1, 2, 3, 4]
+    assert all(s.get("subject") and s.get("body") and s.get("mailto") for s in seq)
+    txt = oe.sequence_as_txt(seq)
+    assert "STEP 1" in txt and "STEP 4" in txt and "Breakup" in txt
+
+
 def test_outreach_email_no_contact_uses_placeholder():
     import outreach_email as oe
     e = oe.compose_email(system_name="X Health", annual_savings=1e6, term_impact=2e6,

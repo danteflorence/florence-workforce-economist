@@ -129,6 +129,61 @@ def compose_email(
     return {"subjects": subjects, "subject": subjects[0], "body": body, "mailto": mailto}
 
 
+def compose_sequence(*, system_name: str, annual_savings, term_impact, rn_need,
+                     monthly_fee, per_nurse_fee=None, code: str = "", activation_url: str = "",
+                     contact_name: str = "", rep_name: str = "", rep_phone: str = "",
+                     rep_email: str = "", availability: str = "") -> list[dict]:
+    """The full outreach cadence: intro → follow-up → share-availability → breakup.
+    Each step is {step, label, subject, body, mailto}, all numbers pre-filled."""
+    intro = compose_email(
+        system_name=system_name, annual_savings=annual_savings, term_impact=term_impact,
+        rn_need=rn_need, monthly_fee=monthly_fee, per_nurse_fee=per_nurse_fee, code=code,
+        activation_url=activation_url, contact_name=contact_name, rep_name=rep_name,
+        rep_phone=rep_phone, rep_email=rep_email, availability=availability)
+    hero = _money(annual_savings)
+    greet = _first_name(contact_name) or "[First name]"
+    sign = (f"{rep_name or '[Your name]'}\nFlorence"
+            + (f" · {rep_phone}" if rep_phone else "") + (f" · {rep_email}" if rep_email else ""))
+    avail = (availability or "I have a couple of windows next week").strip()
+
+    later = [
+        {"step": 2, "label": "Follow-up 1",
+         "subject": f"Re: {system_name} — about {hero}/yr in nurse-staffing savings",
+         "body": (f"Hi {greet},\n\nCircling back on my note about roughly {hero} a year in avoidable "
+                  f"RN labor cost at {system_name}. Did it reach the right person?\n\nHappy to send the "
+                  f"facility-by-facility breakdown, or take 15 minutes whenever it's convenient.\n\n"
+                  f"Best,\n{sign}")},
+        {"step": 3, "label": "Follow-up 2 · share availability",
+         "subject": f"20 minutes on {system_name}'s RN staffing?",
+         "body": (f"Hi {greet},\n\nStill think there's about {hero} a year on the table for {system_name} "
+                  f"by moving agency coverage to permanent, U.S.-licensed RNs.\n\n{avail} for a quick "
+                  f"20 minutes — I'll send an invite. Or point me to whoever manages your calendar and "
+                  f"I'll coordinate directly.\n\nBest,\n{sign}")},
+        {"step": 4, "label": "Breakup",
+         "subject": f"Closing the loop — {system_name}",
+         "body": (f"Hi {greet},\n\nI'll stop here so I'm not cluttering your inbox. If RN agency spend "
+                  f"comes up down the road, the ~{hero}/yr estimate and the facility breakdown for "
+                  f"{system_name} are ready whenever you want them.\n\nThanks for the time,\n{sign}")},
+    ]
+    out = [{"step": 1, "label": "Intro", "subject": intro["subject"],
+            "body": intro["body"], "mailto": intro["mailto"]}]
+    for s in later:
+        s["mailto"] = "mailto:?" + urllib.parse.urlencode(
+            {"subject": s["subject"], "body": s["body"]}, quote_via=urllib.parse.quote)
+        out.append(s)
+    return out
+
+
+def sequence_as_txt(steps: list[dict]) -> str:
+    """Render the whole cadence as a single text file for the ZIP bundle."""
+    parts = ["FLORENCE — OUTREACH SEQUENCE", "=" * 28, ""]
+    for s in steps:
+        parts += [f"--- STEP {s['step']}: {s['label']} ---", f"Subject: {s['subject']}", "",
+                  s["body"], "", ""]
+    parts.append("— Numbers pre-filled. Replace [First name] / your sign-off, then send from your inbox.")
+    return "\n".join(parts)
+
+
 def as_txt(email: dict) -> str:
     """Render the composed email as a plain-text file for the ZIP bundle."""
     lines = ["SUBJECT OPTIONS", "==============="]
