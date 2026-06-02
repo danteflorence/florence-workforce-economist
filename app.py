@@ -1015,6 +1015,20 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
             f"background:{clr}1A;color:{clr};'>&#9679; {lbl}</span>",
             unsafe_allow_html=True,
         )
+    # ── Owner (territory / my-book) ───────────────────────────────────
+    import ownership as _own
+    _rep = st.session_state.get("current_user_email") or ""
+    _owner = _own.owner_of(system_id)
+    _ow1, _ow2 = st.columns([2.6, 1])
+    _ow1.caption(f"Owner: {_owner or 'unassigned'}")
+    with _ow2:
+        if _rep and _owner == _rep.lower():
+            if st.button("Release", key=f"qa_release_{system_id}", use_container_width=True):
+                _own.unassign(system_id)
+        elif _rep:
+            if st.button("Assign to me", key=f"qa_assign_{system_id}", use_container_width=True):
+                _own.assign(system_id, _rep, by=_rep)
+
     # Outreach status — system-level de-dupe + the next coordinated touch.
     import sales_intel as _si
     _touched = _si.already_touched("system", system_id)
@@ -2092,8 +2106,13 @@ if view == "inpatient":
                 "Ranked by 24-mo customer impact weighted by how reachable the account "
                 "is. A high-impact system with no contact yet is your cue to go find one."
             )
-            _ranked = _si_rank.rank_systems(
-                sys_agg.to_dict("records"), _ct_rank.get_contact, limit=30)[:12]
+            import ownership as _own_pq
+            _rep_pq = st.session_state.get("current_user_email") or ""
+            _recs_pq = sys_agg.to_dict("records")
+            if _rep_pq and st.checkbox("My book only", value=False, key="prio_mybook"):
+                _book_pq = _own_pq.book_of(_rep_pq)
+                _recs_pq = [r for r in _recs_pq if str(r.get("health_system_id")) in _book_pq]
+            _ranked = _si_rank.rank_systems(_recs_pq, _ct_rank.get_contact, limit=30)[:12]
 
             # Bulk — work my queue: one outreach pack for several systems.
             _opt_map = {p["name"]: p["system_id"] for p in _ranked}
@@ -2896,6 +2915,11 @@ if view == "today":
         st.info("No systems available yet.", icon=":material/info:")
     else:
         _recs_t = _agg.to_dict("records")
+        import ownership as _own_today
+        _rep_today = st.session_state.get("current_user_email") or ""
+        if _rep_today and st.checkbox("My book only", value=False, key="today_mybook"):
+            _book_t = _own_today.book_of(_rep_today)
+            _recs_t = [r for r in _recs_t if str(r.get("health_system_id")) in _book_t]
         _by_id = {str(r["health_system_id"]): r for r in _recs_t}
         _touched = _si_today.touched_system_ids()
 

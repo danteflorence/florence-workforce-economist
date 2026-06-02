@@ -12,6 +12,8 @@ data/mail_log.csv
 data/activations.csv
 # Account activity log — calls/notes/timeline (mutable)
 data/activity_log.csv
+# System ownership — rep assignments (mutable)
+data/system_owners.csv
 .env
 .env.*
 secrets.toml

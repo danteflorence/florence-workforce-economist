@@ -196,6 +196,18 @@ def test_crm_sync_dry_runs():
     assert X.streak_upsert_box(name="X")["mode"] == "dry_run"
 
 
+# ─── ownership ──────────────────────────────────────────────────────
+def test_ownership_assign_book(tmp_store):
+    import ownership as O
+    O.OWNERS = tmp_store / "owners.csv"
+    O.assign("hca", "Rep@FlorenceEducation.com", by="admin@x")
+    O.assign("sutter_health", "rep@florenceeducation.com")
+    assert O.owner_of("hca") == "rep@florenceeducation.com"   # normalized lower
+    assert O.book_of("rep@florenceeducation.com") == {"hca", "sutter_health"}
+    O.unassign("hca")
+    assert O.owner_of("hca") == "" and O.book_of("rep@florenceeducation.com") == {"sutter_health"}
+
+
 # ─── florence_auth ──────────────────────────────────────────────────
 def test_auth_open_and_domain():
     import os, florence_auth as A
