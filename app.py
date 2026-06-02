@@ -2233,21 +2233,35 @@ if view == "inpatient":
                 _ids = [_opt_map[n] for n in _pick]
                 _bk1, _bk2 = st.columns([1.4, 1])
                 with _bk1:
-                    if _ids:
-                        _pack, _man = build_outreach_pack_zip(_ids, placeholder_msp_markup_pct)
+                    # Build on click only — never compute the ZIP on page load, and
+                    # never let a failure here take down the landing page.
+                    if not _ids:
+                        st.caption("Pick at least one system above.")
+                    elif st.button(f":material/inventory_2: Build outreach pack ({len(_ids)})",
+                                   key="bulk_queue_build", use_container_width=True):
+                        try:
+                            st.session_state["bulk_pack"] = build_outreach_pack_zip(
+                                _ids, placeholder_msp_markup_pct)
+                            st.session_state.pop("bulk_pack_err", None)
+                        except Exception as _e:
+                            st.session_state["bulk_pack"] = None
+                            st.session_state["bulk_pack_err"] = str(_e)[:200]
+                    _bp = st.session_state.get("bulk_pack")
+                    if _bp:
+                        _pack, _man = _bp
                         st.download_button(
-                            f":material/inventory_2: Outreach pack ({len(_ids)} systems)",
+                            f":material/download: Download pack ({len(_man)} systems)",
                             _pack, file_name="florence_outreach_pack.zip",
                             mime="application/zip", use_container_width=True,
                             key="bulk_queue_dl",
                         )
                         st.caption(
                             f"{int(_man['has_email'].sum())} of {len(_man)} have an email · "
-                            f"{int(_man['mailable'].sum())} mailable · "
-                            "each folder: email + postcard + letter"
+                            f"{int(_man['mailable'].sum())} mailable · each folder: email + "
+                            "postcard + letter"
                         )
-                    else:
-                        st.caption("Pick at least one system above.")
+                    elif st.session_state.get("bulk_pack_err"):
+                        st.caption("Pack build failed — " + st.session_state.pop("bulk_pack_err"))
                 with _bk2:
                     import crm_sync as _crm_bulk
                     import outreach_email as _oe_bulk
