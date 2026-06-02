@@ -14,6 +14,8 @@ data/activations.csv
 data/activity_log.csv
 # System ownership — rep assignments (mutable)
 data/system_owners.csv
+# Snooze / reminders (mutable)
+data/snoozes.csv
 .env
 .env.*
 secrets.toml

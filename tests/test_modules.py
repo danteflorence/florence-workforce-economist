@@ -208,6 +208,18 @@ def test_ownership_assign_book(tmp_store):
     assert O.owner_of("hca") == "" and O.book_of("rep@florenceeducation.com") == {"sutter_health"}
 
 
+# ─── reminders ──────────────────────────────────────────────────────
+def test_reminders_snooze(tmp_store):
+    import reminders as R
+    R.SNOOZES = tmp_store / "snz.csv"
+    assert not R.is_snoozed("system", "hca")
+    until = R.snooze("system", "hca", 7, by="rep@florenceeducation.com")
+    assert R.is_snoozed("system", "hca") and R.snoozed_until("system", "hca") == until
+    assert any(a["entity_id"] == "hca" for a in R.active())
+    R.clear("system", "hca")
+    assert not R.is_snoozed("system", "hca") and R.active() == []
+
+
 # ─── florence_auth ──────────────────────────────────────────────────
 def test_auth_open_and_domain():
     import os, florence_auth as A

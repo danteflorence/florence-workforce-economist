@@ -1073,6 +1073,23 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
         _log_outcome("Meeting booked", "discovery")
     if _o3.button("Not interested", key=f"qa_oc_no_{system_id}", use_container_width=True):
         _log_outcome("Not interested", "closed_lost")
+
+    # Snooze — defer this account; it drops off Today until the date.
+    import reminders as _rem
+    _snz = _rem.snoozed_until("system", system_id)
+    if _snz:
+        _zc1, _zc2 = st.columns([2.6, 1])
+        _zc1.caption(f"Snoozed until {_snz}")
+        if _zc2.button("Unsnooze", key=f"qa_unsnz_{system_id}", use_container_width=True):
+            _rem.clear("system", system_id)
+    else:
+        _zc1, _zc2 = st.columns([1.6, 1])
+        _snz_days = _zc1.selectbox(
+            "Snooze", [3, 7, 14, 30], format_func=lambda d: f"in {d} days",
+            key=f"qa_snzdays_{system_id}", label_visibility="collapsed")
+        if _zc2.button("Snooze", key=f"qa_snz_{system_id}", use_container_width=True):
+            _rem.snooze("system", system_id, _snz_days,
+                        by=(st.session_state.get("current_user_email") or ""))
     st.divider()
 
     a, b, d = st.columns([1.2, 1.2, 0.7])
@@ -2931,6 +2948,8 @@ if view == "today":
             _cad = _si_today.cadence_next("system", _sid)
             if _cad.get("ready") and not _cad.get("done"):
                 _due.append((_sid, _cad))
+        import reminders as _rem_today
+        _due = [(s, c) for (s, c) in _due if not _rem_today.is_snoozed("system", s)]
         _due.sort(key=lambda t: (t[1].get("due_in_days")
                                  if t[1].get("due_in_days") is not None else 0))
         st.markdown(f"#### Follow-ups due ({len(_due)})")
@@ -2954,7 +2973,11 @@ if view == "today":
 
         # 2) Start these — top-priority untouched.
         _ranked_t = _si_today.rank_systems(_recs_t, _ct_today.get_contact, limit=50)
-        _starts = [r for r in _ranked_t if r["system_id"] not in _touched][:10]
+        _starts = [r for r in _ranked_t if r["system_id"] not in _touched
+                   and not _rem_today.is_snoozed("system", r["system_id"])][:10]
+        _snz_n = len(_rem_today.active())
+        if _snz_n:
+            st.caption(f":material/snooze: {_snz_n} account(s) snoozed — they'll resurface on their date.")
         st.markdown("#### Start these — top untouched targets")
         for _pr in _starts:
             _s1, _s2, _s3 = st.columns([3.2, 2.3, 1.0])
