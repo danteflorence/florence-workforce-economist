@@ -1822,6 +1822,7 @@ _nav_button("Calibration sweep", "calibration_sweep", "settings")
 
 # ─── Data ────────────────────────────────────────────────────────
 _nav_section("Data")
+_nav_button("Contacts", "contacts", "contacts")
 _nav_button("Data quality", "data_quality", "verified")
 _nav_button("Data provenance", "data_provenance", "library_books")
 
@@ -2767,6 +2768,50 @@ if view == "inpatient":
         )
         st.info(REQUIRED_COMPLIANCE_SENTENCE, icon=":material/balance:")
 
+
+
+# =====================================================================
+# CONTACTS — import the book you already have / export the current one
+# =====================================================================
+if view == "contacts":
+    florence_brand_strip("CONTACTS · INTERNAL")
+    florence_headline("Contact book.",
+                      "Import contacts you already have; export your current book.")
+    import contacts as _ct_io
+    _cE, _cI = st.columns(2)
+    with _cE:
+        st.markdown("#### Export")
+        st.download_button(
+            ":material/download: Download contacts.csv", _ct_io.export_overrides_csv(),
+            file_name="florence_contacts.csv", mime="text/csv", use_container_width=True)
+        st.caption(_ct_io.coverage_note())
+    with _cI:
+        st.markdown("#### Import")
+        st.caption(
+            "CSV columns (any subset): entity_type, entity_id, org_name (or system_name), "
+            "contact_name, title, email, phone, address1, city, state, zip, notes. Rows "
+            "without entity_id are matched to a system by name; blank cells never "
+            "overwrite existing values.")
+        _derive = st.checkbox("Also derive missing emails (name + system domain)", value=False)
+        _up = st.file_uploader("Contacts CSV", type=["csv"], key="contacts_import")
+        if _up is not None:
+            try:
+                _idf = pd.read_csv(_up, dtype=str).fillna("")
+            except Exception as _e:
+                st.error(f"Couldn't read CSV: {_e}")
+                _idf = None
+            if _idf is not None:
+                st.dataframe(_idf.head(15), use_container_width=True, hide_index=True)
+                if st.button("Import contacts", type="primary", key="contacts_do_import"):
+                    _rep = st.session_state.get("current_user_email") or ""
+                    _res = _ct_io.bulk_import(_idf, by=_rep, derive_emails=_derive)
+                    _msg = f"Imported {_res['imported']} · skipped {_res['skipped']}"
+                    if _derive:
+                        _msg += f" · derived {_res['derived']} emails"
+                    st.success(_msg)
+                    if _res["skipped"]:
+                        st.caption("Skipped rows had no entity_id and no org/system name we "
+                                   "could match to a known system.")
 
 
 # =====================================================================
