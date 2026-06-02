@@ -958,6 +958,31 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
             f"<b>Next touch:</b> {_cad['label']}{(' · ' + _due) if _due else ''}</div>",
             unsafe_allow_html=True,
         )
+    # Log an outcome — one click advances the deal stage AND halts the cadence.
+    _oc_rep = st.session_state.get("current_user_email") or ""
+
+    def _log_outcome(outcome: str, stage_to: str):
+        import lob_mailer as _mail_oc
+        _mail_oc.record_outcome("system", system_id, outcome, org_name=m["name"], by=_oc_rep)
+        try:
+            import workbench as _wb_oc
+            _wb_oc.upsert_system_stage(system_id, m["name"], stage_to, _oc_rep, note=outcome)
+        except Exception:
+            pass
+        try:
+            import crm_sync as _crm_oc
+            _crm_oc.streak_upsert_box(name=m["name"], fields={"stage": stage_to, "outcome": outcome})
+        except Exception:
+            pass
+        st.toast(f"Logged: {outcome}")
+
+    _o1, _o2, _o3 = st.columns(3)
+    if _o1.button("Replied", key=f"qa_oc_reply_{system_id}", use_container_width=True):
+        _log_outcome("Replied", "discovery")
+    if _o2.button("Meeting booked", key=f"qa_oc_meet_{system_id}", use_container_width=True):
+        _log_outcome("Meeting booked", "discovery")
+    if _o3.button("Not interested", key=f"qa_oc_no_{system_id}", use_container_width=True):
+        _log_outcome("Not interested", "closed_lost")
     st.divider()
 
     a, b, d = st.columns([1.2, 1.2, 0.7])

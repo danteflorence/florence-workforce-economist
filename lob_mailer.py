@@ -389,6 +389,27 @@ def record_response(entity_type: str, entity_id: str, note: str = "") -> bool:
     return True
 
 
+def record_outcome(entity_type: str, entity_id: str, outcome: str,
+                   org_name: str = "", by: str = "") -> bool:
+    """Log a reply / meeting-booked / not-interested outcome. Marks the latest
+    mailpiece for the org 'responded' (so the cadence halts) if one exists;
+    otherwise appends a standalone outcome row. Idempotent-ish: always records."""
+    df = _read()
+    now = datetime.utcnow().isoformat(timespec="seconds")
+    mask = (df["entity_type"] == entity_type) & (df["entity_id"].astype(str) == str(entity_id))
+    if mask.any():
+        idx = df[mask].index[-1]
+        df.loc[idx, "status"] = "responded"
+        df.loc[idx, "responded_at"] = now
+        df.loc[idx, "notes"] = outcome
+        df.to_csv(MAIL_LOG, index=False, columns=FIELDS)
+    else:
+        _log(entity_type=entity_type, entity_id=str(entity_id), org_name=org_name,
+             piece_type="outcome", status="responded", notes=outcome,
+             drafted_at=now, responded_at=now, by=by)
+    return True
+
+
 def status_for(entity_type: str, entity_id: str) -> dict | None:
     df = _read()
     mask = (df["entity_type"] == entity_type) & (df["entity_id"].astype(str) == str(entity_id))

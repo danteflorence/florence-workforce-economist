@@ -85,6 +85,42 @@ def _now() -> str:
     return datetime.utcnow().isoformat(timespec="seconds")
 
 
+def deal_for_system(system_id: str, rep_email: Optional[str] = None) -> Optional[str]:
+    """Latest deal_id for a system (optionally scoped to a rep), or None."""
+    try:
+        df = _read()
+    except Exception:
+        return None
+    if df.empty:
+        return None
+    m = df[df["system_id"].astype(str) == str(system_id)]
+    if rep_email:
+        rm = m[m["rep_email"].str.lower() == rep_email.strip().lower()]
+        if not rm.empty:
+            m = rm
+    if m.empty:
+        return None
+    if "last_touched_at" in m.columns:
+        m = m.sort_values("last_touched_at")
+    return str(m.iloc[-1]["deal_id"])
+
+
+def upsert_system_stage(system_id: str, system_name: str, new_stage: str,
+                        rep_email: str = "", note: str = "") -> str:
+    """Find-or-create a deal for a system and move it to new_stage. Used by the
+    one-click outcome capture (reply / meeting booked / not interested).
+    Returns the deal_id."""
+    did = deal_for_system(system_id, rep_email or None)
+    if did is None:
+        did = create_deal(rep_email or "unassigned@florence", system_id, system_name)
+    advance_stage(did, new_stage, closed_reason=note if new_stage == "closed_lost" else "")
+    if note:
+        d = get_deal(did) or {}
+        update_deal(did, contract_terms=(d.get("contract_terms", "")
+                                         + f"\n[{_now()}] {note}").strip())
+    return did
+
+
 def system_stage_map() -> dict:
     """Map health_system_id → latest deal stage, for tile status chips.
 
