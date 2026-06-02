@@ -1731,6 +1731,7 @@ st.sidebar.markdown(
 _nav_section("Sales today")
 _nav_button("Inpatient", "inpatient", "local_hospital")
 _nav_button("Outpatient", "outpatient", "medical_services")
+_nav_button("Funnel", "funnel", "filter_alt")
 
 # ─── Growth automation ───────────────────────────────────────────
 _nav_section("Growth automation")
@@ -2705,6 +2706,47 @@ if view == "inpatient":
         )
         st.info(REQUIRED_COMPLIANCE_SENTENCE, icon=":material/balance:")
 
+
+
+# =====================================================================
+# FUNNEL — outreach → engaged → activated → hired
+# =====================================================================
+if view == "funnel":
+    florence_brand_strip("FUNNEL · INTERNAL")
+    florence_headline("Outreach to hires.",
+                      "Every account from first touch to closed-won — overall and by rep.")
+    import funnel as _fn
+    _counts = _fn.funnel_counts()
+    _cols = st.columns(len(_counts) + 1)
+    for (lbl, val), c in zip(_counts.items(), _cols):
+        c.metric(lbl, f"{val:,}")
+    _cols[-1].metric("Open deals", f"{_fn.open_deals():,}")
+    if sum(_counts.values()) == 0:
+        st.info(
+            "No outreach logged yet. Draft mail, capture replies, and log "
+            "activations and the funnel fills in here.",
+            icon=":material/info:",
+        )
+    else:
+        import plotly.graph_objects as _go
+        _labels, _vals = list(_counts.keys()), list(_counts.values())
+        _fig = _go.Figure(_go.Funnel(
+            y=_labels, x=_vals, textinfo="value+percent initial",
+            marker={"color": ["#0ABAB5", "#15ABA8", "#067F7B", "#7340C4", "#5B2DA8"][:len(_labels)]},
+        ))
+        _fig.update_layout(margin=dict(l=8, r=8, t=8, b=8), height=380,
+                           font=dict(family="Inter, sans-serif"))
+        st.plotly_chart(_fig, use_container_width=True)
+    st.markdown("#### By rep")
+    _rep = _fn.by_rep()
+    if _rep.empty:
+        st.caption("No rep activity yet.")
+    else:
+        st.dataframe(_rep, use_container_width=True, hide_index=True)
+    st.caption(
+        "Sources: mail_log (outreach + replies), activations.csv (sign-ups), "
+        "sales_pipeline (deals + closed-won). Counts are distinct accounts."
+    )
 
 
 # =====================================================================
