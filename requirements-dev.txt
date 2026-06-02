@@ -1,0 +1,5 @@
+# Dev/test only — not needed to run the app.
+# Install: pip install -r requirements-dev.txt
+# Run:     pytest -q            (or: python3 tests/test_modules.py)
+-r requirements.txt
+pytest>=8.0

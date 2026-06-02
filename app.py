@@ -5177,18 +5177,18 @@ if view == "hospital_table":
     feasible_only = f4.checkbox("Feasible only", value=True, key="tbl_feasible")
     min_confidence = f5.slider("Min data confidence", 0.0, 1.0, 0.0, 0.05, key="tbl_minconf")
 
-    view = priced.copy()
+    tbl = priced.copy()
     if state_filter:
-        view = view[view["state"].isin(state_filter)]
+        tbl = tbl[tbl["state"].isin(state_filter)]
     if system_filter:
-        view = view[view["health_system"].isin(system_filter)]
+        tbl = tbl[tbl["health_system"].isin(system_filter)]
     if htype_filter:
-        view = view[view["hospital_type"].isin(htype_filter)]
+        tbl = tbl[tbl["hospital_type"].isin(htype_filter)]
     if feasible_only:
-        view = view[view["feasible"]]
-    view = view[view["confidence"] >= min_confidence]
+        tbl = tbl[tbl["feasible"]]
+    tbl = tbl[tbl["confidence"] >= min_confidence]
 
-    st.write(f"**{len(view):,}** hospitals match.")
+    st.write(f"**{len(tbl):,}** hospitals match.")
 
     display_cols = [
         "ccn", "name", "city", "state", "health_system", "hospital_type",
@@ -5202,7 +5202,7 @@ if view == "hospital_table":
         "channel", "manual_review_flag", "confidence",
     ]
     st.dataframe(
-        view[display_cols].round(2).sort_values("florence_net_total", ascending=False),
+        tbl[display_cols].round(2).sort_values("florence_net_total", ascending=False),
         column_config={
             "loaded_staff_cost_per_hr": st.column_config.NumberColumn("Loaded staff $/hr", format="$%.2f"),
             "all_in_agency_per_hr": st.column_config.NumberColumn("Agency $/hr", format="$%.2f"),
@@ -5225,7 +5225,7 @@ if view == "hospital_table":
         use_container_width=True,
     )
 
-    csv_bytes = view[display_cols].to_csv(index=False).encode("utf-8")
+    csv_bytes = tbl[display_cols].to_csv(index=False).encode("utf-8")
     st.download_button(
         "Download filtered view (CSV)",
         csv_bytes,
