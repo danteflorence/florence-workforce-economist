@@ -21,6 +21,7 @@ Run with:
 from __future__ import annotations
 
 import csv
+import os
 import re
 from datetime import datetime, date
 from io import BytesIO
@@ -235,9 +236,12 @@ REVENUE_PER_RN_ANNUAL = {
 
 FACILITY_TYPES = list(REVENUE_PER_RN_ANNUAL.keys())
 
-# Stripe Payment Link placeholders (Florence team will replace with real URLs)
-STRIPE_SUBSCRIPTION_URL = "https://buy.stripe.com/REPLACE_WITH_REAL_URL_SUBSCRIPTION"
-STRIPE_PLACEMENT_URL = "https://buy.stripe.com/REPLACE_WITH_REAL_URL_PLACEMENT"
+# Stripe Payment Links — set via env/secrets. Payment Link URLs are public (not
+# secret), so env is just for config hygiene. Empty → the CTA renders a
+# "contact us" mailto instead of a dead link.
+STRIPE_SUBSCRIPTION_URL = os.environ.get("STRIPE_SUBSCRIPTION_URL", "")
+STRIPE_PLACEMENT_URL = os.environ.get("STRIPE_PLACEMENT_URL", "")
+FLORENCE_CONTACT_EMAIL = os.environ.get("FLORENCE_CONTACT_EMAIL", "partnerships@florenceeducation.com")
 
 
 # ─── Helpers ────────────────────────────────────────────────────────
@@ -526,6 +530,16 @@ if submitted:
 
         # ─── Stripe CTAs (unlocked after email) ───
         st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
+        _sub_cta = (
+            f'<a href="{STRIPE_SUBSCRIPTION_URL}" target="_blank" class="cta-button">Subscribe now →</a>'
+            if STRIPE_SUBSCRIPTION_URL
+            else f'<a href="mailto:{FLORENCE_CONTACT_EMAIL}" class="cta-button">Contact us to start →</a>'
+        )
+        _place_cta = (
+            f'<a href="{STRIPE_PLACEMENT_URL}" target="_blank" class="cta-button">Begin placement →</a>'
+            if STRIPE_PLACEMENT_URL
+            else f'<a href="mailto:{FLORENCE_CONTACT_EMAIL}" class="cta-button">Talk to our team →</a>'
+        )
         cta_l, cta_r = st.columns(2)
         with cta_l:
             st.markdown(
@@ -539,9 +553,7 @@ if submitted:
                   <div style='font-family:Newsreader,serif; font-size:2.2rem;
                               color:#0BC5A0; margin:8px 0;'>$99<span style='font-size:1.1rem;
                               color:rgba(255,255,255,0.85);'>/month</span></div>
-                  <a href="{STRIPE_SUBSCRIPTION_URL}" target="_blank" class="cta-button">
-                    Subscribe now →
-                  </a>
+                  {_sub_cta}
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -559,9 +571,7 @@ if submitted:
                   <div style='font-family:Newsreader,serif; font-size:2.2rem;
                               color:#0BC5A0; margin:8px 0;'>$50K<span style='font-size:1.1rem;
                               color:rgba(255,255,255,0.85);'>/RN</span></div>
-                  <a href="{STRIPE_PLACEMENT_URL}" target="_blank" class="cta-button">
-                    Begin placement →
-                  </a>
+                  {_place_cta}
                 </div>
                 """,
                 unsafe_allow_html=True,
