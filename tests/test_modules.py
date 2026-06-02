@@ -141,6 +141,28 @@ def test_call_script_build():
     assert "Dana" in s["opening"] and "(602) 555-0144" in C.as_text(s)
 
 
+# ─── dossier ────────────────────────────────────────────────────────
+def test_dossier_render_and_escapes():
+    import re, dossier, call_script
+    s = call_script.build_script(system_name="Banner Health", annual_savings=18.4e6,
+                                 term_impact=36.8e6, rn_need=420, monthly_fee=2.94e6,
+                                 contact_name="Dana Reyes", contact_phone="(602) 555-0144")
+    html = dossier.render_html(
+        system_name="Banner Health",
+        metrics={"name": "Banner Health", "rn_need": 420, "n_facilities": 30,
+                 "monthly_fee": 2.94e6, "term_impact": 36.8e6},
+        contact={"contact_name": "Dana Reyes", "phone": "(602) 555-0144", "email": "d@x.com"},
+        script=s, email_intro="Hi Dana, quick note.",
+        timeline=[{"ts": "2026-06-02T04:00", "kind": "call", "detail": "Left VM"}],
+        owner="rep@florenceeducation.com", stage="discovery")
+    assert html.lstrip().startswith("<!doctype html>") and "Banner Health" in html and "$18.4M" in html
+    assert not re.search(r"\b(fica|visa|tax|immigration)\b", html.lower())
+    # HTML-escapes hostile input
+    h2 = dossier.render_html(system_name="X", metrics={}, contact={"contact_name": "<script>x"},
+                             script=s, timeline=[])
+    assert "<script>x" not in h2 and "&lt;script&gt;" in h2
+
+
 # ─── contacts ───────────────────────────────────────────────────────
 def test_contacts_bulk_import(tmp_store):
     import contacts as C, pandas as pd

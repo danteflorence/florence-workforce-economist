@@ -1366,6 +1366,22 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
             if _sr:
                 (st.success if _sr.get("ok") else st.caption)(_sr.get("detail", ""))
 
+    # Account dossier — one-page HTML handoff/leave-behind (hero + script + timeline).
+    import dossier as _dossier, call_script as _cs_d, activity as _act_d
+    _dz_html = _dossier.render_html(
+        system_name=m["name"], metrics=m, contact=cc,
+        script=_cs_d.build_script(
+            system_name=m["name"], annual_savings=m["term_impact"] / 2,
+            term_impact=m["term_impact"], rn_need=m["rn_need"], monthly_fee=m["monthly_fee"],
+            contact_name=cc.get("contact_name", ""), contact_phone=cc.get("phone", "")),
+        email_intro=_seq[0]["body"], timeline=_act_d.timeline("system", system_id),
+        owner=_owner, stage=stage,
+    )
+    st.download_button(
+        ":material/description: Download account dossier (HTML)", _dz_html,
+        file_name=f"florence_dossier_{system_id}.html", mime="text/html",
+        use_container_width=True, key=f"qa_dossier_{system_id}")
+
     st.caption(
         "ZIP includes the customer deck (.pptx), exec summary (PDF + HTML), the "
         "Excel workbook, and a ready-to-send outreach email (outreach_email.txt)."
