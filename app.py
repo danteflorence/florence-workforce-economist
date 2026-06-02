@@ -1204,12 +1204,14 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
     import outreach_email as _oe
     _code = (mst or {}).get("retrieval_code", "") if mst else ""
     _au = f"{_mail.SIGNUP_BASE}?code={_code}" if _code else ""
+    _opener = st.session_state.get(f"opener_{system_id}", "")
     _seq = _oe.compose_sequence(
         system_name=m["name"], annual_savings=m["term_impact"] / 2,
         term_impact=m["term_impact"], rn_need=m["rn_need"],
         monthly_fee=m["monthly_fee"], code=_code, activation_url=_au,
         contact_name=cc.get("contact_name", ""),
         rep_email=(st.session_state.get("current_user_email") or ""),
+        opener=_opener,
     )
     # Default the step selector to where the cadence says this account is.
     _em_default = 0
@@ -1229,6 +1231,22 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
         st.text_input("Subject", value=_email["subject"], key=f"qa_em_subj_{system_id}")
         st.code(_email["body"], language=None)  # the code block has a copy button
         st.markdown(f"[Open prefilled in your email client →]({_email['mailto']})")
+        # Personalize the Intro's lead line from this system's facts (AI if a key
+        # is set; otherwise a deterministic local-data opener).
+        import ai_opener as _aio
+        if st.button("Personalize opener (AI)" if _aio.is_configured() else "Personalize opener",
+                     key=f"qa_openers_{system_id}"):
+            _r = _aio.generate({"system_name": m["name"], "n_facilities": m.get("n_facilities"),
+                                "rn_need": m["rn_need"], "annual_savings": m["term_impact"] / 2})
+            st.session_state[f"opener_{system_id}"] = _r["opener"]
+            st.session_state[f"opener_src_{system_id}"] = _r["source"]
+        if _opener:
+            _src = st.session_state.get(f"opener_src_{system_id}", "rule")
+            st.caption(f"Personalized opener applied ({'AI' if _src == 'ai' else 'rule-based'}) — "
+                       "it leads the Intro step above.")
+            if st.button("Clear opener", key=f"qa_openerx_{system_id}"):
+                st.session_state.pop(f"opener_{system_id}", None)
+                st.session_state.pop(f"opener_src_{system_id}", None)
 
     # ── Call script + battlecard (phone is the channel with coverage) ─
     import call_script as _cs_popup

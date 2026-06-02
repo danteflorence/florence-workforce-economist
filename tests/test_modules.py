@@ -49,6 +49,21 @@ def test_outreach_email_no_contact_uses_placeholder():
     assert "[First name]" in e["body"]
 
 
+def test_ai_opener_rule_fallback():
+    import os, re, ai_opener as A
+    os.environ.pop("ANTHROPIC_API_KEY", None)
+    assert A.is_configured() is False
+    r = A.generate({"system_name": "Banner Health", "n_facilities": 30, "rn_need": 420,
+                    "annual_savings": 18.4e6})
+    assert r["source"] == "rule" and "Banner Health" in r["opener"]
+    assert not re.search(r"\b(fica|visa|tax|immigration)\b", r["opener"].lower())
+    import outreach_email as oe
+    e = oe.compose_email(system_name="Banner Health", annual_savings=18.4e6, term_impact=36.8e6,
+                         rn_need=420, monthly_fee=2.94e6, contact_name="Dana Reyes",
+                         opener=r["opener"])
+    assert r["opener"] in e["body"] and "I lead health-system partnerships" not in e["body"]
+
+
 # ─── lob_mailer ─────────────────────────────────────────────────────
 def test_retrieval_code_format():
     import lob_mailer as L

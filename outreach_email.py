@@ -58,6 +58,7 @@ def compose_email(
     rep_phone: str = "",
     rep_email: str = "",
     availability: str = "",
+    opener: str = "",
 ) -> dict:
     """Compose the outreach email for one health system.
 
@@ -105,11 +106,14 @@ def compose_email(
     sign_phone = f" · {rep_phone}" if rep_phone else ""
     sign_email = f" · {rep_email}" if rep_email else ""
 
-    body = (
-        f"Hi {greet},\n\n"
+    lead = opener.strip() or (
         f"I lead health-system partnerships at Florence. Looking at {system_name}'s "
         f"nurse-staffing footprint, we estimate roughly {hero} a year in avoidable RN "
-        f"labor cost — most of it agency and travel premium.\n\n"
+        f"labor cost — most of it agency and travel premium."
+    )
+    body = (
+        f"Hi {greet},\n\n"
+        f"{lead}\n\n"
         f"Florence places permanent, U.S.-licensed registered nurses directly on your "
         f"payroll — no agency markup, no rotating travelers. For {system_name} that's "
         f"about {_money(per_nurse_fee)} per nurse / month across {rn_phrase}, and about "
@@ -132,14 +136,15 @@ def compose_email(
 def compose_sequence(*, system_name: str, annual_savings, term_impact, rn_need,
                      monthly_fee, per_nurse_fee=None, code: str = "", activation_url: str = "",
                      contact_name: str = "", rep_name: str = "", rep_phone: str = "",
-                     rep_email: str = "", availability: str = "") -> list[dict]:
+                     rep_email: str = "", availability: str = "", opener: str = "") -> list[dict]:
     """The full outreach cadence: intro → follow-up → share-availability → breakup.
-    Each step is {step, label, subject, body, mailto}, all numbers pre-filled."""
+    Each step is {step, label, subject, body, mailto}, all numbers pre-filled.
+    `opener` (optional) personalizes the intro's lead line."""
     intro = compose_email(
         system_name=system_name, annual_savings=annual_savings, term_impact=term_impact,
         rn_need=rn_need, monthly_fee=monthly_fee, per_nurse_fee=per_nurse_fee, code=code,
         activation_url=activation_url, contact_name=contact_name, rep_name=rep_name,
-        rep_phone=rep_phone, rep_email=rep_email, availability=availability)
+        rep_phone=rep_phone, rep_email=rep_email, availability=availability, opener=opener)
     hero = _money(annual_savings)
     greet = _first_name(contact_name) or "[First name]"
     sign = (f"{rep_name or '[Your name]'}\nFlorence"
