@@ -861,6 +861,10 @@ def build_system_bundle_zip(system_id: str, placeholder_msp_markup_pct: float):
             rn_need=_rn_need,
             monthly_fee=_sum("target_monthly_florence_fee_account"),
         )
+        import call_script as _cs
+        _script = _cs.build_script(
+            system_name=name, annual_savings=_term_impact / 2, term_impact=_term_impact,
+            rn_need=_rn_need, monthly_fee=_sum("target_monthly_florence_fee_account"))
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -869,6 +873,7 @@ def build_system_bundle_zip(system_id: str, placeholder_msp_markup_pct: float):
             zf.write(Path(p), Path(p).name)
             zf.write(Path(h), Path(h).name)
             zf.writestr("outreach_email.txt", _oe.as_txt(_email))
+            zf.writestr("call_script.txt", _cs.as_text(_script))
         return buf.getvalue(), f"{safe}_recommendation_bundle.zip"
 
 
@@ -1214,6 +1219,33 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
         st.text_input("Subject", value=_email["subject"], key=f"qa_em_subj_{system_id}")
         st.code(_email["body"], language=None)  # the code block has a copy button
         st.markdown(f"[Open prefilled in your email client →]({_email['mailto']})")
+
+    # ── Call script + battlecard (phone is the channel with coverage) ─
+    import call_script as _cs_popup
+    with st.expander("Call script · " + (cc.get("phone") or "no phone on file")):
+        _scr = _cs_popup.build_script(
+            system_name=m["name"], annual_savings=m["term_impact"] / 2,
+            term_impact=m["term_impact"], rn_need=m["rn_need"], monthly_fee=m["monthly_fee"],
+            contact_name=cc.get("contact_name", ""), contact_phone=cc.get("phone", ""),
+            rep_name=(st.session_state.get("current_user_email") or "").split("@")[0].replace(".", " ").title(),
+        )
+        _n = _scr["numbers"]
+        st.markdown(
+            f"<div style='font-family:var(--f-mono);font-size:.82rem;color:var(--f-muted);'>"
+            f"{_n['hero_annual']}/yr · ~{_n['per_nurse_mo']}/nurse/mo · {_n['term_24mo']} 24-mo · "
+            f"{_n['rn_need']:,} RN</div>", unsafe_allow_html=True)
+        st.markdown("**Opening**")
+        st.write(_scr["opening"])
+        st.markdown("**Talk track**")
+        for _b in _scr["beats"]:
+            st.markdown(f"- {_b}")
+        st.markdown("**Objections**")
+        for _q, _a in _scr["objections"]:
+            st.markdown(f"- **{_q}**  \n  {_a}")
+        st.download_button(
+            "Download call script (.txt)", _cs_popup.as_text(_scr),
+            file_name="call_script.txt", mime="text/plain",
+            key=f"qa_callscript_{system_id}", use_container_width=True)
 
     # ── CRM + Gmail sync (dormant until keys are provisioned) ─────────
     import crm_sync as _crm
