@@ -258,6 +258,24 @@ def test_ownership_assign_book(tmp_store):
     assert O.owner_of("hca") == "" and O.book_of("rep@florenceeducation.com") == {"sutter_health"}
 
 
+# ─── callcenter ─────────────────────────────────────────────────────
+def test_callcenter_queue_claims_disposition(tmp_store):
+    import callcenter as CC, activity, reminders
+    CC.CLAIMS = tmp_store / "claims.csv"
+    activity.LOG = tmp_store / "act.csv"
+    reminders.SNOOZES = tmp_store / "snz.csv"
+    q = CC.queue(limit=20)
+    assert not q.empty and (q["facility_phone"].astype(str).str.strip() != "").all()
+    ccn = str(q.iloc[0]["ccn"])
+    assert CC.claimed_by(ccn) == ""
+    CC.claim(ccn, "agentA")
+    assert CC.claimed_by(ccn) == "agentA" and ccn in CC.active_claims()
+    CC.disposition(ccn, "agentA", "No answer", note="vm full", callback_days=3, org_name="X")
+    assert CC.claimed_by(ccn) == ""                                   # claim released on disposition
+    assert any(e["kind"] == "call" for e in activity.timeline("facility", ccn))
+    assert reminders.is_snoozed("facility", ccn)                      # callback scheduled
+
+
 # ─── geo ────────────────────────────────────────────────────────────
 def test_geo_centroids():
     import geo

@@ -16,6 +16,8 @@ data/activity_log.csv
 data/system_owners.csv
 # Snooze / reminders (mutable)
 data/snoozes.csv
+# Call-center claim locks (mutable)
+data/call_claims.csv
 .env
 .env.*
 secrets.toml

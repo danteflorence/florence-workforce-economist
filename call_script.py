@@ -83,6 +83,20 @@ def build_script(*, system_name: str, annual_savings, term_impact, rn_need,
         "Proof — the pricing is built from your own facilities' cost data; I can send the "
         "system-specific breakdown today.",
     ]
+    # No per-facility figure on hand (e.g. an outpatient cold call) — drop the
+    # dollar claims and lead with the value prop + an offer to price it.
+    if not (float(annual_savings or 0) or float(monthly_fee or 0)):
+        opening = (
+            f"Hi {greet}, this is {rep_name or '[your name]'} with Florence — I'll keep it to "
+            f"30 seconds. We place permanent, U.S.-licensed RNs directly on your payroll — direct "
+            f"hire, no agency markup, no rotating travelers. Worth 20 minutes to see what that "
+            f"could look like for {system_name}?"
+        )
+        beats = [
+            "Mechanism — permanent, U.S.-licensed RNs, direct-hire; replaces agency/travel premium.",
+            "We'll build a cost estimate specific to your facility before the call.",
+            "No agency markup and no 13-week churn — nurses who stay.",
+        ]
     ask = (
         "The ask — 20 minutes with whoever owns nurse staffing (CNO or CFO). I'll send a "
         "couple of windows, or coordinate with whoever runs their calendar."

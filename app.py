@@ -1388,6 +1388,76 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
     )
 
 
+@st.dialog("Call workspace", width="large")
+def open_call_workspace(ccn: str, agent: str):
+    """Focused outbound-call panel: claim → dial → script → disposition → timeline."""
+    import contacts as _c, call_script as _cs, callcenter as _cc, activity as _act
+    _cc.claim(ccn, agent)
+    cc = _c.get_contact("facility", ccn)
+    name = cc.get("org_name") or str(ccn)
+    phone = (cc.get("phone") or "").strip()
+    florence_eyebrow(name)
+    _loc = " · ".join(x for x in (cc.get("city"), cc.get("state")) if x)
+    _who = " · ".join(x for x in (cc.get("contact_name"), cc.get("title")) if x) or "No named contact"
+    st.markdown(f"<div style='color:var(--f-muted);font-size:.9rem;'>{_loc}</div>"
+                f"<div style='font-size:.9rem;'>{_who}</div>", unsafe_allow_html=True)
+    if phone:
+        _digits = "".join(c for c in phone if c.isdigit() or c == "+")
+        st.markdown(f"<div style='font-family:var(--f-mono);font-size:1.5rem;color:var(--f-ink);"
+                    f"margin:6px 0;'>{phone}</div>", unsafe_allow_html=True)
+        st.link_button(f"Call {phone}", f"tel:{_digits}", use_container_width=True, type="primary")
+        import ringcentral as _rc
+        if _rc.is_configured():
+            if st.button("Call via RingCentral (RingOut)", key=f"cw_ro_{ccn}", use_container_width=True):
+                _r = _rc.ringout(agent_number=st.session_state.get("rc_agent_number", ""), to_number=_digits)
+                (st.success if _r.get("ok") else st.caption)(_r.get("detail", ""))
+    else:
+        st.caption("No phone on file for this facility.")
+    _pr = _cc.facility_pricing(ccn)
+    _scr = _cs.build_script(
+        system_name=name, annual_savings=(_pr.get("term_impact", 0) or 0) / 2,
+        term_impact=_pr.get("term_impact", 0), rn_need=_pr.get("rn_need", 0),
+        monthly_fee=_pr.get("monthly_fee", 0), contact_name=cc.get("contact_name", ""),
+        contact_phone=phone, rep_name=(agent.split("@")[0].replace(".", " ").title() if agent else ""))
+    with st.expander("Script + objections", expanded=True):
+        st.write(_scr["opening"])
+        for _b in _scr["beats"]:
+            st.markdown(f"- {_b}")
+        st.markdown("**If they push back**")
+        for _q, _a in _scr["objections"][:3]:
+            st.markdown(f"- **{_q}** — {_a}")
+    st.markdown("**Log the call**")
+    _note = st.text_input("Note (optional)", key=f"cw_note_{ccn}")
+    _cbd = st.selectbox("Callback in", [3, 7, 14], format_func=lambda d: f"{d} days", key=f"cw_cbd_{ccn}")
+
+    def _disp(outcome, cb=None):
+        _cc.disposition(ccn, agent, outcome, note=_note, callback_days=cb, org_name=name)
+        st.session_state["cc_flash"] = f"{name}: {outcome}"
+        st.rerun()
+
+    _r1 = st.columns(3)
+    if _r1[0].button("Connected", key=f"cw_c_{ccn}", use_container_width=True):
+        _disp("Connected")
+    if _r1[1].button("No answer", key=f"cw_na_{ccn}", use_container_width=True):
+        _disp("No answer", _cbd)
+    if _r1[2].button("Left VM", key=f"cw_vm_{ccn}", use_container_width=True):
+        _disp("Left voicemail", _cbd)
+    _r2 = st.columns(3)
+    if _r2[0].button("Callback", key=f"cw_cb_{ccn}", use_container_width=True):
+        _disp("Callback", _cbd)
+    if _r2[1].button("Not interested", key=f"cw_ni_{ccn}", use_container_width=True):
+        _disp("Not interested")
+    if _r2[2].button("Interested →", key=f"cw_int_{ccn}", type="primary", use_container_width=True):
+        _disp("Interested → handoff")
+    _tl = _act.timeline("facility", ccn)
+    if _tl:
+        st.divider()
+        for _e in _tl[:5]:
+            st.markdown(f"<div style='font-size:.8rem;color:var(--f-muted);'>"
+                        f"{str(_e.get('ts',''))[:16].replace('T',' ')} · {_e.get('kind','')} — "
+                        f"{_e.get('detail','')}</div>", unsafe_allow_html=True)
+
+
 def _render_quick_access_row(sys_agg, placeholder_msp_markup_pct: float) -> None:
     """Compact 'Pinned & recent' quick-open chips above the tile grid."""
     pinned = st.session_state.get("pinned_systems", [])
@@ -1899,6 +1969,7 @@ _nav_button("Today", "today", "today")
 _nav_button("Inpatient", "inpatient", "local_hospital")
 _nav_button("Outpatient", "outpatient", "medical_services")
 _nav_button("Funnel", "funnel", "filter_alt")
+_nav_button("Call center", "call_center", "call")
 
 # ─── Growth automation ───────────────────────────────────────────
 _nav_section("Growth automation")
@@ -2935,6 +3006,67 @@ if view == "contacts":
     else:
         st.dataframe(_adf[["ts", "org_name", "kind", "detail", "by"]],
                      use_container_width=True, hide_index=True)
+
+
+# =====================================================================
+# CALL CENTER — outbound queue over the outpatient phone universe
+# =====================================================================
+if view == "call_center":
+    florence_brand_strip("CALL CENTER · INTERNAL")
+    florence_headline("Outbound call queue.",
+                      "Work the outpatient phone list — claim, dial, log the call, set the callback.")
+    import callcenter as _ccq, reminders as _rem_cc
+    _agent = (st.session_state.get("current_user_email") or "").strip()
+    if not _agent:
+        _agent = st.text_input("Your name or extension (claims + call logs attribute to you)",
+                               key="cc_agent_name").strip()
+    if not _agent:
+        st.info("Enter your name/extension to start working the queue.", icon=":material/badge:")
+    elif _ccq._facilities().empty:
+        st.warning("No facility contact file found (data/facility_contacts.parquet).")
+    else:
+        st.text_input("Your phone for one-click RingOut (optional)", key="rc_agent_number",
+                      placeholder="+1…  — only used when RingCentral is connected")
+        _fc1, _fc2, _fc3 = st.columns([1.4, 1.1, 1.5])
+        _states = _fc1.multiselect("States", _ccq.states_with_phones(), key="cc_states")
+        _typeopts = sorted(set(_ccq._facilities().get("facility_type", pd.Series(dtype=str))
+                               .dropna().astype(str)) - {""})
+        _types = _fc2.multiselect("Type", _typeopts, key="cc_types")
+        _chainq = _fc3.text_input("Chain / name contains", key="cc_chain")
+        _q = _ccq.queue(states=_states or None, facility_types=_types or None,
+                        chain_query=_chainq, limit=300)
+        _snoozed = {str(a["entity_id"]) for a in _rem_cc.active() if a.get("entity_type") == "facility"}
+        _claims = _ccq.active_claims()
+        if not _q.empty:
+            _q = _q[~_q["ccn"].astype(str).isin(_snoozed)]
+        st.caption(f"{len(_q):,} to call"
+                   + (f" · {len(_snoozed)} on scheduled callback" if _snoozed else "")
+                   + (f" · {len(_claims)} claimed now" if _claims else ""))
+        if st.session_state.get("cc_flash"):
+            st.success("Logged — " + st.session_state.pop("cc_flash"))
+        for _, _row in _q.head(40).iterrows():
+            _ccn = str(_row["ccn"])
+            _by = _claims.get(_ccn, "")
+            _k1, _k2, _k3 = st.columns([3.4, 2, 1.1])
+            _chain = f" · {_row.get('chain_name')}" if str(_row.get("chain_name") or "").strip() else ""
+            _k1.markdown(
+                f"**{_row['name']}**<br><span style='color:var(--f-muted);font-size:.8rem;'>"
+                f"{_row.get('city','')}, {_row.get('state','')} · {_row.get('facility_type','')}{_chain}</span>",
+                unsafe_allow_html=True)
+            _k2.markdown(f"<span style='font-family:var(--f-mono);font-size:.85rem;'>"
+                         f"{_row['facility_phone']}</span>", unsafe_allow_html=True)
+            with _k3:
+                if _by and _by != _agent:
+                    st.caption(":material/lock: " + _by)
+                elif st.button("Call →", key=f"cc_work_{_ccn}", use_container_width=True):
+                    open_call_workspace(_ccn, _agent)
+        if _snoozed:
+            with st.expander(f"Scheduled callbacks ({len(_snoozed)})"):
+                for _a in sorted(_rem_cc.active(), key=lambda x: x.get("snooze_until", "")):
+                    if _a.get("entity_type") == "facility":
+                        st.markdown(f"<div style='font-size:.82rem;'>{_a.get('snooze_until','')} · "
+                                    f"{_a.get('entity_id','')} — {_a.get('note','')}</div>",
+                                    unsafe_allow_html=True)
 
 
 # =====================================================================
