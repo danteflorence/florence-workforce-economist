@@ -937,6 +937,34 @@ def _bundle_system_metrics(system_id: str, overrides_mtime: float = 0.0) -> dict
     }
 
 
+@st.cache_data(show_spinner=False)
+def _all_systems_agg(overrides_mtime: float = 0.0) -> pd.DataFrame:
+    """System-level rollup (id, name, rn_need, fee, 24-mo savings) for the Today
+    worklist + priority ranking outside the inpatient view. Excludes the
+    'independent' bucket. Cached on the contact/overrides mtime."""
+    df = _recs_with_ownership()
+    if df.empty:
+        return pd.DataFrame()
+    if "feasible" in df.columns:
+        df = df[df["feasible"]]
+    df = df[df["health_system_id"] != "independent"]
+    if df.empty:
+        return pd.DataFrame()
+    g = (
+        df.groupby("health_system_id")
+        .agg(
+            health_system=("health_system",
+                           lambda s: max(s.dropna().astype(str), key=len, default="")),
+            rn_need=("rn_need", "sum"),
+            monthly_fee_target=("target_monthly_florence_fee_account", "sum"),
+            term_savings_target=("target_term_net_savings_account", "sum"),
+        )
+        .reset_index()
+        .sort_values("term_savings_target", ascending=False)
+    )
+    return g
+
+
 def _money(v) -> str:
     v = float(v or 0)
     if v >= 1e9:
@@ -1729,6 +1757,7 @@ st.sidebar.markdown(
 
 # ─── Sales today ──────────────────────────────────────────────────
 _nav_section("Sales today")
+_nav_button("Today", "today", "today")
 _nav_button("Inpatient", "inpatient", "local_hospital")
 _nav_button("Outpatient", "outpatient", "medical_services")
 _nav_button("Funnel", "funnel", "filter_alt")
@@ -2706,6 +2735,78 @@ if view == "inpatient":
         )
         st.info(REQUIRED_COMPLIANCE_SENTENCE, icon=":material/balance:")
 
+
+
+# =====================================================================
+# TODAY — the daily worklist (follow-ups due + top untouched targets)
+# =====================================================================
+if view == "today":
+    florence_brand_strip("TODAY · INTERNAL")
+    florence_headline("Today's worklist.",
+                      "Follow-ups due now, then your highest-value untouched targets.")
+    import sales_intel as _si_today
+    import contacts as _ct_today
+    _agg = _all_systems_agg(sysov.overrides_mtime())
+    if _agg.empty:
+        st.info("No systems available yet.", icon=":material/info:")
+    else:
+        _recs_t = _agg.to_dict("records")
+        _by_id = {str(r["health_system_id"]): r for r in _recs_t}
+        _touched = _si_today.touched_system_ids()
+
+        # 1) Follow-ups due — active sequences whose next touch is ready.
+        _due = []
+        for _sid in _touched:
+            if _sid not in _by_id:
+                continue
+            _cad = _si_today.cadence_next("system", _sid)
+            if _cad.get("ready") and not _cad.get("done"):
+                _due.append((_sid, _cad))
+        _due.sort(key=lambda t: (t[1].get("due_in_days")
+                                 if t[1].get("due_in_days") is not None else 0))
+        st.markdown(f"#### Follow-ups due ({len(_due)})")
+        if not _due:
+            st.caption("Nothing due — you're caught up on active sequences.")
+        for _sid, _cad in _due:
+            _r = _by_id[_sid]
+            _dd = _cad.get("due_in_days")
+            _due_txt = "overdue" if (_dd is not None and _dd < 0) else "due now"
+            _t1, _t2, _t3 = st.columns([3.2, 2.3, 1.0])
+            _t1.markdown(
+                f"**{_r['health_system']}**<br><span style='color:var(--f-muted);"
+                f"font-size:.8rem;'>{_money(_r['term_savings_target'])} impact · "
+                f"{int(_r['rn_need']):,} RN</span>", unsafe_allow_html=True)
+            _t2.markdown(f"<div style='font-size:.82rem;margin-top:4px;'><b>{_due_txt}</b> · "
+                         f"{_cad['label']}</div>", unsafe_allow_html=True)
+            with _t3:
+                if st.button("Open →", key=f"today_due_{_sid}", use_container_width=True):
+                    open_system_quick_actions(_sid, placeholder_msp_markup_pct)
+        st.divider()
+
+        # 2) Start these — top-priority untouched.
+        _ranked_t = _si_today.rank_systems(_recs_t, _ct_today.get_contact, limit=50)
+        _starts = [r for r in _ranked_t if r["system_id"] not in _touched][:10]
+        st.markdown("#### Start these — top untouched targets")
+        for _pr in _starts:
+            _s1, _s2, _s3 = st.columns([3.2, 2.3, 1.0])
+            _s1.markdown(
+                f"**{_pr['name']}**<br><span style='color:var(--f-muted);font-size:.8rem;'>"
+                f"{_money(_pr['term_savings'])} impact · {_pr['rn_need']:,} RN</span>",
+                unsafe_allow_html=True)
+            _rc = {"Reachable": "#067F7B", "Partial": "#B7791F",
+                   "No contact": "#B33A3A"}.get(_pr["reach_label"], "#475467")
+            _s2.markdown(
+                f"<div style='margin-top:6px;'><span style='font-size:.72rem;font-weight:600;"
+                f"padding:2px 8px;border-radius:999px;background:{_rc}1A;color:{_rc};'>"
+                f"{_pr['reach_label']} {_pr['reach_pct']}%</span></div>", unsafe_allow_html=True)
+            with _s3:
+                if st.button("Open →", key=f"today_start_{_pr['system_id']}",
+                             use_container_width=True):
+                    open_system_quick_actions(_pr["system_id"], placeholder_msp_markup_pct)
+        st.caption(
+            "Follow-ups come from logged touches + the cadence; untouched targets are "
+            "ranked by savings × reachability. Open any to act, then log the outcome."
+        )
 
 
 # =====================================================================

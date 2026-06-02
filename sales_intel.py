@@ -105,6 +105,20 @@ def touch_history(entity_type: str, entity_id: str) -> list[dict]:
     return m.to_dict("records")
 
 
+def touched_system_ids() -> set:
+    """Set of system entity_ids with at least one logged touch (for the Today
+    worklist: separate accounts already in a sequence from untouched targets)."""
+    try:
+        import lob_mailer
+        df = lob_mailer._read()
+    except Exception:
+        return set()
+    if df.empty or "entity_type" not in df.columns:
+        return set()
+    m = df[df["entity_type"] == "system"]
+    return set(m["entity_id"].astype(str))
+
+
 def already_touched(entity_type: str, entity_id: str) -> Optional[dict]:
     """Summary of the most recent touch, or None. Drives the de-dupe banner so a
     system gets one coordinated sequence rather than duplicate sends."""
