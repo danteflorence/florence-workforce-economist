@@ -209,6 +209,34 @@ def test_funnel_counts(tmp_store):
     assert not F.by_rep().empty
 
 
+def test_weekly_digest(tmp_store):
+    import funnel as F, pandas as pd
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    recent = now.isoformat(timespec="seconds")
+    old = (now - timedelta(days=20)).isoformat(timespec="seconds")
+    pd.DataFrame([
+        {"entity_type": "system", "entity_id": "a", "status": "drafted", "by": "r1",
+         "drafted_at": recent, "responded_at": ""},
+        {"entity_type": "system", "entity_id": "b", "status": "responded", "by": "r1",
+         "drafted_at": old, "responded_at": recent},
+        {"entity_type": "system", "entity_id": "c", "status": "drafted", "by": "r2",
+         "drafted_at": old, "responded_at": ""},
+    ]).to_csv(tmp_store / "mail.csv", index=False)
+    pd.DataFrame([{"ts": recent, "by": "r1", "kind": "call", "detail": "x",
+                   "entity_type": "system", "entity_id": "a", "org_name": ""}]
+                 ).to_csv(tmp_store / "act.csv", index=False)
+    pd.DataFrame([{"deal_id": "d", "rep_email": "r1", "system_id": "b",
+                   "stage": "closed_won", "closed_at": recent}]).to_csv(tmp_store / "pipe.csv", index=False)
+    F.MAIL, F.ACTLOG, F.PIPE = tmp_store / "mail.csv", tmp_store / "act.csv", tmp_store / "pipe.csv"
+    wd = F.weekly_digest(7)
+    r1 = wd[wd["rep"] == "r1"].iloc[0]
+    assert int(r1["outreach"]) == 1 and int(r1["replies"]) == 1
+    assert int(r1["calls_notes"]) == 1 and int(r1["hires"]) == 1
+    r2 = wd[wd["rep"] == "r2"]
+    assert r2.empty or int(r2["outreach"].iloc[0]) == 0   # 20-day-old touch is out of window
+
+
 # ─── crm_sync (dormant) ─────────────────────────────────────────────
 def test_crm_sync_dry_runs():
     import os, crm_sync as X

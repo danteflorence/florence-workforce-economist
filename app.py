@@ -3083,9 +3083,26 @@ if view == "funnel":
         st.caption("No rep activity yet.")
     else:
         st.dataframe(_rep, use_container_width=True, hide_index=True)
+
+    st.markdown("#### This week")
+    _wd_days = st.radio("Window", [7, 14, 30], format_func=lambda d: f"last {d} days",
+                        horizontal=True, key="wd_window", label_visibility="collapsed")
+    _wd = _fn.weekly_digest(_wd_days)
+    _me = (st.session_state.get("current_user_email") or "").lower()
+    if _me and not _wd.empty and (_wd["rep"] == _me).any():
+        _r = _wd[_wd["rep"] == _me].iloc[0]
+        _mc = st.columns(4)
+        _mc[0].metric("My outreach", int(_r["outreach"]))
+        _mc[1].metric("My replies", int(_r["replies"]))
+        _mc[2].metric("My calls/notes", int(_r["calls_notes"]))
+        _mc[3].metric("My hires", int(_r["hires"]))
+    if _wd.empty:
+        st.caption("No activity in this window yet.")
+    else:
+        st.dataframe(_wd, use_container_width=True, hide_index=True)
     st.caption(
-        "Sources: mail_log (outreach + replies), activations.csv (sign-ups), "
-        "sales_pipeline (deals + closed-won). Counts are distinct accounts."
+        "Sources: mail_log (outreach + replies), activity_log (calls/notes), "
+        "activations.csv (sign-ups), sales_pipeline (deals + closed-won)."
     )
 
 
