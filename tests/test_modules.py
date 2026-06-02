@@ -208,6 +208,15 @@ def test_ownership_assign_book(tmp_store):
     assert O.owner_of("hca") == "" and O.book_of("rep@florenceeducation.com") == {"sutter_health"}
 
 
+# ─── geo ────────────────────────────────────────────────────────────
+def test_geo_centroids():
+    import geo
+    assert len(geo.STATE_CENTROIDS) >= 50
+    ca = geo.centroid("ca")
+    assert ca and len(ca) == 2 and 32 < ca[0] < 42
+    assert geo.centroid("ZZ") is None
+
+
 # ─── reminders ──────────────────────────────────────────────────────
 def test_reminders_snooze(tmp_store):
     import reminders as R

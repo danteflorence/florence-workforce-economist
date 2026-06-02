@@ -955,6 +955,8 @@ def _all_systems_agg(overrides_mtime: float = 0.0) -> pd.DataFrame:
     df = df[df["health_system_id"] != "independent"]
     if df.empty:
         return pd.DataFrame()
+    if "state" not in df.columns:
+        df = df.assign(state="")
     g = (
         df.groupby("health_system_id")
         .agg(
@@ -963,6 +965,7 @@ def _all_systems_agg(overrides_mtime: float = 0.0) -> pd.DataFrame:
             rn_need=("rn_need", "sum"),
             monthly_fee_target=("target_monthly_florence_fee_account", "sum"),
             term_savings_target=("target_term_net_savings_account", "sum"),
+            primary_state=("state", lambda s: s.mode().iat[0] if len(s.mode()) else ""),
         )
         .reset_index()
         .sort_values("term_savings_target", ascending=False)
@@ -2995,6 +2998,34 @@ if view == "today":
                 if st.button("Open →", key=f"today_start_{_pr['system_id']}",
                              use_container_width=True):
                     open_system_quick_actions(_pr["system_id"], placeholder_msp_markup_pct)
+        # Map of your top untouched targets (plotted at state centroids).
+        import geo as _geo
+        _pts = []
+        for _pr in _starts:
+            _cen = _geo.centroid(_by_id.get(_pr["system_id"], {}).get("primary_state", ""))
+            if _cen:
+                _pts.append({"name": _pr["name"], "lat": _cen[0], "lon": _cen[1],
+                             "sav": _pr["term_savings"],
+                             "state": _by_id[_pr["system_id"]].get("primary_state", "")})
+        if _pts:
+            with st.expander("Map of your top targets"):
+                import plotly.graph_objects as _go_t
+                _md = pd.DataFrame(_pts)
+                _md["_n"] = _md.groupby("state").cumcount()
+                _md["lat"] = _md["lat"] + (_md["_n"] % 5) * 0.35
+                _md["lon"] = _md["lon"] + (_md["_n"] // 5) * 0.45
+                _mx = float(_md["sav"].max() or 1)
+                _fig_t = _go_t.Figure(_go_t.Scattergeo(
+                    lon=_md["lon"], lat=_md["lat"],
+                    text=_md["name"] + " · " + _md["sav"].map(_money),
+                    mode="markers",
+                    marker=dict(size=(_md["sav"] / _mx * 26 + 8), color="#0ABAB5",
+                                line=dict(width=0.5, color="#067F7B"), opacity=0.82),
+                ))
+                _fig_t.update_layout(geo=dict(scope="usa", bgcolor="rgba(0,0,0,0)"),
+                                     margin=dict(l=0, r=0, t=0, b=0), height=360)
+                st.plotly_chart(_fig_t, use_container_width=True)
+
         st.caption(
             "Follow-ups come from logged touches + the cadence; untouched targets are "
             "ranked by savings × reachability. Open any to act, then log the outcome."
