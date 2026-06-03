@@ -976,12 +976,12 @@ def _all_systems_agg(overrides_mtime: float = 0.0) -> pd.DataFrame:
 def _money(v) -> str:
     v = float(v or 0)
     if v >= 1e9:
-        return f"${v / 1e9:.1f}B"
+        return f"${v / 1e9:,.2f}B"
     if v >= 1e6:
-        return f"${v / 1e6:,.0f}M"
+        return f"${v / 1e6:,.2f}M"
     if v >= 1e3:
-        return f"${v / 1e3:,.0f}K"
-    return f"${v:,.0f}"
+        return f"${v / 1e3:,.2f}K"
+    return f"${v:,.2f}"
 
 
 def _push_recent(system_id: str) -> None:

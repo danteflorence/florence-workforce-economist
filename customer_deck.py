@@ -67,9 +67,16 @@ class DeckInputs:
 
 
 def _fmt_big(v: float) -> str:
-    if v >= 1e9:
-        return f"${v/1e9:.2f}B"
-    return f"${v/1e6:,.0f}M"
+    """Money with two decimals at the right magnitude, so small values never
+    collapse to a misleading '$0M'."""
+    v = float(v or 0)
+    if abs(v) >= 1e9:
+        return f"${v/1e9:,.2f}B"
+    if abs(v) >= 1e6:
+        return f"${v/1e6:,.2f}M"
+    if abs(v) >= 1e3:
+        return f"${v/1e3:,.2f}K"
+    return f"${v:,.2f}"
 
 
 def _add_text(slide, x, y, w, h, text, *,
@@ -164,7 +171,8 @@ def _slide_cover(prs: Presentation, d: DeckInputs):
         "A Pathway to Permanent\nRN Capacity.", w_in=12)
     _body(s, Inches(0.5), Inches(5.7),
           f"Florence delivers {d.rn_need:,.0f} permanent international RNs to "
-          f"{d.system_name} across {d.n_facilities} facilities in {d.n_states} states. "
+          f"{d.system_name} across {d.n_facilities} facilit{'ies' if d.n_facilities != 1 else 'y'} in "
+          f"{d.n_states} state{'s' if d.n_states != 1 else ''}. "
           f"Same hours. Different price. Different outcome.",
           w_in=10, size=14)
     _add_text(s, Inches(0.5), Inches(7.0), Inches(4), Inches(0.3),
@@ -283,7 +291,7 @@ def _slide_top_facilities(prs, d: DeckInputs):
         ("State", Inches(6.1), Inches(0.8)),
         ("RNs", Inches(7.0), Inches(0.8)),
         ("24-mo savings", Inches(8.0), Inches(2.0)),
-        ("Florence fee", Inches(10.1), Inches(1.6)),
+        ("Fee /RN/mo", Inches(10.1), Inches(1.6)),
         ("ROI", Inches(11.8), Inches(1.0)),
     ]
     for label, x, w in headers:
@@ -311,8 +319,11 @@ def _slide_top_facilities(prs, d: DeckInputs):
         _add_text(s, Inches(8.0), ry, Inches(2.0), Inches(0.35),
                   _fmt_big(float(r.get("target_term_net_savings_account", 0))),
                   font="Playfair Display", size=14, bold=True, color=TEAL_DARK)
+        _rn = max(float(r.get("rn_need", 0) or 0), 1.0)
+        _mo_fee_acct = float(r.get("target_monthly_florence_fee_account", 0) or 0) \
+            or (float(r.get("target_term_florence_fee_account", 0) or 0) / 24.0)
         _add_text(s, Inches(10.1), ry, Inches(1.6), Inches(0.35),
-                  _fmt_big(float(r.get("target_term_florence_fee_account", 0))),
+                  f"${_mo_fee_acct / _rn:,.2f}",
                   font="Inter", size=12, color=NAVY)
         _add_text(s, Inches(11.8), ry, Inches(1.0), Inches(0.35),
                   f"{float(r.get('target_savings_ratio', 0)):.1f}×",

@@ -48,10 +48,10 @@ BORDER = colors.HexColor("#E2E6EE")
 def _fmt_money(v: float) -> str:
     if v is None or not isinstance(v, (int, float)):
         return "—"
-    if abs(v) >= 1e9: return f"${v/1e9:.2f}B"
-    if abs(v) >= 1e6: return f"${v/1e6:.1f}M"
-    if abs(v) >= 1e3: return f"${v/1e3:.0f}K"
-    return f"${v:,.0f}"
+    if abs(v) >= 1e9: return f"${v/1e9:,.2f}B"
+    if abs(v) >= 1e6: return f"${v/1e6:,.2f}M"
+    if abs(v) >= 1e3: return f"${v/1e3:,.2f}K"
+    return f"${v:,.2f}"
 
 
 def _fmt_money_full(v: float) -> str:

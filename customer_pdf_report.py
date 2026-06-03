@@ -29,9 +29,11 @@ MUTED = colors.HexColor("#475467")
 
 
 def _fmt_big(v: float) -> str:
-    if v >= 1e9: return f"${v/1e9:.2f}B"
-    if v >= 1e6: return f"${v/1e6:,.1f}M"
-    return f"${v:,.0f}"
+    v = float(v or 0)
+    if abs(v) >= 1e9: return f"${v/1e9:,.2f}B"
+    if abs(v) >= 1e6: return f"${v/1e6:,.2f}M"
+    if abs(v) >= 1e3: return f"${v/1e3:,.2f}K"
+    return f"${v:,.2f}"
 
 
 def build_report(
