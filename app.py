@@ -2109,6 +2109,14 @@ if view == "inpatient":
     feas_recs = recs[recs["feasible"]].copy()
     feas_recs["region"] = feas_recs["state"].map(CENSUS_REGION).fillna("Other")
 
+    # ── Find a system — prominent search at the very top of the landing ──
+    if st.session_state.get("inpatient_active_system") is None:
+        st.text_input(
+            "Find a health system",
+            placeholder="Type a system name — e.g. Honor Health, HCA, Sutter…",
+            key="inpatient_search",
+        )
+
     # ── Compact filter & sort (collapsed by default) ──────────────────
     with st.expander(":material/tune: Filter & sort", expanded=False):
         ctrl_col1, ctrl_col2, ctrl_col3, ctrl_col4 = st.columns([1.2, 1.2, 1.4, 1.0])
@@ -2328,12 +2336,7 @@ if view == "inpatient":
 
         if tile_mode == "Biggest health systems":
             florence_eyebrow("Top U.S. health systems · by scale")
-            search_q = st.text_input(
-                "Search systems",
-                placeholder="Search systems by name…",
-                label_visibility="collapsed",
-                key="inpatient_search",
-            )
+            search_q = st.session_state.get("inpatient_search", "")  # box now lives at the top
             _render_quick_access_row(sys_agg, placeholder_msp_markup_pct)
             with st.expander(":material/inventory_2: Bulk download — bundles for several systems"):
                 _opts = {str(r["health_system"]): str(r["health_system_id"])

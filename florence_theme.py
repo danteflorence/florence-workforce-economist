@@ -155,6 +155,12 @@ h3 {{ font-size:1.4rem; }}
 /* Capital-purple document actions (Generate documents / direct mail / bundle) */
 [class*="st-key-tile_docs"] button, [class*="st-key-cp_mail"] button, [class*="st-key-qa_zipdl"] button, [class*="st-key-bulk_dl"] button {{ background:var(--pur) !important; color:#fff !important; border-color:var(--pur) !important; }}
 [class*="st-key-tile_docs"] button:hover, [class*="st-key-cp_mail"] button:hover, [class*="st-key-qa_zipdl"] button:hover, [class*="st-key-bulk_dl"] button:hover {{ background:var(--pur-text) !important; }}
+
+/* Prominent system search — thick teal outline so it can't be missed */
+[class*="st-key-inpatient_search"] label {{ font-weight:700 !important; color:var(--ink) !important; font-size:.95rem !important; }}
+[class*="st-key-inpatient_search"] input {{ border:3px solid #0ABAB5 !important; border-radius:12px !important; background:#fff !important; font-size:1.05rem !important; padding:11px 14px !important; }}
+[class*="st-key-inpatient_search"] input::placeholder {{ color:#98A2B3 !important; }}
+[class*="st-key-inpatient_search"] input:focus {{ border-color:#00A4B4 !important; box-shadow:0 0 0 3px rgba(10,186,181,.20) !important; }}
 </style>""", unsafe_allow_html=True)
 
 
