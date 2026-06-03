@@ -30,12 +30,17 @@ def _money(v) -> str:
     except (TypeError, ValueError):
         return "$0"
     if v >= 1e9:
-        return f"${v / 1e9:.1f}B"
+        return f"${v / 1e9:,.2f}B"
     if v >= 1e6:
-        return f"${v / 1e6:,.1f}M"
+        return f"${v / 1e6:,.2f}M"
     if v >= 1e3:
-        return f"${v / 1e3:,.0f}K"
-    return f"${v:,.0f}"
+        return f"${v / 1e3:,.2f}K"
+    return f"${v:,.2f}"
+
+
+def _dollars(v) -> str:
+    """Exact dollars to the cent — for per-nurse / per-month figures."""
+    return f"${float(v or 0):,.2f}"
 
 
 def _first_name(contact_name: str) -> str:
@@ -116,7 +121,7 @@ def compose_email(
         f"{lead}\n\n"
         f"Florence places permanent, U.S.-licensed registered nurses directly on your "
         f"payroll — no agency markup, no rotating travelers. For {system_name} that's "
-        f"about {_money(per_nurse_fee)} per nurse / month across {rn_phrase}, and about "
+        f"about {_dollars(per_nurse_fee)} per nurse / month across {rn_phrase}, and about "
         f"{_money(term_impact)} of impact over the first 24 months.\n\n"
         f"{link_line}"
         f"Worth 20 minutes to walk your team through it? {avail} — happy to send an "

@@ -54,10 +54,10 @@ def build_data(n_top: int = 12) -> pd.DataFrame:
 
 
 def fmt_money(v: float) -> str:
-    if v >= 1e9: return f"${v/1e9:.2f}B"
-    if v >= 1e6: return f"${v/1e6:.0f}M"
-    if v >= 1e3: return f"${v/1e3:.0f}K"
-    return f"${v:,.0f}"
+    if v >= 1e9: return f"${v/1e9:,.2f}B"
+    if v >= 1e6: return f"${v/1e6:,.2f}M"
+    if v >= 1e3: return f"${v/1e3:,.2f}K"
+    return f"${v:,.2f}"
 
 
 def render_html(df: pd.DataFrame, output: Path) -> Path:

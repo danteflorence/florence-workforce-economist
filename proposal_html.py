@@ -25,12 +25,12 @@ def _fmt_money(v: float) -> str:
     if v is None or not isinstance(v, (int, float)):
         return "—"
     if abs(v) >= 1e9:
-        return f"${v/1e9:.2f}B"
+        return f"${v/1e9:,.2f}B"
     if abs(v) >= 1e6:
-        return f"${v/1e6:.1f}M"
+        return f"${v/1e6:,.2f}M"
     if abs(v) >= 1e3:
-        return f"${v/1e3:.0f}K"
-    return f"${v:,.0f}"
+        return f"${v/1e3:,.2f}K"
+    return f"${v:,.2f}"
 
 
 def _fmt_money_full(v: float) -> str:
@@ -59,8 +59,8 @@ def render_html(data: ProposalData) -> str:
               <td class="num">${h.loaded_staff_per_hr:.2f}</td>
               <td class="num">${h.agency_per_hr:.2f}</td>
               <td class="num"><strong>${h.delta_per_hr:.2f}</strong></td>
-              <td class="num">${h.fee_per_nurse:,.0f}</td>
-              <td class="num">${h.florence_net_per_nurse:,.0f}</td>
+              <td class="num">${h.fee_per_nurse:,.2f}</td>
+              <td class="num">${h.florence_net_per_nurse:,.2f}</td>
               <td class="num">{_fmt_pct(h.contract_labor_share)}</td>
             </tr>
         """)

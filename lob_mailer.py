@@ -74,12 +74,17 @@ def _money(v) -> str:
     except (TypeError, ValueError):
         return "$0"
     if v >= 1e9:
-        return f"${v / 1e9:.1f}B"
+        return f"${v / 1e9:,.2f}B"
     if v >= 1e6:
-        return f"${v / 1e6:,.1f}M"
+        return f"${v / 1e6:,.2f}M"
     if v >= 1e3:
-        return f"${v / 1e3:,.0f}K"
-    return f"${v:,.0f}"
+        return f"${v / 1e3:,.2f}K"
+    return f"${v:,.2f}"
+
+
+def _dollars(v) -> str:
+    """Exact dollars to the cent — for per-nurse / per-month figures."""
+    return f"${float(v or 0):,.2f}"
 
 
 def compose(*, org_name: str, contact_name: str, monthly_fee, term_impact,
@@ -185,7 +190,7 @@ def render_letter_html(*, org_name, contact_name="", title="", address1="", city
     title_line = f", {title}" if title else ""
     if rn_need:
         per = (monthly_fee or 0) / rn_need
-        price = f"{_money(per)} per nurse / month"
+        price = f"{_dollars(per)} per nurse / month"
         rn_clause = f" across an estimated {rn_need:,}-RN need"
     else:
         price = f"{_money(monthly_fee)} per month"
@@ -228,7 +233,7 @@ def render_postcard_html(*, org_name, contact_name="", address1="", city="", sta
     """6×11 postcard front + back HTML (returns {'front','back'})."""
     hero = _money(annual_savings if annual_savings is not None else (term_impact or 0) / 2)
     if rn_need:
-        fee_phrase = f"About {_money((monthly_fee or 0) / rn_need)}/nurse/month."
+        fee_phrase = f"About {_dollars((monthly_fee or 0) / rn_need)}/nurse/month."
     else:
         fee_phrase = f"About {_money(monthly_fee)}/month."
     link = (url or SIGNUP_BASE) + (f"?code={code}" if code and "?" not in (url or SIGNUP_BASE) else "")

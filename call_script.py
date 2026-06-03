@@ -18,12 +18,17 @@ def _money(v) -> str:
     except (TypeError, ValueError):
         return "$0"
     if v >= 1e9:
-        return f"${v / 1e9:.1f}B"
+        return f"${v / 1e9:,.2f}B"
     if v >= 1e6:
-        return f"${v / 1e6:,.1f}M"
+        return f"${v / 1e6:,.2f}M"
     if v >= 1e3:
-        return f"${v / 1e3:,.0f}K"
-    return f"${v:,.0f}"
+        return f"${v / 1e3:,.2f}K"
+    return f"${v:,.2f}"
+
+
+def _dollars(v) -> str:
+    """Exact dollars to the cent — for per-nurse / per-month figures."""
+    return f"${float(v or 0):,.2f}"
 
 
 def _first(name: str) -> str:
@@ -63,7 +68,7 @@ def build_script(*, system_name: str, annual_savings, term_impact, rn_need,
     except (TypeError, ValueError):
         rn = 0
     per_nurse = (float(monthly_fee or 0) / rn) if rn else float(monthly_fee or 0)
-    hero, per, term = _money(annual_savings), _money(per_nurse), _money(term_impact)
+    hero, per, term = _money(annual_savings), _dollars(per_nurse), _money(term_impact)
     greet = _first(contact_name) or "there"
     rn_phrase = f"an estimated {rn:,} RNs" if rn else "your projected RN need"
 

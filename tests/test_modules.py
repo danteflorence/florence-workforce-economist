@@ -23,9 +23,9 @@ def test_outreach_email_numbers_and_greeting():
     e = oe.compose_email(system_name="Banner Health", annual_savings=18_400_000,
                          term_impact=36_800_000, rn_need=420, monthly_fee=2_940_000,
                          contact_name="Dana Reyes")
-    assert "$18.4M" in e["subject"]
+    assert "$18.40M" in e["subject"]
     assert e["body"].startswith("Hi Dana,")
-    assert "$7K per nurse / month" in e["body"]
+    assert "$7,000.00 per nurse / month" in e["body"]
     assert e["mailto"].startswith("mailto:?")
     txt = oe.as_txt(e)
     assert "SUBJECT OPTIONS" in txt and "BODY" in txt
@@ -77,7 +77,7 @@ def test_mailpiece_renderers():
     ltr = L.render_letter_html(org_name="Sutter Health", contact_name="Dana Reyes",
                                monthly_fee=2_940_000, term_impact=36_800_000, rn_need=420,
                                code="FLOR-7QK4M")
-    assert ltr.lstrip().startswith("<!doctype html>") and "8.5in 11in" in ltr and "18.4M" in ltr
+    assert ltr.lstrip().startswith("<!doctype html>") and "8.5in 11in" in ltr and "18.40M" in ltr
     pc = L.render_postcard_html(org_name="Sutter Health", monthly_fee=2_940_000,
                                 term_impact=36_800_000, rn_need=420)
     assert set(pc) == {"front", "back"} and "11in 6in" in pc["front"]
@@ -137,7 +137,7 @@ def test_call_script_build():
     s = C.build_script(system_name="Banner", annual_savings=18_400_000, term_impact=36_800_000,
                        rn_need=420, monthly_fee=2_940_000, contact_name="Dana Reyes",
                        contact_phone="(602) 555-0144")
-    assert s["numbers"]["hero_annual"] == "$18.4M" and len(s["objections"]) >= 4
+    assert s["numbers"]["hero_annual"] == "$18.40M" and len(s["objections"]) >= 4
     assert "Dana" in s["opening"] and "(602) 555-0144" in C.as_text(s)
 
 
@@ -155,7 +155,7 @@ def test_dossier_render_and_escapes():
         script=s, email_intro="Hi Dana, quick note.",
         timeline=[{"ts": "2026-06-02T04:00", "kind": "call", "detail": "Left VM"}],
         owner="rep@florenceeducation.com", stage="discovery")
-    assert html.lstrip().startswith("<!doctype html>") and "Banner Health" in html and "$18.4M" in html
+    assert html.lstrip().startswith("<!doctype html>") and "Banner Health" in html and "$18.40M" in html
     assert not re.search(r"\b(fica|visa|tax|immigration)\b", html.lower())
     # HTML-escapes hostile input
     h2 = dossier.render_html(system_name="X", metrics={}, contact={"contact_name": "<script>x"},
