@@ -276,6 +276,16 @@ def test_callcenter_queue_claims_disposition(tmp_store):
     assert reminders.is_snoozed("facility", ccn)                      # callback scheduled
 
 
+# ─── system tile search ─────────────────────────────────────────────
+def test_system_search_space_insensitive():
+    import system_tiles as T
+    assert T._name_matches("Honor Health", "HonorHealth")     # the reported miss
+    assert T._name_matches("honorhealth", "HonorHealth")
+    assert T._name_matches("honor-health", "HonorHealth")
+    assert T._name_matches("", "HonorHealth")                 # empty query = match all
+    assert not T._name_matches("Banner", "HonorHealth")
+
+
 # ─── geo ────────────────────────────────────────────────────────────
 def test_geo_centroids():
     import geo

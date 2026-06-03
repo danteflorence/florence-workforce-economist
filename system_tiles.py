@@ -27,6 +27,7 @@ the tile falls back to a teal initials badge (handled in CSS).
 from __future__ import annotations
 
 import html
+import re
 from pathlib import Path
 from typing import Optional
 
@@ -39,6 +40,15 @@ except Exception:  # import-safe fallback if the pipeline module is unavailable
 
 DATA_DIR = Path(__file__).parent / "data"
 DIRECTORY_FILE = DATA_DIR / "system_directory.csv"
+
+
+def _name_matches(query: str, name: str) -> bool:
+    """Space/punctuation-insensitive substring match, so 'Honor Health',
+    'honorhealth', and 'honor-health' all find the system 'HonorHealth'."""
+    q = re.sub(r"[^a-z0-9]", "", str(query or "").lower())
+    if not q:
+        return True
+    return q in re.sub(r"[^a-z0-9]", "", str(name or "").lower())
 
 
 # ─── Loading ────────────────────────────────────────────────────────
@@ -275,10 +285,9 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
     """
     merged = merged_systems(sys_agg)
     status_map = status_map or {}
-    q = (search or "").strip().lower()
-    if q:
+    if (search or "").strip():
         merged = merged[merged.apply(
-            lambda r: q in str(r.get("display_name") or r.get("health_system") or "").lower(),
+            lambda r: _name_matches(search, r.get("display_name") or r.get("health_system") or ""),
             axis=1,
         )]
     if merged.empty:
