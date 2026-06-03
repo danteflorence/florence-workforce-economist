@@ -158,9 +158,10 @@ h3 {{ font-size:1.4rem; }}
 
 /* Prominent system search — thick teal outline so it can't be missed */
 [class*="st-key-inpatient_search"] label {{ font-weight:700 !important; color:var(--ink) !important; font-size:.95rem !important; }}
-[class*="st-key-inpatient_search"] input {{ border:3px solid #0ABAB5 !important; border-radius:12px !important; background:#fff !important; font-size:1.05rem !important; padding:11px 14px !important; }}
-[class*="st-key-inpatient_search"] input::placeholder {{ color:#98A2B3 !important; }}
-[class*="st-key-inpatient_search"] input:focus {{ border-color:#00A4B4 !important; box-shadow:0 0 0 3px rgba(10,186,181,.20) !important; }}
+[class*="st-key-inpatient_search"] [data-baseweb="input"] {{ border:none !important; box-shadow:none !important; background:transparent !important; }}
+[class*="st-key-inpatient_search"] input {{ border:3px solid #0B2545 !important; border-radius:12px !important; background:#fff !important; font-size:1.05rem !important; padding:12px 14px !important; box-shadow:0 2px 8px rgba(11,37,69,.18) !important; }}
+[class*="st-key-inpatient_search"] input::placeholder {{ color:#667085 !important; }}
+[class*="st-key-inpatient_search"] input:focus {{ border-color:#0B2545 !important; box-shadow:0 0 0 3px rgba(11,37,69,.28) !important; }}
 </style>""", unsafe_allow_html=True)
 
 
