@@ -110,6 +110,16 @@ def render() -> None:
     kinds = c3.multiselect("Setting", ["Inpatient", "Outpatient"],
                            default=["Inpatient", "Outpatient"], key="mm_kinds")
 
+    # Health-system search: searchable dropdown of real system names (type to filter)
+    _counts = df["health_system"].fillna("").value_counts()
+    _sys_opts = [s for s in _counts.index if s and s != "Independent / Unknown"]
+    SYS_ALL = "— All systems —"
+    system = st.selectbox(
+        "Health system — type to find one (e.g. Kaiser Permanente, Tenet, Advocate)",
+        [SYS_ALL] + _sys_opts,
+        format_func=lambda s: s if s == SYS_ALL else f"{s}   ·   {_counts[s]:,} facilities",
+        key="mm_system")
+
     with st.expander("Pricing assumptions — drag to model a different deal", expanded=False):
         s1, s2, s3, s4 = st.columns(4)
         offset = s1.slider("FICA-offset target %", 20, 80, 40, 5, key="mm_offset") / 100.0
@@ -138,6 +148,8 @@ def render() -> None:
         d = d[d["ftype"].isin(ftypes)]
     if states:
         d = d[d["state"].isin(states)]
+    if system != SYS_ALL:
+        d = d[d["health_system"] == system]
     if spread:
         d = d[d["agency_prem_hr"].notna()]
     d = FD.reprice(d, offset, markup, floor, ceiling)
@@ -171,6 +183,11 @@ def render() -> None:
     k2.metric("MSAs", f"{d['cbsa_title'].nunique():,}")
     k3.metric(f"Median {layer.lower()}", f"${d[col].median():,.0f}/RN/mo")
     k4.metric("Total modeled RN need", f"{d['rn_need'].sum():,.0f}")
+
+    if system != SYS_ALL:
+        st.markdown(f"**{system}** — {len(d):,} facilities across {d['state'].nunique()} states "
+                    f"· median {layer.lower()} ${d[col].median():,.0f}/RN/mo. "
+                    "Switch **View** to *Individual facilities* to see each site.")
 
     st.plotly_chart(_map_figure(d_plot, view, col, color_col, layer, spread, metro_q),
                     use_container_width=True, key="mm_chart")
