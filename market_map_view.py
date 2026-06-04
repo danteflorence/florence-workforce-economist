@@ -144,6 +144,12 @@ def render() -> None:
     spread = st.checkbox("Color by savings vs current agency spend (inpatient only)",
                          value=False, key="mm_spread")
 
+    # Quote channel — does a distribution partner sit between Florence and the employer?
+    via_partner = st.radio(
+        "Quote channel — price to the health-system employer",
+        ["Direct — Florence rate", f"Via distribution partner (+{int(markup * 100)}% atop)"],
+        index=0, horizontal=True, key="mm_channel").startswith("Via")
+
     # ---- filter + reprice ----
     d = df
     if kinds:
@@ -157,6 +163,9 @@ def render() -> None:
     if spread:
         d = d[d["agency_prem_hr"].notna()]
     d = FD.reprice(d, offset, markup, floor, ceiling)
+    # employer-facing price = wholesale Florence rate, or +partner markup if a partner is in the channel
+    d["employer_price"] = d["partner"] if via_partner else d["florence"]
+    d["employer_effective"] = (d["employer_price"] - d["fica_savings"]).clip(lower=0)
     col = LAYER_COL[layer]
     color_col = "spread_vs_agency" if spread else col
 
@@ -189,9 +198,19 @@ def render() -> None:
     k4.metric("Total modeled RN need", f"{d['rn_need'].sum():,.0f}")
 
     if system != SYS_ALL:
+        chan = "via partner" if via_partner else "direct"
         st.markdown(f"**{system}** — {len(d):,} facilities across {d['state'].nunique()} states "
-                    f"· median {layer.lower()} ${d[col].median():,.0f}/RN/mo. "
+                    f"· median quote (${chan}) ${d['employer_price'].median():,.0f}/RN/mo. "
                     "Switch **View** to *Individual facilities* to see each site.")
+        e1, e2 = st.columns([1, 3])
+        if e1.button("Generate pitch PDF", key="mm_pdf_btn"):
+            import system_pitch_pdf as _spp
+            st.session_state["mm_pdf"] = _spp.render(system, d, via_partner, markup)
+            st.session_state["mm_pdf_name"] = f"Florence - {system} pitch.pdf"
+        if st.session_state.get("mm_pdf"):
+            e2.download_button("⬇ Download pitch PDF", st.session_state["mm_pdf"],
+                               file_name=st.session_state.get("mm_pdf_name", "pitch.pdf"),
+                               mime="application/pdf", key="mm_pdf_dl")
 
     st.plotly_chart(_map_figure(d_plot, view, col, color_col, layer, spread, metro_q),
                     use_container_width=True, key="mm_chart")
@@ -211,3 +230,37 @@ def render() -> None:
         st.download_button("Download this view (CSV)", tbl.to_csv(index=False).encode(),
                            file_name="florence_market_rates.csv", mime="text/csv",
                            key="mm_csv")
+
+    # ---- compare health systems side by side ----
+    with st.expander("Compare health systems side by side", expanded=False):
+        cmp = st.multiselect("Pick 2–4 systems (e.g. Kaiser Permanente vs Providence)",
+                             _sys_opts, default=[], max_selections=4, key="mm_cmp")
+        st.caption(f"Quotes shown {'via distribution partner (+'+str(int(markup*100))+'%)' if via_partner else 'direct from Florence'}.")
+        if len(cmp) >= 2:
+            rows = []
+            for s in cmp:
+                ds = FD.reprice(df[df["health_system"] == s], offset, markup, floor, ceiling)
+                g = ds["partner"] if via_partner else ds["florence"]
+                rows.append({"System": s, "Facilities": len(ds), "States": ds["state"].nunique(),
+                             "RN need": int(ds["rn_need"].sum()),
+                             "Quoted $/RN/mo": int(g.median()),
+                             "FICA-effective $/RN/mo": int((g - ds["fica_savings"]).clip(lower=0).median())})
+            st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
+            palette = ["#0ABAB5", "#7340C4", "#F2994A", "#0B2545"]
+            cfig = go.Figure()
+            for i, s in enumerate(cmp):
+                ds = df[df["health_system"] == s]
+                cfig.add_trace(go.Scattermapbox(
+                    lat=ds["lat"], lon=ds["lon"], name=s[:26], mode="markers",
+                    marker=dict(size=8, color=palette[i % len(palette)], opacity=0.82),
+                    hovertext=ds["name"], hoverinfo="text+name"))
+            allc = df[df["health_system"].isin(cmp)]
+            cfig.update_layout(
+                mapbox=dict(style="carto-positron", zoom=2.5,
+                            center=dict(lat=float((allc["lat"].min() + allc["lat"].max()) / 2),
+                                        lon=float((allc["lon"].min() + allc["lon"].max()) / 2))),
+                margin=dict(l=0, r=0, t=0, b=0), height=480,
+                legend=dict(orientation="h", y=0.99, x=0.01, bgcolor="rgba(255,255,255,0.75)"))
+            st.plotly_chart(cfig, use_container_width=True, key="mm_cmp_map")
+        else:
+            st.caption("Pick at least two systems to compare their footprints and rates.")
