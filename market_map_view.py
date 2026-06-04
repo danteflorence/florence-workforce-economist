@@ -39,9 +39,13 @@ def _focus(d: pd.DataFrame, metro_q: str):
             return dict(lat=float(hit["lat"].mean()), lon=float(hit["lon"].mean())), 8.0
     if not len(d):
         return dict(lat=39.5, lon=-98.5), 3.1
-    lat0, lon0 = float(d["lat"].mean()), float(d["lon"].mean())
+    # center on the bounding-box midpoint (not the mean) so every facility fits,
+    # even when a system spans coast-to-coast plus Hawaii/Alaska
+    lat0 = float((d["lat"].min() + d["lat"].max()) / 2)
+    lon0 = float((d["lon"].min() + d["lon"].max()) / 2)
     span = max(float(d["lat"].max() - d["lat"].min()), float(d["lon"].max() - d["lon"].min()), 0.5)
-    zoom = 3.1 if span > 35 else 4.2 if span > 18 else 5.6 if span > 7 else 7.0
+    zoom = (2.2 if span > 60 else 3.1 if span > 35 else 4.2 if span > 18
+            else 5.6 if span > 7 else 7.0)
     return dict(lat=lat0, lon=lon0), zoom
 
 
