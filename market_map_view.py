@@ -108,6 +108,13 @@ def render() -> None:
                 unsafe_allow_html=True)
     df = _facilities()
 
+    if st.session_state.get("mm_demo"):
+        _render_demo(df)
+        return
+    st.button("🎬  Launch demo mode — scripted walkthrough (Kaiser Permanente)",
+              key="mm_demo_enter", type="primary",
+              on_click=lambda: st.session_state.update(mm_demo=True, mm_demo_step=0))
+
     c1, c2, c3 = st.columns([1.1, 1, 1.4])
     layer = c1.radio("Rate layer", list(LAYER_COL), index=0, key="mm_layer")
     view = c2.radio("View", ["MSA bubbles", "Individual facilities"], index=0, key="mm_view")
@@ -264,3 +271,120 @@ def render() -> None:
             st.plotly_chart(cfig, use_container_width=True, key="mm_cmp_map")
         else:
             st.caption("Pick at least two systems to compare their footprints and rates.")
+
+
+def _render_demo(df: pd.DataFrame) -> None:
+    """Scripted, audience-aware walkthrough with Kaiser Permanente as the hero."""
+    import system_pitch_pdf as _spp
+    allp = FD.reprice(df)
+    nat_fac, nat_states = len(df), df["state"].nunique()
+    nat_med = float(allp["florence"].median())
+    kd = FD.reprice(df[df["health_system"] == "Kaiser Permanente"])
+    k_fac, k_st = len(kd), kd["state"].nunique()
+    k_flor, k_part, k_eff = (float(kd["florence"].median()), float(kd["partner"].median()),
+                             float(kd["effective"].median()))
+    _sp = (kd["agency_monthly"] - kd["florence"]).dropna()
+    k_spread = float(_sp.median()) if len(_sp) else 0.0
+
+    NAT = [("Facilities priced", f"{nat_fac:,}"), ("States", str(nat_states)),
+           ("Median Florence rate", f"${nat_med:,.0f}/RN/mo")]
+    K = [("Kaiser facilities", str(k_fac)), ("States", str(k_st)),
+         ("Median Florence rate", f"${k_flor:,.0f}/RN/mo")]
+    P = [("Direct — Florence", f"${k_flor:,.0f}"), ("+20% partner (AMN)", f"${k_part:,.0f}"),
+         ("Partner margin / RN / mo", f"${k_part - k_flor:,.0f}")]
+    S = [("Florence permanent rate", f"${k_flor:,.0f}/RN/mo"),
+         ("Saved vs agency premium", f"${k_spread:,.0f}/RN/mo")]
+    E = [("Florence rate", f"${k_flor:,.0f}/RN/mo"),
+         ("Effective after FICA offset", f"${k_eff:,.0f}/RN/mo")]
+    KP, IND, FLO, PART, EFF = "Kaiser Permanente", "Individual facilities", "Florence rate", "+20% partner (AMN)", "FICA-effective (net)"
+
+    amn = st.radio("Audience", ["AMN — distribution partner", "Investors"],
+                   horizontal=True, key="mm_demo_aud").startswith("AMN")
+
+    if amn:
+        beats = [
+            dict(system=None, view="MSA bubbles", layer=FLO, spread=False, stat=NAT,
+                 headline="Market-adjusted rates in every metro you serve",
+                 say="Florence prices RN labor in every U.S. metro — 48,870 facilities, inpatient and outpatient. "
+                     "Each rate is calibrated to the local wage and agency market, so you can quote anywhere you already operate."),
+            dict(system=KP, view=IND, layer=FLO, spread=False, stat=K,
+                 headline="Your account — already priced",
+                 say="Type any system you serve and its facilities light up. Kaiser: 95 sites across 8 states, each priced to its local market."),
+            dict(system=KP, view=IND, layer=PART, spread=False, stat=P,
+                 headline="Your margin, built into every nurse",
+                 say=f"Through the partner channel it is +20% atop the Florence rate — ${k_part:,.0f} per RN per month. "
+                     "That spread is your recurring margin, in every market, every month."),
+            dict(system=KP, view=IND, layer=FLO, spread=True, stat=S,
+                 headline="The conversion you can sell",
+                 say="Here is the gap vs. what these hospitals pay for travelers today. That delta is the permanent-conversion "
+                     "opportunity — you monetize the account instead of losing it when they cut travel."),
+            dict(system=KP, view=IND, layer=PART, spread=False, stat=P, export=True,
+                 headline="A co-branded pitch in one click",
+                 say="Generate a leave-behind for the account in seconds — quoted at your partner rate, ready to hand over."),
+        ]
+    else:
+        beats = [
+            dict(system=None, view="MSA bubbles", layer=FLO, spread=False, stat=NAT,
+                 headline="The agency-labor crisis, priced facility by facility",
+                 say="This is U.S. nurse-staffing spend, priced facility by facility — 48,870 facilities across every metro. "
+                     "The displaceable agency premium is the market we attack."),
+            dict(system=KP, view=IND, layer=EFF, spread=False, stat=E,
+                 headline="Structurally cheaper — the unit-economics moat",
+                 say=f"Permanent international RNs land below agency cost because of the F-1 payroll-tax offset. The employer's "
+                     f"effective net is about ${k_eff:,.0f} per RN per month — that structural advantage is the moat."),
+            dict(system=KP, view=IND, layer=FLO, spread=False, stat=K,
+                 headline="Proprietary, market-by-market pricing",
+                 say="Every rate is calibrated from CMS HCRIS agency filings and BLS wages, per facility. No one else prices "
+                     "this product market-by-market — this engine is the defensible asset."),
+            dict(system=KP, view=IND, layer=PART, spread=False, stat=P,
+                 headline="Distribution = the largest staffing partner in the country",
+                 say="We don't build a national sales force — we plug into AMN's. The +20% partner channel is instant national "
+                     "reach and recurring, high-margin revenue."),
+            dict(system=KP, view=IND, layer=FLO, spread=False, stat=K, export=True,
+                 headline="Automated go-to-market",
+                 say="Pricing, outreach, and these account pitches are all automated in one platform — operating leverage as we scale supply."),
+        ]
+
+    n = len(beats)
+    i = min(max(int(st.session_state.get("mm_demo_step", 0)), 0), n - 1)
+    b = beats[i]
+
+    t = st.columns([1, 1, 4, 1.3, 1])
+    t[0].button("◀ Back", key="mm_db", disabled=(i == 0),
+                on_click=lambda: st.session_state.update(mm_demo_step=i - 1))
+    t[1].button("Next ▶", key="mm_dn", disabled=(i == n - 1),
+                on_click=lambda: st.session_state.update(mm_demo_step=i + 1))
+    t[3].markdown(f"<div style='text-align:right;color:#667085;padding-top:7px'>Step {i+1} of {n}</div>",
+                  unsafe_allow_html=True)
+    t[4].button("✕ Exit", key="mm_dx",
+                on_click=lambda: st.session_state.update(mm_demo=False, mm_demo_step=0))
+
+    st.markdown(f"<h3 style='color:{NAVY};font-family:Georgia,serif;margin:8px 0 4px'>{b['headline']}</h3>",
+                unsafe_allow_html=True)
+    st.markdown(f"<div style='background:#F2F4F7;border-left:4px solid #0ABAB5;padding:11px 15px;"
+                f"border-radius:6px;color:#101828;font-size:1.05rem;line-height:1.5;margin-bottom:8px'>"
+                f"🗣&nbsp; {b['say']}</div>", unsafe_allow_html=True)
+    sc = st.columns(len(b["stat"]))
+    for c, (lab, val) in zip(sc, b["stat"]):
+        c.metric(lab, val)
+
+    d = FD.reprice(df if b["system"] is None else df[df["health_system"] == b["system"]])
+    if b["spread"]:
+        d = d[d["agency_prem_hr"].notna()]
+    if not len(d):
+        st.warning("No facilities for this step.")
+        return
+    cc = LAYER_COL[b["layer"]]
+    color_col = "spread_vs_agency" if b["spread"] else cc
+    st.plotly_chart(_map_figure(d, b["view"], cc, color_col, b["layer"], b["spread"], ""),
+                    use_container_width=True, key="mm_demo_map")
+
+    if b.get("export"):
+        if st.button("⬇ Generate Kaiser Permanente pitch PDF", key="mm_demo_pdf_btn"):
+            st.session_state["mm_demo_pdf"] = _spp.render(
+                "Kaiser Permanente", FD.reprice(df[df["health_system"] == "Kaiser Permanente"]),
+                via_partner=amn, markup=0.20)
+        if st.session_state.get("mm_demo_pdf"):
+            st.download_button("Download pitch PDF", st.session_state["mm_demo_pdf"],
+                               file_name="Florence - Kaiser Permanente pitch.pdf",
+                               mime="application/pdf", key="mm_demo_pdf_dl")
