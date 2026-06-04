@@ -1989,6 +1989,7 @@ _nav_button("Pipeline", "pipeline", "assignment")
 # ─── Deep tools ──────────────────────────────────────────────────
 _nav_section("Deep tools")
 _nav_button("National map", "national_map", "public")
+_nav_button("Market map", "market_map", "map")
 _nav_button("Health systems", "health_systems", "business")
 _nav_button("System ownership", "system_ownership", "swap_horiz")
 _nav_button("Price a hospital", "price_hospital", "local_hospital")
@@ -4389,6 +4390,17 @@ if view == "outpatient":
         )
         st.info(REQUIRED_COMPLIANCE_SENTENCE, icon=":material/balance:")
 
+
+# =====================================================================
+# MARKET MAP — facility-level, market-adjusted rates (inpatient + outpatient)
+# =====================================================================
+if view == "market_map":
+    florence_brand_strip("MARKET MAP · INTERNAL")
+    try:
+        import market_map_view as _mm
+        _mm.render()
+    except Exception as _e:
+        st.error(f"Market map failed to load: {_e}")
 
 # =====================================================================
 # MAP — every hospital plotted, colored by system or financial opportunity
