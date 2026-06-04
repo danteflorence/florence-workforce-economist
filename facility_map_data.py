@@ -10,11 +10,11 @@ Reprice formula (matches the engine):
     effective = max(fee - FICA_savings, 0)      # employer net after FICA offset
 """
 from __future__ import annotations
-import functools, io, zipfile
+import functools, io, os, zipfile
 import numpy as np
 import pandas as pd
 
-DATA = "data/"
+DATA = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data") + os.sep
 HOURS_MO = 156.0  # ~36 hrs/wk * 52 / 12, the engine's monthly-hours basis
 
 DEFAULTS = dict(offset_pct=0.40, markup_pct=0.20, floor=750.0, ceiling=2000.0)

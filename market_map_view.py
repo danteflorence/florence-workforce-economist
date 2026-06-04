@@ -148,8 +148,8 @@ def render() -> None:
         st.warning("No facilities match these filters. Loosen the setting, type or state filters.")
         return
 
-    # rate-band slider
-    lo = int(np.nanpercentile(d[col], 1)); hi = int(np.nanpercentile(d[col], 99))
+    # rate-band slider — default spans the full range so nothing is hidden up front
+    lo = int(np.floor(d[col].min())); hi = int(np.ceil(d[col].max()))
     if hi > lo:
         band = st.slider(f"{layer} band ($/RN/mo)", lo, hi, (lo, hi), key="mm_band")
         d = d[(d[col] >= band[0]) & (d[col] <= band[1])]
