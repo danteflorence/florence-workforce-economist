@@ -1641,71 +1641,34 @@ fica_eligible_months = 24       # FICA-exempt months per nurse
 st.sidebar.markdown(
     "<div style='font-family:Inter,sans-serif; font-size:0.7rem; "
     "letter-spacing:0.18em; text-transform:uppercase; color:#089478; "
-    "font-weight:600; margin: 0 0 6px 0;'>Pricing model</div>",
+    "font-weight:600; margin: 0 0 6px 0;'>Market-based pricing</div>",
     unsafe_allow_html=True,
 )
-_pricing_mode_choice = st.sidebar.radio(
-    "Pricing model",
-    [
-        "Flat placement fee ($50K per RN, KP-style)",
-        "FICA-offset target (40% of fee)",
-    ],
-    index=0,
-    label_visibility="collapsed",
-    help=(
-        "Flat placement fee: Florence collects a one-time fee per RN (default $50K), "
-        "amortized over the contract term. Matches the partner deck math.\n\n"
-        "FICA-offset target: Florence fee sized so FICA savings cover a target % "
-        "of the fee. More dynamic, captures more revenue per facility."
-    ),
-)
-if _pricing_mode_choice.startswith("Flat"):
-    pricing_mode = PricingMode.FLAT_PLACEMENT_FEE.value
-else:
-    pricing_mode = PricingMode.FICA_OFFSET_TARGET.value
+# Market-based (FICA-offset) pricing only — flat placement fee retired.
+pricing_mode = PricingMode.FICA_OFFSET_TARGET.value
 
-# ── 2. Mode-specific calibration ──
-if pricing_mode == PricingMode.FLAT_PLACEMENT_FEE.value:
-    st.sidebar.markdown("**Flat-fee calibration**")
-    flat_placement_fee_per_rn = st.sidebar.slider(
-        "Placement fee per RN ($)",
-        25_000, 100_000, 50_000, 1_000,
-        format="$%d",
-        help="One-time per-RN placement fee. Default $50K matches the partner deck. "
-             "Per-system overrides live in the System Ownership tab.",
-    )
-    flat_fee_term_months = st.sidebar.selectbox(
-        "Amortization period (months)", [12, 18, 24, 36, 48], index=3,
-        help="Months over which the placement fee is amortized for monthly-display purposes. "
-             "v2 default = 36 (3-year contract).",
-    )
-    term_months = flat_fee_term_months
-    # Mode-agnostic but unused in this branch
-    target_offset_pct = 0.40
-    price_floor_monthly = 750.0
-    price_ceiling_monthly = 2000.0
-    standard_monthly_fee = 1750.0
-else:
-    st.sidebar.markdown("**FICA-offset calibration**")
-    _target_offset_pct_int = st.sidebar.slider(
-        "Target FICA offset %", 10, 100, 40, 5,
-        format="%d%%",
-        help="Target share of Florence fee offset by employer FICA savings. "
-             "Default 40% — Florence retains 60% of fee net of FICA.",
-    )
-    target_offset_pct = _target_offset_pct_int / 100.0
-    price_floor_monthly = st.sidebar.slider(
-        "Price floor ($/RN/month)", 500, 3000, 750, 50,
-    )
-    price_ceiling_monthly = st.sidebar.slider(
-        "Price ceiling ($/RN/month)", 1000, 5000, 2000, 50,
-    )
-    term_months = st.sidebar.selectbox(
-        "Contract term (months)", [12, 18, 24, 36, 48], index=2,
-    )
-    standard_monthly_fee = 1750.0
-    flat_placement_fee_per_rn = 50_000.0
-    flat_fee_term_months = 36
+# ── 2. Market-based calibration ──
+st.sidebar.markdown("**Market-based calibration**")
+_target_offset_pct_int = st.sidebar.slider(
+    "Target FICA offset %", 10, 100, 40, 5,
+    format="%d%%",
+    help="Target share of the Florence fee offset by employer FICA savings. "
+         "Default 40% — Florence retains 60% of fee net of FICA.",
+)
+target_offset_pct = _target_offset_pct_int / 100.0
+price_floor_monthly = st.sidebar.slider(
+    "Price floor ($/RN/month)", 500, 3000, 750, 50,
+)
+price_ceiling_monthly = st.sidebar.slider(
+    "Price ceiling ($/RN/month)", 1000, 5000, 2000, 50,
+)
+term_months = st.sidebar.selectbox(
+    "Contract term (months)", [12, 18, 24, 36, 48], index=2,
+)
+standard_monthly_fee = 1750.0
+# inert defaults retained for downstream signatures; flat-fee mode is retired
+flat_placement_fee_per_rn = 50_000.0
+flat_fee_term_months = 36
 
 # ── 3. Partner channel ──
 with st.sidebar.expander(":material/handshake: Partner channel (atop core rate)", expanded=False):

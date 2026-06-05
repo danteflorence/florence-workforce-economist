@@ -22,7 +22,7 @@ import facility_map_data as FD
 HEAT = [[0.0, "#CFF5F3"], [0.35, "#0ABAB5"], [0.70, "#7340C4"], [1.0, "#5B2DA8"]]
 SPREAD_SCALE = [[0.0, "#F2C9C2"], [0.5, "#CFF5F3"], [1.0, "#067F7B"]]
 NAVY = "#0B2545"
-LAYER_COL = {"Florence rate": "florence", "+20% partner (AMN)": "partner",
+LAYER_COL = {"Florence rate": "florence", "+20% distribution partner": "partner",
              "FICA-effective (net)": "effective"}
 
 
@@ -279,7 +279,19 @@ def _render_demo(df: pd.DataFrame) -> None:
     allp = FD.reprice(df)
     nat_fac, nat_states = len(df), df["state"].nunique()
     nat_med = float(allp["florence"].median())
-    kd = FD.reprice(df[df["health_system"] == "Kaiser Permanente"])
+
+    HEROES = ["Kaiser Permanente", "Tenet Healthcare", "Sutter Health", "CommonSpirit Health",
+              "Advocate Health", "HCA", "Banner Health", "HonorHealth",
+              "Cedars Sinai Health System", "Providence", "Trinity Health", "CHRISTUS Health"]
+    HERO_DISP = {"HCA": "HCA Healthcare", "Cedars Sinai Health System": "Cedars-Sinai"}
+    hc = st.columns([2, 2])
+    hero = hc[0].selectbox("Hero account", HEROES,
+                           format_func=lambda s: HERO_DISP.get(s, s), key="mm_demo_hero")
+    hd = HERO_DISP.get(hero, hero)
+    partner = hc[1].radio("Audience", ["Distribution partner", "Investors"],
+                          horizontal=True, key="mm_demo_aud").startswith("Distribution")
+
+    kd = FD.reprice(df[df["health_system"] == hero])
     k_fac, k_st = len(kd), kd["state"].nunique()
     k_flor, k_part, k_eff = (float(kd["florence"].median()), float(kd["partner"].median()),
                              float(kd["effective"].median()))
@@ -288,20 +300,17 @@ def _render_demo(df: pd.DataFrame) -> None:
 
     NAT = [("Facilities priced", f"{nat_fac:,}"), ("States", str(nat_states)),
            ("Median Florence rate", f"${nat_med:,.0f}/RN/mo")]
-    K = [("Kaiser facilities", str(k_fac)), ("States", str(k_st)),
+    K = [(f"{hd} facilities", str(k_fac)), ("States", str(k_st)),
          ("Median Florence rate", f"${k_flor:,.0f}/RN/mo")]
-    P = [("Direct — Florence", f"${k_flor:,.0f}"), ("+20% partner (AMN)", f"${k_part:,.0f}"),
+    P = [("Direct — Florence", f"${k_flor:,.0f}"), ("+20% partner", f"${k_part:,.0f}"),
          ("Partner margin / RN / mo", f"${k_part - k_flor:,.0f}")]
     S = [("Florence permanent rate", f"${k_flor:,.0f}/RN/mo"),
          ("Saved vs agency premium", f"${k_spread:,.0f}/RN/mo")]
     E = [("Florence rate", f"${k_flor:,.0f}/RN/mo"),
          ("Effective after FICA offset", f"${k_eff:,.0f}/RN/mo")]
-    KP, IND, FLO, PART, EFF = "Kaiser Permanente", "Individual facilities", "Florence rate", "+20% partner (AMN)", "FICA-effective (net)"
+    KP, IND, FLO, PART, EFF = hero, "Individual facilities", "Florence rate", "+20% distribution partner", "FICA-effective (net)"
 
-    amn = st.radio("Audience", ["AMN — distribution partner", "Investors"],
-                   horizontal=True, key="mm_demo_aud").startswith("AMN")
-
-    if amn:
+    if partner:
         beats = [
             dict(system=None, view="MSA bubbles", layer=FLO, spread=False, stat=NAT,
                  headline="Market-adjusted rates in every metro you serve",
@@ -309,7 +318,7 @@ def _render_demo(df: pd.DataFrame) -> None:
                      "Each rate is calibrated to the local wage and agency market, so you can quote anywhere you already operate."),
             dict(system=KP, view=IND, layer=FLO, spread=False, stat=K,
                  headline="Your account — already priced",
-                 say="Type any system you serve and its facilities light up. Kaiser: 95 sites across 8 states, each priced to its local market."),
+                 say=f"Type any system you serve and its facilities light up. {hd}: {k_fac} sites across {k_st} states, each priced to its local market."),
             dict(system=KP, view=IND, layer=PART, spread=False, stat=P,
                  headline="Your margin, built into every nurse",
                  say=f"Through the partner channel it is +20% atop the Florence rate — ${k_part:,.0f} per RN per month. "
@@ -338,8 +347,8 @@ def _render_demo(df: pd.DataFrame) -> None:
                      "this product market-by-market — this engine is the defensible asset."),
             dict(system=KP, view=IND, layer=PART, spread=False, stat=P,
                  headline="Distribution = the largest staffing partner in the country",
-                 say="We don't build a national sales force — we plug into AMN's. The +20% partner channel is instant national "
-                     "reach and recurring, high-margin revenue."),
+                 say="We don't build a national sales force — we plug into established national distribution partners. The +20% "
+                     "partner channel is instant national reach and recurring, high-margin revenue."),
             dict(system=KP, view=IND, layer=FLO, spread=False, stat=K, export=True,
                  headline="Automated go-to-market",
                  say="Pricing, outreach, and these account pitches are all automated in one platform — operating leverage as we scale supply."),
@@ -380,11 +389,10 @@ def _render_demo(df: pd.DataFrame) -> None:
                     use_container_width=True, key="mm_demo_map")
 
     if b.get("export"):
-        if st.button("⬇ Generate Kaiser Permanente pitch PDF", key="mm_demo_pdf_btn"):
-            st.session_state["mm_demo_pdf"] = _spp.render(
-                "Kaiser Permanente", FD.reprice(df[df["health_system"] == "Kaiser Permanente"]),
-                via_partner=amn, markup=0.20)
+        if st.button(f"⬇ Generate {hd} pitch PDF", key="mm_demo_pdf_btn"):
+            st.session_state["mm_demo_pdf"] = _spp.render(hero, kd, via_partner=partner, markup=0.20)
+            st.session_state["mm_demo_pdf_name"] = f"Florence - {hd} pitch.pdf"
         if st.session_state.get("mm_demo_pdf"):
             st.download_button("Download pitch PDF", st.session_state["mm_demo_pdf"],
-                               file_name="Florence - Kaiser Permanente pitch.pdf",
+                               file_name=st.session_state.get("mm_demo_pdf_name", "pitch.pdf"),
                                mime="application/pdf", key="mm_demo_pdf_dl")

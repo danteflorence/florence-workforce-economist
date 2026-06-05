@@ -1,9 +1,9 @@
 """
 Florence — Nationwide Market-Adjusted RN Rates, MSA by MSA.
 
-Interactive choropleth-style bubble map for the AMN conversation. Three layers:
+Interactive choropleth-style bubble map for the distribution-partner conversation. Three layers:
   1. Florence rate            — target monthly fee per RN (the wholesale rate)
-  2. +20% partner (AMN)       — Florence rate x 1.20 (AMN wholesale channel)
+  2. +20% distribution partner — Florence rate x 1.20 (partner wholesale channel)
   3. FICA-effective (net)     — employer's effective cost after the FICA offset
 
 Each MSA (CBSA) is one bubble at its facility centroid, colored by the selected
@@ -54,7 +54,7 @@ def build_msa_table(recs_path="data/recommendations.parquet",
 def build_figure(g: pd.DataFrame) -> go.Figure:
     LAYERS = [
         ("florence",  "Florence rate", "Florence rate&nbsp;($/RN/mo)"),
-        ("partner",   "+20% partner channel (AMN)", "AMN partner rate&nbsp;($/RN/mo)"),
+        ("partner",   "+20% distribution partner", "Distribution-partner rate&nbsp;($/RN/mo)"),
         ("effective", "FICA-effective (net to hospital)", "FICA-effective&nbsp;($/RN/mo)"),
     ]
     # bubble size by RN need (area-scaled)
@@ -65,7 +65,7 @@ def build_figure(g: pd.DataFrame) -> go.Figure:
                        g["n_fac"], g["rn_need"], g["agency_prem"]], axis=-1)
     hover = ("<b>%{customdata[0]}</b><br>"
              "Florence rate: <b>$%{customdata[1]:,.0f}</b>/RN/mo<br>"
-             "+20% partner (AMN): $%{customdata[3]:,.0f}/RN/mo<br>"
+             "+20% distribution partner: $%{customdata[3]:,.0f}/RN/mo<br>"
              "FICA-effective (net): $%{customdata[2]:,.0f}/RN/mo<br>"
              "<span style='color:#667085'>%{customdata[4]} facilities · "
              "%{customdata[5]:,.0f} RN need · agency premium $%{customdata[6]:,.2f}/hr</span>"
@@ -108,12 +108,12 @@ def build_figure(g: pd.DataFrame) -> go.Figure:
         annotations=[dict(
             x=0.015, y=-0.05, xref="paper", yref="paper", showarrow=False,
             xanchor="left", align="left", font=dict(size=11, color="#475467"),
-            text=(f"<b>National medians</b> — Florence ${med_f:,.0f} &nbsp;·&nbsp; +20% AMN partner "
+            text=(f"<b>National medians</b> — Florence ${med_f:,.0f} &nbsp;·&nbsp; +20% distribution partner "
                   f"${med_p:,.0f} &nbsp;·&nbsp; FICA-effective ${med_e:,.0f} &nbsp;(per RN / month) "
                   f"&nbsp;·&nbsp; bubble size = modeled RN need<br>"
                   "<span style='color:#667085'>Each bubble is one metro area (CBSA), priced from local "
                   "agency-premium and wage data. Florence rate = wholesale monthly fee per RN · "
-                  "AMN partner channel = +20% atop · FICA-effective = employer net after the F-1 "
+                  "Distribution-partner channel = +20% atop · FICA-effective = employer net after the F-1 "
                   "payroll-tax offset. Source: Florence Workforce Economist · per-RN / month, 24-month term.</span>"))],
     )
     return fig
