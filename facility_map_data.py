@@ -121,17 +121,24 @@ def reprice(df: pd.DataFrame, offset_pct=0.40, markup_pct=0.20,
     d["effective"] = eff.clip(lower=0)
     d["agency_monthly"] = d["agency_prem_hr"] * HOURS_MO
     d["spread_vs_agency"] = d["agency_monthly"] - fee
+    # gross Florence subscription-revenue potential at the modeled RN need
+    # (fee $/RN/mo × RNs) — the "size of the prize" lens for the opportunity layer
+    rn = pd.to_numeric(d["rn_need"], errors="coerce").clip(lower=0).fillna(0.0)
+    d["florence_rev_mo"] = fee * rn
     return d
 
 
 def msa_rollup(d: pd.DataFrame) -> pd.DataFrame:
     """Aggregate a (re)priced facility frame to MSA centroids for the bubble view."""
     d = d[d["cbsa_code"].notna() & (d["cbsa_title"] != "Non-metro")]
+    if "florence_rev_mo" not in d.columns:  # robustness if called pre-reprice
+        d = d.assign(florence_rev_mo=0.0)
     g = d.groupby("cbsa_code").agg(
         msa=("cbsa_title", "first"), lat=("lat", "mean"), lon=("lon", "mean"),
         florence=("florence", "median"), partner=("partner", "median"),
         effective=("effective", "median"), n_fac=("ccn", "count"),
         rn_need=("rn_need", "sum"), agency_prem=("agency_prem_hr", "median"),
+        florence_rev_mo=("florence_rev_mo", "sum"),
     ).reset_index()
     return g.sort_values("rn_need", ascending=False).reset_index(drop=True)
 

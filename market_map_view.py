@@ -23,7 +23,8 @@ HEAT = [[0.0, "#CFF5F3"], [0.35, "#0ABAB5"], [0.70, "#7340C4"], [1.0, "#5B2DA8"]
 SPREAD_SCALE = [[0.0, "#F2C9C2"], [0.5, "#CFF5F3"], [1.0, "#067F7B"]]
 NAVY = "#0B2545"
 LAYER_COL = {"Florence rate": "florence", "+20% distribution partner": "partner",
-             "FICA-effective (net)": "effective"}
+             "FICA-effective (net)": "effective",
+             "Opportunity — annual $": "florence_rev_mo"}
 
 
 @st.cache_data(show_spinner=False)
@@ -34,17 +35,23 @@ def _facilities() -> pd.DataFrame:
 def _map_figure(d: pd.DataFrame, view: str, col: str, color_col: str,
                 label: str, spread: bool) -> go.Figure:
     diverging = spread and color_col == "spread_vs_agency"
+    is_opp = color_col == "florence_rev_mo"
     scale = SPREAD_SCALE if diverging else HEAT
-    cbar_title = ("Savings vs agency&nbsp;($/RN/mo)" if diverging
-                  else f"{label}&nbsp;($/RN/mo)")
+    if diverging:
+        cbar_title = "Savings vs agency&nbsp;($/RN/mo)"
+    elif is_opp:
+        cbar_title = "Annual Florence revenue"
+    else:
+        cbar_title = f"{label}&nbsp;($/RN/mo)"
 
     if view == "MSA bubbles":
         g = FD.msa_rollup(d)
         if not len(g):
             g = pd.DataFrame(columns=["lat", "lon", "florence", "partner", "effective",
-                                      "msa", "n_fac", "rn_need", "agency_prem"])
+                                      "msa", "n_fac", "rn_need", "agency_prem",
+                                      "florence_rev_mo"])
         cc = col if col in g.columns else "florence"
-        color_vals = g[cc]
+        color_vals = g[cc] * 12.0 if is_opp else g[cc]
         size = np.sqrt(g["rn_need"].clip(lower=1)) if len(g) else pd.Series(dtype=float)
         custom = (np.stack([g["msa"], g["florence"], g["partner"], g["effective"],
                             g["n_fac"], g["rn_need"]], axis=-1) if len(g) else None)
@@ -55,7 +62,7 @@ def _map_figure(d: pd.DataFrame, view: str, col: str, color_col: str,
         lat, lon, mx = g["lat"], g["lon"], 42.0
     else:
         g = d
-        color_vals = g[color_col]
+        color_vals = g[color_col] * 12.0 if is_opp else g[color_col]
         size = np.sqrt(g["rn_need"].clip(lower=1)) if len(g) else pd.Series(dtype=float)
         custom = (np.stack([g["name"], g["city"], g["state"], g["ftype"],
                             g["florence"], g["partner"], g["effective"]], axis=-1) if len(g) else None)
@@ -68,13 +75,16 @@ def _map_figure(d: pd.DataFrame, view: str, col: str, color_col: str,
     cmin = float(np.nanpercentile(color_vals, 3)) if len(color_vals) else 0.0
     cmax = float(np.nanpercentile(color_vals, 97)) if len(color_vals) else 1.0
 
+    cbar = dict(title=dict(text=cbar_title, side="right"),
+                thickness=14, len=0.7, tickprefix="$")
+    if is_opp:
+        cbar["tickformat"] = "~s"  # SI-suffix big totals: $5M, $250k
     fig = go.Figure(go.Scattergeo(
         lat=lat, lon=lon, mode="markers", customdata=custom, hovertemplate=hover,
         marker=dict(size=size, sizemode="area", sizeref=sizeref, sizemin=3,
                     color=color_vals, colorscale=scale, cmin=cmin, cmax=cmax,
                     opacity=0.9, line=dict(width=0.3, color="rgba(255,255,255,0.55)"),
-                    colorbar=dict(title=dict(text=cbar_title, side="right"),
-                                  thickness=14, len=0.7, tickprefix="$"))))
+                    colorbar=cbar)))
     fig.update_layout(
         geo=dict(scope="usa", projection_type="albers usa", bgcolor="rgba(0,0,0,0)",
                  landcolor="#F7FAFC", lakecolor="#EAF3F8", subunitcolor="#D7DEE6",
@@ -99,7 +109,9 @@ def render() -> None:
               on_click=lambda: st.session_state.update(mm_demo=True, mm_demo_step=0))
 
     c1, c2, c3 = st.columns([1.1, 1, 1.4])
-    layer = c1.radio("Rate layer", list(LAYER_COL), index=0, key="mm_layer")
+    layer = c1.radio("Map layer", list(LAYER_COL), index=0, key="mm_layer",
+                     help="Rate layers price per RN/month. Opportunity colors each "
+                          "metro/facility by annual Florence subscription revenue at the modeled RN need.")
     view = c2.radio("View", ["MSA bubbles", "Individual facilities"], index=0, key="mm_view")
     kinds = c3.multiselect("Setting", ["Inpatient", "Outpatient"],
                            default=["Inpatient", "Outpatient"], key="mm_kinds")
@@ -159,6 +171,7 @@ def render() -> None:
     d["employer_price"] = d["partner"] if via_partner else d["florence"]
     d["employer_effective"] = (d["employer_price"] - d["fica_savings"]).clip(lower=0)
     col = LAYER_COL[layer]
+    is_opp = col == "florence_rev_mo"
     color_col = "spread_vs_agency" if spread else col
 
     if not len(d):
@@ -166,13 +179,15 @@ def render() -> None:
         return
 
     # rate-band slider — default spans the full range so nothing is hidden up front
-    lo = int(np.floor(d[col].min())); hi = int(np.ceil(d[col].max()))
-    if hi > lo:
-        band = st.slider(f"{layer} band ($/RN/mo)", lo, hi, (lo, hi), key="mm_band")
-        d = d[(d[col] >= band[0]) & (d[col] <= band[1])]
-    if not len(d):
-        st.warning("No facilities in that rate band.")
-        return
+    # (skipped for the Opportunity layer, whose units are facility $-totals, not $/RN/mo)
+    if not is_opp:
+        lo = int(np.floor(d[col].min())); hi = int(np.ceil(d[col].max()))
+        if hi > lo:
+            band = st.slider(f"{layer} band ($/RN/mo)", lo, hi, (lo, hi), key="mm_band")
+            d = d[(d[col] >= band[0]) & (d[col] <= band[1])]
+        if not len(d):
+            st.warning("No facilities in that rate band.")
+            return
 
     # cap individual-facility rendering for performance
     note = ""
@@ -186,7 +201,10 @@ def render() -> None:
     k1, k2, k3, k4 = st.columns(4)
     k1.metric("Facilities in view", f"{len(d):,}")
     k2.metric("MSAs", f"{d['cbsa_title'].nunique():,}")
-    k3.metric(f"Median {layer.lower()}", f"${d[col].median():,.0f}/RN/mo")
+    if is_opp:
+        k3.metric("Annual Florence revenue in view", f"${d['florence_rev_mo'].sum() * 12:,.0f}")
+    else:
+        k3.metric(f"Median {layer.lower()}", f"${d[col].median():,.0f}/RN/mo")
     k4.metric("Total modeled RN need", f"{d['rn_need'].sum():,.0f}")
 
     if system != SYS_ALL:
@@ -213,11 +231,14 @@ def render() -> None:
     # ---- detail table + CSV export ----
     with st.expander(f"Facility detail & export ({len(d):,} rows)", expanded=False):
         cols = ["name", "city", "state", "kind", "ftype", "cbsa_title",
-                "florence", "partner", "effective", "rn_need"]
-        tbl = d[cols].rename(columns={
+                "florence", "partner", "effective", "florence_rev_mo", "rn_need"]
+        tbl = d[cols].copy()
+        tbl["florence_rev_mo"] = tbl["florence_rev_mo"] * 12.0
+        tbl = tbl.rename(columns={
             "name": "Facility", "city": "City", "state": "State", "kind": "Setting",
             "ftype": "Type", "cbsa_title": "Metro", "florence": "Florence $/RN/mo",
-            "partner": "+20% partner", "effective": "FICA-effective", "rn_need": "RN need"
+            "partner": "+20% partner", "effective": "FICA-effective",
+            "florence_rev_mo": "Florence annual $", "rn_need": "RN need"
         }).sort_values("RN need", ascending=False)
         st.dataframe(tbl.head(500), use_container_width=True, hide_index=True)
         st.download_button("Download this view (CSV)", tbl.to_csv(index=False).encode(),

@@ -15,7 +15,7 @@ APP = str(ROOT / "app.py")
 
 VIEWS = [
     "inpatient", "today", "outpatient", "funnel", "contacts", "call_center", "growth",
-    "market_intel", "forecast", "national_map", "market_map", "health_systems",
+    "market_intel", "forecast", "market_map", "health_systems",
     "system_ownership", "price_hospital", "hospital_table", "market_view",
     "elasticity", "calibration_sweep", "data_quality", "data_provenance",
     "playbook", "onboarding", "pipeline",

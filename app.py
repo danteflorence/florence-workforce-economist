@@ -1939,7 +1939,6 @@ _nav_button("Pipeline", "pipeline", "assignment")
 
 # ─── Deep tools ──────────────────────────────────────────────────
 _nav_section("Deep tools")
-_nav_button("National map", "national_map", "public")
 _nav_button("Market map", "market_map", "map")
 _nav_button("Health systems", "health_systems", "business")
 _nav_button("System ownership", "system_ownership", "swap_horiz")
@@ -4352,104 +4351,6 @@ if view == "market_map":
         _mm.render()
     except Exception as _e:
         st.error(f"Market map failed to load: {_e}")
-
-# =====================================================================
-# MAP — every hospital plotted, colored by system or financial opportunity
-# =====================================================================
-if view == "national_map":
-    st.subheader("National hospital map")
-    st.caption(
-        "Every Medicare-registered hospital plotted by ZIP centroid. "
-        "Filter by state, system, opportunity tier; color and size encode "
-        "the Florence net revenue potential at this calibration."
-    )
-
-    map_view = priced[priced["lat"].notna() & priced["lon"].notna()].copy()
-
-    f1, f2, f3, f4 = st.columns(4)
-    state_filter = f1.multiselect("State", sorted(map_view["state"].unique()), default=[], key="map_state")
-    system_filter = f2.multiselect(
-        "Health system",
-        sorted(map_view["health_system"].unique()),
-        default=[],
-        key="map_system",
-    )
-    htype_filter = f3.multiselect(
-        "Hospital type",
-        sorted(map_view["hospital_type"].dropna().unique()),
-        default=[],
-        key="map_htype",
-    )
-    min_florence_net = f4.number_input(
-        "Min Florence net revenue ($)", min_value=0, value=0, step=100_000,
-    )
-
-    mv = map_view.copy()
-    if state_filter:
-        mv = mv[mv["state"].isin(state_filter)]
-    if system_filter:
-        mv = mv[mv["health_system"].isin(system_filter)]
-    if htype_filter:
-        mv = mv[mv["hospital_type"].isin(htype_filter)]
-    mv = mv[mv["florence_net_total"] >= min_florence_net]
-
-    st.write(f"**{len(mv):,}** hospitals plotted of {len(map_view):,} total")
-
-    # Render using pydeck for tooltips + sizing
-    try:
-        import pydeck as pdk
-
-        # Color tier by Florence net potential
-        def _tier_color(v: float) -> list:
-            if v >= 50_000_000: return [220, 20, 20, 200]    # red
-            if v >= 10_000_000: return [240, 130, 30, 200]   # orange
-            if v >= 1_000_000:  return [240, 210, 50, 200]   # yellow
-            if v >  0:          return [110, 190, 100, 180]  # green
-            return [120, 120, 130, 100]                       # grey
-
-        mv["_color"] = mv["florence_net_total"].apply(_tier_color)
-        mv["_radius"] = (mv["florence_net_total"].clip(lower=0) ** 0.5) * 3 + 1500
-
-        layer = pdk.Layer(
-            "ScatterplotLayer",
-            data=mv,
-            get_position="[lon, lat]",
-            get_fill_color="_color",
-            get_radius="_radius",
-            pickable=True,
-            opacity=0.7,
-            stroked=False,
-            radius_min_pixels=2,
-            radius_max_pixels=40,
-        )
-        view_state = pdk.ViewState(
-            latitude=39.5, longitude=-98.0, zoom=3.5, pitch=0,
-        )
-        tooltip = {
-            "html": (
-                "<b>{name}</b><br/>"
-                "{city}, {state}<br/>"
-                "System: {health_system}<br/>"
-                "Fee/nurse: ${f_total}<br/>"
-                "Monthly: ${monthly_fee_per_nurse}<br/>"
-                "RN need: {rn_need} FTE<br/>"
-                "Florence net: ${florence_net_total}"
-            ),
-            "style": {"backgroundColor": "white", "color": "black"},
-        }
-        st.pydeck_chart(pdk.Deck(
-            map_style=None,
-            layers=[layer],
-            initial_view_state=view_state,
-            tooltip=tooltip,
-        ))
-        st.caption(
-            "Color tiers: 🔴 ≥$50M  🟠 ≥$10M  🟡 ≥$1M  🟢 ≥$1  ⚫ infeasible. "
-            "Size scales with Florence net at projected RN need."
-        )
-    except Exception as e:
-        st.warning(f"pydeck render failed ({e}); falling back to st.map")
-        st.map(mv[["lat", "lon"]])
 
 # =====================================================================
 # HEALTH SYSTEMS — aggregate pricing & financials by parent system
