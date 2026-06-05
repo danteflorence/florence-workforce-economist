@@ -6,22 +6,50 @@
 
 services:
   # ─── Internal Florence Workforce Economist (sales + ops) ──────────
+  # Docker image (see Dockerfile) so a persistent disk can preserve mutable
+  # runtime state — auth users/sessions, CRM overrides, mail log, activations,
+  # activity log — across redeploys. The entrypoint reseeds read-only reference
+  # data on boot, so deploys still update the universe while state persists.
   - type: web
     name: florence-economist
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter            # a persistent disk requires a paid plan
+    region: oregon           # change to virginia / frankfurt / singapore if closer
+    autoDeploy: true
+    healthCheckPath: /_stcore/health   # Streamlit health endpoint (200 when up)
+    disk:
+      name: florence-data
+      mountPath: /app/data
+      sizeGB: 1
+    envVars:
+      # App auth OFF — Cloudflare Access gates who reaches the app (clean
+      # magic-link access for AMN / investors, no Streamlit login). Flip to "1"
+      # to use the in-app email-OTP / Google sign-in instead. See DEPLOY.md.
+      - key: FLORENCE_INTERNAL_AUTH
+        value: "0"
+      # Set real values in the Render dashboard (sync:false keeps them out of git):
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: BLS_REGISTRATION_KEY
+        sync: false
+
+  # ─── Pricing API (FastAPI) — the shared pricing brain for a React product ─
+  # Pure pricing_engine.price(): no data files, no secrets. The future
+  # customer-facing React app calls this instead of re-implementing pricing.
+  - type: web
+    name: florence-pricing-api
     runtime: python
-    plan: starter
-    buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run app.py --server.port $PORT --server.headless true --server.enableCORS false
+    plan: starter            # 'free' is fine for dev (it sleeps between calls)
+    region: oregon
+    autoDeploy: true
+    healthCheckPath: /health
+    buildCommand: pip install -r requirements-api.txt
+    startCommand: uvicorn pricing_api:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
         value: "3.11"
-      - key: STREAMLIT_SERVER_RUN_ON_SAVE
-        value: "false"
-      # Set these in the Render dashboard, not in this file:
-      # - key: ANTHROPIC_API_KEY
-      #   sync: false
-      # - key: BLS_REGISTRATION_KEY
-      #   sync: false
 
   # ─── Public Customer Calculator (lead funnel) ─────────────────────
   - type: web

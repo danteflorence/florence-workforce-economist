@@ -1,0 +1,64 @@
+# Build context hygiene — keep secrets + mutable state + large raw sources OUT
+# of the image. (On Render the build context is a clean git clone, but this also
+# protects local `docker build`.)
+
+# VCS + Python caches
+.git
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Virtualenvs
+venv/
+.venv/
+env/
+
+# Secrets — NEVER bake into an image
+.env
+.env.*
+secrets.toml
+.streamlit/secrets.toml
+.streamlit/credentials.toml
+data/.auth_secret
+data/auth_users.csv
+data/auth_sessions.csv
+data/auth_otp_codes.csv
+data/auth_otp_outbox.log
+
+# Mutable runtime state — lives on the persistent disk, not the image
+data/contact_overrides.csv
+data/mail_log.csv
+data/activations.csv
+data/activity_log.csv
+data/system_owners.csv
+data/snoozes.csv
+data/call_claims.csv
+data/growth_employer_pipeline.csv
+data/growth_university_pipeline.csv
+
+# Large re-downloadable raw sources (not read at runtime)
+data/hcris_raw/
+data/raw_cms_pecos/
+data/raw_cms_non_hospital/
+data/2024_Gaz_zcta_national.txt
+
+# Backups, working files, regenerated bundles
+data/*.bak_*
+data/*.bak.*
+data/output/
+*.swp
+*.swo
+*~
+
+# Dev-only (not needed at runtime; keeps the image small)
+tests/
+.github/
+launch.json
+.DS_Store
+Thumbs.db

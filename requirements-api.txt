@@ -1,0 +1,6 @@
+# Florence Pricing API — deps for the FastAPI service ONLY.
+# Deliberately tiny: pricing_engine.py is pure stdlib, so the API needs no
+# pandas/numpy/streamlit. This keeps the API image small and fast to cold-start.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+httpx>=0.27          # used by fastapi's TestClient in tests/test_pricing_api.py
