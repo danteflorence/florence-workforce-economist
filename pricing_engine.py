@@ -49,10 +49,9 @@ SS_WAGE_BASE_2026 = 184_500
 class PricingMode(Enum):
     """v2 methodology pricing modes (Methodology §6).
 
-    Two production modes (FLAT_PLACEMENT_FEE, FICA_OFFSET_TARGET) and three
-    sensitivity / legacy modes.
+    Production mode is FICA_OFFSET_TARGET (market-based); the rest are
+    sensitivity / fallback / legacy modes.
     """
-    FLAT_PLACEMENT_FEE = "flat_placement_fee"   # Florence fee = $50K (default) per RN, amortized over term
     FICA_OFFSET_TARGET = "fica_offset_target"   # Florence fee = FICA savings / target_offset_pct
     STANDARD_FEE = "standard_fee"               # Flat $1,750/RN/month
     BOUNDED_TARGET = "bounded_target"           # Target offset with custom floor/ceiling
@@ -79,12 +78,8 @@ class Calibration:
     # Pricing mode (v2 §6)
     pricing_mode: PricingMode = PricingMode.FICA_OFFSET_TARGET
 
-    # Flat placement-fee mode (matches KP/AMN customer-facing deck math)
-    flat_placement_fee_per_rn: float = 50_000.0   # $50K per RN, amortized over flat_fee_term_months
-    flat_fee_term_months: int = 36                # 3-year contract by default
-
     # Monthly-anchored guardrails (v2 §6.2-6.3) — canonical buyer unit
-    standard_monthly_fee: float = 1_750.00      # default flat fee mode
+    standard_monthly_fee: float = 1_750.00      # low-confidence fallback fee
     target_offset_pct: float = 0.40             # FICA covers 40% of fee (Florence protects more of the core rate)
     price_floor_monthly: float = 750.00         # $/RN/month — lowered to include 99% of US universe
     price_ceiling_monthly: float = 2_000.00     # $/RN/month
@@ -393,7 +388,7 @@ def price(
     H_term = H_monthly * cal.term_months  # covered RN hours over contract
 
     # ---- Manual-review gate (v2 §10 validation) --------------------------
-    # FLAT_PLACEMENT_FEE and STANDARD_FEE don't need a positive agency premium —
+    # STANDARD_FEE doesn't need a positive agency premium —
     # the fee is set independent of agency math. Only FICA_OFFSET_TARGET /
     # BOUNDED_TARGET / LEGACY_V1 are blocked when agency premium is missing or
     # non-positive (because their fee logic uses the agency premium).
@@ -454,29 +449,6 @@ def price(
         suggested_fee = final_fee
         constrained_by = "override"
         rationale.append(f"MANUAL EXCEPTION override: ${final_fee:,.0f}/RN/month.")
-    elif cal.pricing_mode == PricingMode.FLAT_PLACEMENT_FEE:
-        # Flat per-RN placement fee, amortized over flat_fee_term_months.
-        # Per-system overrides come from system_fee_overrides.json
-        # (e.g., Kaiser $50K × 36mo, HCA $40K × 36mo).
-        try:
-            from system_fee_overrides import fee_for_system
-            flat_fee_total, months = fee_for_system(
-                system_id,
-                default_fee=cal.flat_placement_fee_per_rn,
-                default_term=cal.flat_fee_term_months,
-            )
-        except ImportError:
-            flat_fee_total = cal.flat_placement_fee_per_rn
-            months = cal.flat_fee_term_months
-        months = max(months, 1)
-        suggested_fee = flat_fee_total / months
-        final_fee = suggested_fee
-        constrained_by = "flat_placement"
-        rationale.append(
-            f"FLAT_PLACEMENT_FEE mode: ${flat_fee_total:,.0f} per RN "
-            f"amortized over {months} months = ${final_fee:,.0f}/RN/month."
-            + (" (system-specific override applied)" if system_id != "independent" else "")
-        )
     elif cal.pricing_mode == PricingMode.STANDARD_FEE:
         final_fee = cal.standard_monthly_fee
         suggested_fee = final_fee

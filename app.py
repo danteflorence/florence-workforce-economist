@@ -1589,9 +1589,6 @@ def cached_priced(
     rn_share_of_contracted_labor: float, coverage_fill_factor: float,
     agency_displacement_factor: float,
     placeholder_msp_markup_pct: float,
-    flat_placement_fee_per_rn: float = 50_000.0,
-    flat_fee_term_months: int = 36,
-    flat_fee_overrides_mtime: float = 0.0,  # cache key for system_fee_overrides.json
 ) -> pd.DataFrame:
     cal = Calibration(
         pricing_mode=PricingMode(pricing_mode),
@@ -1608,8 +1605,6 @@ def cached_priced(
         coverage_fill_factor=coverage_fill_factor,
         agency_displacement_factor=agency_displacement_factor,
         placeholder_msp_markup_pct=placeholder_msp_markup_pct,
-        flat_placement_fee_per_rn=flat_placement_fee_per_rn,
-        flat_fee_term_months=flat_fee_term_months,
     )
     cohort = CohortMix(eta=eta)
     return price_batch(cached_universe(sysov.overrides_mtime()), cohort, cal)
@@ -1666,9 +1661,6 @@ term_months = st.sidebar.selectbox(
     "Contract term (months)", [12, 18, 24, 36, 48], index=2,
 )
 standard_monthly_fee = 1750.0
-# inert defaults retained for downstream signatures; flat-fee mode is retired
-flat_placement_fee_per_rn = 50_000.0
-flat_fee_term_months = 36
 
 # ── 3. Partner channel ──
 with st.sidebar.expander(":material/handshake: Partner channel (atop core rate)", expanded=False):
@@ -1740,7 +1732,6 @@ zeta = 0.0  # no buffer in v2 model
 # ---------------------------------------------------------------------------
 
 universe = cached_universe(sysov.overrides_mtime())
-import system_fee_overrides as sysfee
 priced = cached_priced(
     pricing_mode,
     target_offset_pct, price_floor_monthly, price_ceiling_monthly,
@@ -1750,9 +1741,6 @@ priced = cached_priced(
     amn_partner_markup_pct, direct_partner_markup_pct,
     rn_share, coverage, agency_displacement_factor,
     placeholder_msp_markup_pct,
-    flat_placement_fee_per_rn=flat_placement_fee_per_rn,
-    flat_fee_term_months=flat_fee_term_months,
-    flat_fee_overrides_mtime=sysfee.overrides_mtime(),
 )
 
 total = len(priced)
@@ -4958,192 +4946,6 @@ if view == "system_ownership":
             )
         else:
             st.caption("No active overrides to export.")
-
-    # ─────────────────────────────────────────────────────────────────
-    # Per-system flat-fee overrides — for FLAT_PLACEMENT_FEE pricing
-    # ─────────────────────────────────────────────────────────────────
-    st.divider()
-    florence_eyebrow("05 · Per-system flat-fee overrides")
-    florence_headline(
-        "System-specific placement fees.",
-        subhead=(
-            "Default is $50K per RN amortized over 36 months. Override per system "
-            "(Kaiser, HCA, Sutter, etc.) when a customer accepts a premium or demands a discount. "
-            "Florence's flat-fee pricing mode uses these per-system values automatically."
-        ),
-    )
-
-    active_fee_ovs = sysfee.load_overrides()
-    fee_sys_summary = sysov.known_systems(current_universe)
-    fee_sys_summary = fee_sys_summary[
-        fee_sys_summary["health_system_id"] != "independent"
-    ]
-
-    sf1, sf2, sf3 = st.columns(3)
-    sf1.metric(
-        "Active fee overrides",
-        f"{len(active_fee_ovs):,}",
-        "out of {} named systems".format(len(fee_sys_summary)),
-    )
-    if active_fee_ovs:
-        avg_fee = sum(o.flat_fee_per_rn for o in active_fee_ovs.values()) / len(active_fee_ovs)
-        sf2.metric(
-            "Mean override fee",
-            f"${avg_fee:,.0f}/RN",
-            f"default ${50_000:,.0f}",
-        )
-        avg_term = sum(o.term_months for o in active_fee_ovs.values()) / len(active_fee_ovs)
-        sf3.metric(
-            "Mean override term",
-            f"{avg_term:.0f} mo",
-            "default 36 mo",
-        )
-    else:
-        sf2.metric("Mean override fee", "—", "no overrides yet")
-        sf3.metric("Mean override term", "—", "no overrides yet")
-
-    # ─── Add or edit override ───────────────────────────────────────
-    st.markdown("### Add or update an override")
-    af1, af2, af3 = st.columns([2, 1, 1])
-    with af1:
-        sys_picker_labels = ["— Pick a system —"] + [
-            f"{row['health_system']} · {row['n_hospitals']:,} hospitals"
-            + (
-                f"  (current: ${active_fee_ovs[row['health_system_id']].flat_fee_per_rn:,.0f}/RN, "
-                f"{active_fee_ovs[row['health_system_id']].term_months}mo)"
-                if row['health_system_id'] in active_fee_ovs
-                else ""
-            )
-            for _, row in fee_sys_summary.iterrows()
-        ]
-        sys_picker_ids = ["__none__"] + fee_sys_summary["health_system_id"].tolist()
-        sys_picker_names = [""] + fee_sys_summary["health_system"].tolist()
-        sel_idx = st.selectbox(
-            "Health system",
-            range(len(sys_picker_labels)),
-            format_func=lambda i: sys_picker_labels[i],
-            key="fee_sys_picker",
-        )
-        sel_sys_id = sys_picker_ids[sel_idx]
-        sel_sys_name = sys_picker_names[sel_idx]
-        existing_ov = active_fee_ovs.get(sel_sys_id) if sel_sys_id != "__none__" else None
-    with af2:
-        fee_default = int(existing_ov.flat_fee_per_rn) if existing_ov else 50_000
-        new_fee = st.slider(
-            "Placement fee per RN ($)",
-            25_000, 100_000, fee_default, 1_000,
-            format="$%d",
-            key="fee_new_fee",
-        )
-    with af3:
-        term_default = existing_ov.term_months if existing_ov else 36
-        new_term = st.selectbox(
-            "Amortization (months)",
-            [12, 18, 24, 36, 48],
-            index=[12, 18, 24, 36, 48].index(term_default) if term_default in [12, 18, 24, 36, 48] else 3,
-            key="fee_new_term",
-        )
-
-    new_note = st.text_input(
-        "Note (optional — e.g., 'Pilot pricing, accepted Q1 2026')",
-        value=existing_ov.note if existing_ov else "",
-        key="fee_new_note",
-    )
-
-    fa1, fa2 = st.columns([1, 4])
-    with fa1:
-        save_disabled = sel_sys_id == "__none__"
-        if st.button(
-            ":material/save: Save override",
-            type="primary",
-            disabled=save_disabled,
-            use_container_width=True,
-            key="fee_save",
-        ):
-            sysfee.upsert(
-                system_id=sel_sys_id,
-                system_name=sel_sys_name,
-                flat_fee_per_rn=new_fee,
-                term_months=new_term,
-                note=new_note,
-            )
-            monthly_amort = new_fee / new_term
-            st.success(
-                f"Saved override for **{sel_sys_name}** — "
-                f"${new_fee:,.0f}/RN over {new_term}mo = "
-                f"${monthly_amort:,.0f}/RN/mo. "
-                "Live in flat-fee pricing immediately."
-            )
-            st.cache_data.clear()
-            st.rerun()
-    with fa2:
-        if existing_ov:
-            st.caption(
-                f"**Editing existing override.** Currently {sel_sys_name}: "
-                f"${existing_ov.flat_fee_per_rn:,.0f}/RN over {existing_ov.term_months}mo. "
-                f"Note: _{existing_ov.note or '(none)'}_"
-            )
-        else:
-            st.caption(
-                "No override exists for the selected system. "
-                "Saving will create a new one. Default if no override: "
-                f"$50,000/RN over 36 months ($1,389/RN/mo amortized)."
-            )
-
-    # ─── Active overrides table ─────────────────────────────────────
-    st.markdown("### Active overrides")
-    if not active_fee_ovs:
-        st.info(
-            "No per-system flat-fee overrides yet. Add one above, or every system "
-            "falls back to the global default ($50K / 36mo).",
-            icon=":material/info:",
-        )
-    else:
-        rows = []
-        for sid, ov in active_fee_ovs.items():
-            monthly = ov.flat_fee_per_rn / ov.term_months
-            rows.append({
-                "system_id": sid,
-                "system_name": ov.system_name,
-                "flat_fee_per_rn": ov.flat_fee_per_rn,
-                "term_months": ov.term_months,
-                "monthly_amortized": monthly,
-                "note": ov.note,
-                "created_at": ov.created_at[:10],
-            })
-        ov_df = pd.DataFrame(rows)
-        st.dataframe(
-            ov_df,
-            column_config={
-                "system_id": st.column_config.TextColumn("System id", width="small"),
-                "system_name": st.column_config.TextColumn("System name"),
-                "flat_fee_per_rn": st.column_config.NumberColumn("Fee per RN", format="$%d"),
-                "term_months": st.column_config.NumberColumn("Term (mo)", width="small"),
-                "monthly_amortized": st.column_config.NumberColumn("$/RN/mo", format="$%.0f"),
-                "note": st.column_config.TextColumn("Note"),
-                "created_at": st.column_config.TextColumn("Added", width="small"),
-            },
-            hide_index=True,
-            use_container_width=True,
-        )
-        del_l, del_r = st.columns([1, 3])
-        with del_l:
-            if st.button(
-                ":material/delete_sweep: Clear ALL fee overrides",
-                type="secondary",
-                use_container_width=True,
-                key="fee_clear_all",
-            ):
-                n = sysfee.delete_all()
-                st.success(f"Cleared {n} fee override(s). Reverted to $50K/36mo global default.")
-                st.cache_data.clear()
-                st.rerun()
-        with del_r:
-            st.caption(
-                "Clearing all reverts every system to the global flat-fee default "
-                "($50K per RN over 36 months = $1,389/RN/mo). Cannot be undone."
-            )
-
 
 # =====================================================================
 # PRICE A HOSPITAL — single-hospital evidence pack with proposal
