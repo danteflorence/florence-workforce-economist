@@ -68,28 +68,31 @@ def load_facilities() -> pd.DataFrame:
         "health_system": m["health_system"].fillna(""),
     })
 
-    # ---- outpatient / non-hospital ----
-    nf = pd.read_csv(DATA + "non_hospital_facilities.csv", dtype={"ccn": str, "zip": str})
-    pr = pd.read_parquet(DATA + "non_hospital_priced.parquet")
-    nf["ccn"] = nf["ccn"].astype(str)
-    pr["ccn"] = pr["ccn"].astype(str)
-    o = nf.merge(pr[["ccn", "monthly_fica_savings_per_rn", "florence_fee_per_rn_month",
-                     "employer_net_cost_per_rn_month"]], on="ccn", how="inner")
-    o["zip"] = o["zip"].astype(str).str.extract(r"(\d{5})")[0].str.zfill(5)
-    o = o.merge(_zip_centroids(), on="zip", how="left").merge(_zip_cbsa(), on="zip", how="left")
-    o = o[o["lat"].notna() & o["lon"].notna()]
-    out = pd.DataFrame({
-        "ccn": o["ccn"], "name": o["name"], "city": o["city"], "state": o["state"],
-        "lat": o["lat"].astype(float), "lon": o["lon"].astype(float),
-        "cbsa_code": o["cbsa_code"], "cbsa_title": o["cbsa_title"].fillna("Non-metro"),
-        "kind": "Outpatient", "ftype": o["facility_type"],
-        "fica_savings": pd.to_numeric(o["monthly_fica_savings_per_rn"], errors="coerce"),
-        "florence_stored": pd.to_numeric(o["florence_fee_per_rn_month"], errors="coerce"),
-        "effective_stored": pd.to_numeric(o["employer_net_cost_per_rn_month"], errors="coerce"),
-        "rn_need": pd.to_numeric(o["rn_estimate"], errors="coerce").fillna(1.0).clip(lower=1.0),
-        "agency_prem_hr": np.nan,
-        "health_system": o["health_system"].fillna(""),
-    })
+    # ---- outpatient / non-hospital (degrade to inpatient-only if data absent) ----
+    try:
+        nf = pd.read_csv(DATA + "non_hospital_facilities.csv", dtype={"ccn": str, "zip": str})
+        pr = pd.read_parquet(DATA + "non_hospital_priced.parquet")
+        nf["ccn"] = nf["ccn"].astype(str)
+        pr["ccn"] = pr["ccn"].astype(str)
+        o = nf.merge(pr[["ccn", "monthly_fica_savings_per_rn", "florence_fee_per_rn_month",
+                         "employer_net_cost_per_rn_month"]], on="ccn", how="inner")
+        o["zip"] = o["zip"].astype(str).str.extract(r"(\d{5})")[0].str.zfill(5)
+        o = o.merge(_zip_centroids(), on="zip", how="left").merge(_zip_cbsa(), on="zip", how="left")
+        o = o[o["lat"].notna() & o["lon"].notna()]
+        out = pd.DataFrame({
+            "ccn": o["ccn"], "name": o["name"], "city": o["city"], "state": o["state"],
+            "lat": o["lat"].astype(float), "lon": o["lon"].astype(float),
+            "cbsa_code": o["cbsa_code"], "cbsa_title": o["cbsa_title"].fillna("Non-metro"),
+            "kind": "Outpatient", "ftype": o["facility_type"],
+            "fica_savings": pd.to_numeric(o["monthly_fica_savings_per_rn"], errors="coerce"),
+            "florence_stored": pd.to_numeric(o["florence_fee_per_rn_month"], errors="coerce"),
+            "effective_stored": pd.to_numeric(o["employer_net_cost_per_rn_month"], errors="coerce"),
+            "rn_need": pd.to_numeric(o["rn_estimate"], errors="coerce").fillna(1.0).clip(lower=1.0),
+            "agency_prem_hr": np.nan,
+            "health_system": o["health_system"].fillna(""),
+        })
+    except (FileNotFoundError, OSError, KeyError, ValueError):
+        out = inp.iloc[0:0]  # outpatient data/geo files unavailable → inpatient-only
 
     df = pd.concat([inp, out], ignore_index=True)
     df = df[df["fica_savings"].notna() & (df["fica_savings"] > 0)]

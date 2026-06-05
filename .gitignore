@@ -37,8 +37,10 @@ data/raw_cms_pecos/
 # CMS non-hospital provider raw files
 data/raw_cms_non_hospital/
 
-# Geo source files (can re-download from Census)
-data/geo/
+# Geo source files (can re-download from Census) — except the small ZIP→CBSA
+# crosswalk, which the Market Map needs at runtime on Streamlit Cloud.
+data/geo/*
+!data/geo/zip_cbsa.csv
 
 # Large Gazetteer files (Census, re-downloadable)
 data/2024_Gaz_zcta_national.txt
