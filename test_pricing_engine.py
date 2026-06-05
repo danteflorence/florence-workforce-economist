@@ -68,7 +68,7 @@ class TestPricingFormula(unittest.TestCase):
     def test_default_calibration_constants(self):
         cal = Calibration()
         self.assertEqual(cal.pricing_mode, PricingMode.FICA_OFFSET_TARGET)
-        self.assertEqual(cal.target_offset_pct, 0.50)
+        self.assertEqual(cal.target_offset_pct, 0.40)
         self.assertEqual(cal.price_floor_monthly, 750)
         self.assertEqual(cal.price_ceiling_monthly, 2000)
         self.assertEqual(cal.term_months, 24)
@@ -76,10 +76,10 @@ class TestPricingFormula(unittest.TestCase):
         self.assertEqual(cal.monthly_hours_rn, 156)
 
     def test_fica_offset_target_at_target(self):
-        """When suggested fee falls within floor/ceiling, it equals FICA × 2."""
+        """When suggested fee falls within floor/ceiling, it equals FICA / target_offset_pct."""
         result = price(kaiser_like(), CohortMix(eta=1.0), Calibration())
-        # FICA savings × 2 should = monthly fee (under 50% target)
-        expected_fee = result.employer_fica_savings_per_rn_per_month / 0.50
+        # FICA savings / 0.40 should = monthly fee (under the 40% target)
+        expected_fee = result.employer_fica_savings_per_rn_per_month / 0.40
         # Should hit target exactly (not floor or ceiling)
         if 750 <= expected_fee <= 2000:
             self.assertAlmostEqual(
@@ -88,7 +88,7 @@ class TestPricingFormula(unittest.TestCase):
                 places=2,
                 msg="Fee should equal FICA / target_offset_pct when no clamping",
             )
-            self.assertAlmostEqual(result.actual_fica_offset_pct, 0.50, places=3)
+            self.assertAlmostEqual(result.actual_fica_offset_pct, 0.40, places=3)
 
     def test_floor_binds_when_fica_too_low(self):
         cal = Calibration()
@@ -190,25 +190,27 @@ class TestFICACalculation(unittest.TestCase):
 
 
 class TestRevenueSplit(unittest.TestCase):
-    """v2 partner-share handling."""
+    """v2 partner-markup handling — margin is ADDED ATOP Florence's protected core fee."""
 
     def test_direct_channel_zero_partner(self):
-        cal = Calibration(direct_partner_share=0.0)
+        cal = Calibration(direct_partner_markup_pct=0.0)
         r = price(kaiser_like(), CohortMix(eta=1.0), cal)
         self.assertEqual(r.partner_share, 0.0)
         self.assertEqual(r.partner_revenue_monthly, 0)
+        # Florence's net always equals the protected core fee
         self.assertAlmostEqual(r.florence_net_monthly, r.florence_monthly_fee_per_rn, places=2)
 
-    def test_amn_partner_share_20pct(self):
-        cal = Calibration(direct_partner_share=0.20)  # apply as direct = 20%
+    def test_partner_markup_20pct(self):
+        cal = Calibration(direct_partner_markup_pct=0.20)  # 20% markup atop core (direct channel)
         r = price(kaiser_like(), CohortMix(eta=1.0), cal)
-        # Direct channel uses direct_partner_share
         self.assertAlmostEqual(r.partner_share, 0.20, places=4)
+        # partner margin = core fee × markup; Florence net is unchanged (protected)
         self.assertAlmostEqual(
             r.partner_revenue_monthly,
             r.florence_monthly_fee_per_rn * 0.20,
             places=2,
         )
+        self.assertAlmostEqual(r.florence_net_monthly, r.florence_monthly_fee_per_rn, places=2)
 
 
 class TestImmigrationAddon(unittest.TestCase):
