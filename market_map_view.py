@@ -31,26 +31,8 @@ def _facilities() -> pd.DataFrame:
     return FD.load_facilities()
 
 
-def _focus(d: pd.DataFrame, metro_q: str):
-    """Return (center dict, zoom) — fly to a searched metro, else fit the data."""
-    if metro_q:
-        hit = d[d["cbsa_title"].fillna("").str.contains(metro_q.strip(), case=False, regex=False)]
-        if len(hit):
-            return dict(lat=float(hit["lat"].mean()), lon=float(hit["lon"].mean())), 8.0
-    if not len(d):
-        return dict(lat=39.5, lon=-98.5), 3.1
-    # center on the bounding-box midpoint (not the mean) so every facility fits,
-    # even when a system spans coast-to-coast plus Hawaii/Alaska
-    lat0 = float((d["lat"].min() + d["lat"].max()) / 2)
-    lon0 = float((d["lon"].min() + d["lon"].max()) / 2)
-    span = max(float(d["lat"].max() - d["lat"].min()), float(d["lon"].max() - d["lon"].min()), 0.5)
-    zoom = (2.2 if span > 60 else 3.1 if span > 35 else 4.2 if span > 18
-            else 5.6 if span > 7 else 7.0)
-    return dict(lat=lat0, lon=lon0), zoom
-
-
 def _map_figure(d: pd.DataFrame, view: str, col: str, color_col: str,
-                label: str, spread: bool, metro_q: str) -> go.Figure:
+                label: str, spread: bool) -> go.Figure:
     diverging = spread and color_col == "spread_vs_agency"
     scale = SPREAD_SCALE if diverging else HEAT
     cbar_title = ("Savings vs agency&nbsp;($/RN/mo)" if diverging
@@ -86,17 +68,18 @@ def _map_figure(d: pd.DataFrame, view: str, col: str, color_col: str,
     cmin = float(np.nanpercentile(color_vals, 3)) if len(color_vals) else 0.0
     cmax = float(np.nanpercentile(color_vals, 97)) if len(color_vals) else 1.0
 
-    fig = go.Figure(go.Scattermapbox(
+    fig = go.Figure(go.Scattergeo(
         lat=lat, lon=lon, mode="markers", customdata=custom, hovertemplate=hover,
         marker=dict(size=size, sizemode="area", sizeref=sizeref, sizemin=3,
                     color=color_vals, colorscale=scale, cmin=cmin, cmax=cmax,
-                    opacity=0.85,
+                    opacity=0.9, line=dict(width=0.3, color="rgba(255,255,255,0.55)"),
                     colorbar=dict(title=dict(text=cbar_title, side="right"),
                                   thickness=14, len=0.7, tickprefix="$"))))
-    center, zoom = _focus(d, metro_q)
-    fig.update_layout(mapbox=dict(style="carto-positron", center=center, zoom=zoom),
-                      margin=dict(l=0, r=0, t=0, b=0), height=620,
-                      paper_bgcolor="white")
+    fig.update_layout(
+        geo=dict(scope="usa", projection_type="albers usa", bgcolor="rgba(0,0,0,0)",
+                 landcolor="#F7FAFC", lakecolor="#EAF3F8", subunitcolor="#D7DEE6",
+                 countrycolor="#C2CCD6", showlakes=True, showland=True, showsubunits=True),
+        margin=dict(l=0, r=0, t=0, b=0), height=640, paper_bgcolor="white")
     return fig
 
 
@@ -146,7 +129,7 @@ def render() -> None:
                             default=[], key="mm_ftype")
     states = f2.multiselect("State", sorted(df["state"].dropna().unique()),
                             default=[], key="mm_states")
-    metro_q = f3.text_input("Find a metro (flies the map there)", "", key="mm_metro")
+    metro_q = f3.text_input("Find a metro (filters to it)", "", key="mm_metro")
 
     spread = st.checkbox("Color by savings vs current agency spend (inpatient only)",
                          value=False, key="mm_spread")
@@ -165,6 +148,8 @@ def render() -> None:
         d = d[d["ftype"].isin(ftypes)]
     if states:
         d = d[d["state"].isin(states)]
+    if metro_q:
+        d = d[d["cbsa_title"].fillna("").str.contains(metro_q.strip(), case=False, regex=False)]
     if system != SYS_ALL:
         d = d[d["health_system"] == system]
     if spread:
@@ -219,8 +204,9 @@ def render() -> None:
                                file_name=st.session_state.get("mm_pdf_name", "pitch.pdf"),
                                mime="application/pdf", key="mm_pdf_dl")
 
-    st.plotly_chart(_map_figure(d_plot, view, col, color_col, layer, spread, metro_q),
-                    use_container_width=True, key="mm_chart")
+    st.plotly_chart(_map_figure(d_plot, view, col, color_col, layer, spread),
+                    use_container_width=True, key="mm_chart",
+                    config={"scrollZoom": True, "displayModeBar": True})
     if note:
         st.caption(note)
 
@@ -257,18 +243,19 @@ def render() -> None:
             cfig = go.Figure()
             for i, s in enumerate(cmp):
                 ds = df[df["health_system"] == s]
-                cfig.add_trace(go.Scattermapbox(
+                cfig.add_trace(go.Scattergeo(
                     lat=ds["lat"], lon=ds["lon"], name=s[:26], mode="markers",
-                    marker=dict(size=8, color=palette[i % len(palette)], opacity=0.82),
+                    marker=dict(size=7, color=palette[i % len(palette)], opacity=0.82,
+                                line=dict(width=0.3, color="rgba(255,255,255,0.55)")),
                     hovertext=ds["name"], hoverinfo="text+name"))
-            allc = df[df["health_system"].isin(cmp)]
             cfig.update_layout(
-                mapbox=dict(style="carto-positron", zoom=2.5,
-                            center=dict(lat=float((allc["lat"].min() + allc["lat"].max()) / 2),
-                                        lon=float((allc["lon"].min() + allc["lon"].max()) / 2))),
-                margin=dict(l=0, r=0, t=0, b=0), height=480,
+                geo=dict(scope="usa", projection_type="albers usa", bgcolor="rgba(0,0,0,0)",
+                         landcolor="#F7FAFC", lakecolor="#EAF3F8", subunitcolor="#D7DEE6",
+                         countrycolor="#C2CCD6", showlakes=True, showland=True, showsubunits=True),
+                margin=dict(l=0, r=0, t=0, b=0), height=520,
                 legend=dict(orientation="h", y=0.99, x=0.01, bgcolor="rgba(255,255,255,0.75)"))
-            st.plotly_chart(cfig, use_container_width=True, key="mm_cmp_map")
+            st.plotly_chart(cfig, use_container_width=True, key="mm_cmp_map",
+                            config={"scrollZoom": True})
         else:
             st.caption("Pick at least two systems to compare their footprints and rates.")
 
@@ -385,8 +372,9 @@ def _render_demo(df: pd.DataFrame) -> None:
         return
     cc = LAYER_COL[b["layer"]]
     color_col = "spread_vs_agency" if b["spread"] else cc
-    st.plotly_chart(_map_figure(d, b["view"], cc, color_col, b["layer"], b["spread"], ""),
-                    use_container_width=True, key="mm_demo_map")
+    st.plotly_chart(_map_figure(d, b["view"], cc, color_col, b["layer"], b["spread"]),
+                    use_container_width=True, key="mm_demo_map",
+                    config={"scrollZoom": True})
 
     if b.get("export"):
         if st.button(f"⬇ Generate {hd} pitch PDF", key="mm_demo_pdf_btn"):
