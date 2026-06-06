@@ -51,6 +51,24 @@ services:
       - key: PYTHON_VERSION
         value: "3.11"
 
+  # ─── Customer pricing calculator (React/Vite static site) ─────────
+  # Calls florence-pricing-api. Set VITE_API_URL (build-time) to that service's
+  # URL in the dashboard. SPA rewrite so client routing works. See web/ + DEPLOY.md.
+  - type: web
+    name: florence-pricing-web
+    runtime: static
+    rootDir: web
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    autoDeploy: true
+    envVars:
+      - key: VITE_API_URL
+        sync: false   # e.g. https://florence-pricing-api.onrender.com
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
   # ─── Public Customer Calculator (lead funnel) ─────────────────────
   - type: web
     name: florence-calculator

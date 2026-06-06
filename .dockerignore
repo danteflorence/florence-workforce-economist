@@ -62,3 +62,7 @@ tests/
 launch.json
 .DS_Store
 Thumbs.db
+
+# Customer-facing React app — deployed separately as a Render static site,
+# never part of the Streamlit image.
+web/

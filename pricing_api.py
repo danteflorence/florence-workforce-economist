@@ -102,6 +102,9 @@ class PriceResponse(BaseModel):
     fica_adjusted_effective_cost_per_rn_month: float
     actual_fica_offset_pct: float
     net_monthly_savings_per_rn: float
+    # customer-safe headline (no tax mechanics): the travel/agency premium per
+    # RN/month the employer stops paying — drives the "Today vs Florence" compare.
+    monthly_agency_premium_avoided_per_rn: float
 
     # fee detail + partner economics (markup atop the protected core fee)
     final_fee_constrained_by: str
@@ -161,6 +164,7 @@ def price_endpoint(req: PriceRequest) -> PriceResponse:
         fica_adjusted_effective_cost_per_rn_month=r.fica_adjusted_effective_cost_per_rn_month,
         actual_fica_offset_pct=r.actual_fica_offset_pct,
         net_monthly_savings_per_rn=r.net_monthly_savings_per_rn,
+        monthly_agency_premium_avoided_per_rn=r.monthly_agency_premium_avoided_per_rn,
         final_fee_constrained_by=r.final_fee_constrained_by,
         term_months=r.term_months,
         all_in_florence_fee_per_rn_month=r.all_in_florence_fee_per_rn_month,

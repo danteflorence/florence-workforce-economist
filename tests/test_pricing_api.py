@@ -53,6 +53,8 @@ class TestPricingAPI(unittest.TestCase):
         self.assertAlmostEqual(data["employer_fica_savings_per_rn_per_month"],
                                eng.employer_fica_savings_per_rn_per_month, places=2)
         self.assertAlmostEqual(data["actual_fica_offset_pct"], eng.actual_fica_offset_pct, places=4)
+        self.assertAlmostEqual(data["monthly_agency_premium_avoided_per_rn"],
+                               eng.monthly_agency_premium_avoided_per_rn, places=2)
         self.assertEqual(data["channel"], eng.channel.value)
         self.assertTrue(data["feasible"])
 
