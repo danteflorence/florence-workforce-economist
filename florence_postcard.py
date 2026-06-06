@@ -280,8 +280,8 @@ body {{ font-family:{_SANS}; color:#101828; }}
       </div>
     </div>
     <div class="fine">Estimate based on the prevailing registered-nurse wage in your market.
-      Your exact monthly rate is confirmed at activation. Permanent RNs placed on your payroll
-      on a month-to-month service term.</div>
+      Your exact monthly rate is confirmed at activation. Nurses commit to a two-year term,
+      billed monthly. After two years they can stay on your staff, yours to keep.</div>
   </div>
   {addr_col}
 </div></body></html>"""
