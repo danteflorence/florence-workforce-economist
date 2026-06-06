@@ -1,0 +1,4 @@
+# Florence × Lob tracking webhook (lob_webhook.py) — deps for that service ONLY.
+# It's a tiny standalone Flask receiver for Lob delivery events; kept out of the
+# main app/image so Flask doesn't bloat the Streamlit deploy.
+flask>=3.0

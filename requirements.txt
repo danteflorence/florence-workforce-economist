@@ -15,3 +15,4 @@ google-api-python-client>=2.100
 google-auth>=2.30
 google-auth-oauthlib>=1.2
 dnspython>=2.6
+qrcode[pil]>=7.4       # postcard QR codes (florence_postcard.py); pulls in Pillow

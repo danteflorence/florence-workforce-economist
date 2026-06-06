@@ -129,6 +129,41 @@ python3 scripts/smoke_check.py \
 
 ---
 
+## Direct mail — Lob postcards (`florence_postcard.py` / `lob_send.py`)
+
+Personalized, market-priced postcards for the non-hospital universe (home health,
+surgery centers, skilled nursing, dialysis, hospice), mailed via Lob. Files:
+`florence_postcard.py` (themed creative + QR), `lob_send.py` (gated batch sender),
+`lob_webhook.py` (delivery tracking), `postcard_copy.json` (copy source of truth),
+`assets/` (RN photo + white wordmark). The existing in-app `lob_mailer.py` is
+untouched — this is the upgraded creative + batch path alongside it.
+
+**One-time setup**
+- Host `assets/nurse-rn.png` + `assets/florence-white.svg` on a public HTTPS URL
+  (CDN / S3); Lob's renderer fetches them by URL.
+- Env (Render dashboard / `.env`, never in git):
+  - `LOB_API_KEY` — `test_…` first (renders a real preview PDF, no mail, no
+    charge); swap to `live_…` only for an approved segment.
+  - `FLORENCE_SIGNUP_URL=https://florenceedu.com/activate` (the QR target)
+  - `FLORENCE_NURSE_IMG`, `FLORENCE_LOGO_WHITE` — the two hosted asset URLs
+  - `LOB_WEBHOOK_SECRET` — only if you deploy the tracking webhook
+
+**Sending is always gated**
+1. Dry-run the whole segment: `lob_send.run_segment(rows, live=False)` — builds
+   every payload, mails nothing, charges nothing. Eyeball the count.
+2. A human approves the segment.
+3. Flip `live=True` to mail. Idempotency keys mean a retried batch never
+   double-mails a facility.
+
+**Tracking webhook (optional)** — `lob_webhook.py` is a small Flask receiver
+(`pip install -r requirements-webhook.txt`). Deploy as its own service, set
+`LOB_WEBHOOK_SECRET`, register the URL + events in the Lob dashboard, and wire
+the `persist()` TODO to your datastore. Not in the Blueprint yet — it needs that
+datastore wire first.
+
+**Compliance** — copy is value + activation only; no FICA / IRS / visa / tax
+language, verified on the rendered HTML.
+
 ## Roadmap (after this lands)
 
 - **Phase 2 — customer-facing product in React.** Build the calculator / pitch /

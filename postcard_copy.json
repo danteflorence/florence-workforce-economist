@@ -1,0 +1,35 @@
+{
+  "_comment": "Single source of truth for Florence postcard copy. Read by florence_postcard.py (production/Lob) AND mirrored by Postcard Mailer.html (design tool). Edit here; both surfaces stay in sync. Value + activation only — no FICA / visa / tax language. No italics, no em-dashes. {verb} and {city} are filled per-account.",
+  "taglines": {
+    "quote": {
+      "head": "Permanent RNs, committed for two years. The capacity to care for more.",
+      "sub": "Globally-educated, U.S.-licensed RNs placed direct on your payroll. No travelers, no agency premium."
+    },
+    "market": {
+      "head": "Your next nurse doesn't have to be a traveler.",
+      "sub": "Florence places permanent, globally-educated RNs, fully U.S.-licensed, direct on your payroll, to {verb} in {city} without agency markup."
+    }
+  },
+  "types": {
+    "HHA": {
+      "label": "Home Health Agency", "short": "Home Health", "verb": "fill every visit",
+      "recap": "Fill every visit on your own schedule. Permanent, globally-educated RNs, fully U.S.-licensed, on your payroll, not per-visit contractors."
+    },
+    "ASC": {
+      "label": "Ambulatory Surgery Center", "short": "Surgery Center", "verb": "keep every OR staffed",
+      "recap": "Keep every OR running with permanent, globally-educated RNs, fully U.S.-licensed, placed direct. No per-diem premium, no travelers."
+    },
+    "SNF": {
+      "label": "Skilled Nursing Facility", "short": "Skilled Nursing", "verb": "cover every shift",
+      "recap": "Cover every shift with permanent, globally-educated RNs, fully U.S.-licensed, on your payroll. No agency markup, no rotating travelers."
+    },
+    "DIALYSIS": {
+      "label": "Dialysis Center", "short": "Dialysis", "verb": "staff every chair",
+      "recap": "Staff every chair with permanent, globally-educated RNs, fully U.S.-licensed, placed direct. Steady coverage, no agency premium."
+    },
+    "HOSPICE": {
+      "label": "Hospice", "short": "Hospice", "verb": "cover every patient",
+      "recap": "A permanent RN for every patient. Globally-educated, fully U.S.-licensed, placed direct on your payroll, no agency."
+    }
+  }
+}
