@@ -42,13 +42,33 @@ DATA_DIR = Path(__file__).parent / "data"
 DIRECTORY_FILE = DATA_DIR / "system_directory.csv"
 
 
-def _name_matches(query: str, name: str) -> bool:
+def _clean_str(v) -> str:
+    """NaN/None-safe string coalescing helper. A missing directory `display_name`
+    arrives from the left-join as NaN — which is TRUTHY in Python — so the idiom
+    `display_name or health_system` wrongly keeps the NaN. Use this instead."""
+    return v if isinstance(v, str) else ""
+
+
+def _num(v, default: float = 0.0) -> float:
+    """NaN/None-safe number. `int(NaN)` raises, and `v or 0` keeps NaN (truthy)."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return default
+    return default if f != f else f   # f != f is True only for NaN
+
+
+def _name_matches(query: str, name) -> bool:
     """Space/punctuation-insensitive substring match, so 'Honor Health',
-    'honorhealth', and 'honor-health' all find the system 'HonorHealth'."""
+    'honorhealth', and 'honor-health' all find the system 'HonorHealth'.
+    A NaN/None name (an unranked system with no display_name) is treated as no
+    match, so the caller falls through to the other name rather than matching 'nan'."""
     q = re.sub(r"[^a-z0-9]", "", str(query or "").lower())
     if not q:
         return True
-    return q in re.sub(r"[^a-z0-9]", "", str(name or "").lower())
+    if not isinstance(name, str):
+        return False
+    return q in re.sub(r"[^a-z0-9]", "", name.lower())
 
 
 # ─── Loading ────────────────────────────────────────────────────────
@@ -194,9 +214,9 @@ def _tile_html(row: dict, idx: int = 0, status: Optional[str] = None) -> str:
     card as LaTeX math — the root cause of the deployed tile bug.
     """
     accent = _accent_for(idx)
-    name = row.get("display_name") or row.get("health_system") or "Unknown"
+    name = _clean_str(row.get("display_name")) or _clean_str(row.get("health_system")) or "Unknown"
     name_s = _safe(name)
-    child_domains_raw = (row.get("child_domains") or "").strip()
+    child_domains_raw = _clean_str(row.get("child_domains")).strip()
     child_domains = [
         d.strip() for d in child_domains_raw.replace(",", ";").split(";")
         if d.strip()
@@ -224,10 +244,10 @@ def _tile_html(row: dict, idx: int = 0, status: Optional[str] = None) -> str:
         )
 
     inits = _safe(_initials(name))
-    n_fac = int(row.get("n_facilities", 0) or 0)
-    rn_need = int(row.get("rn_need", 0) or 0)
-    monthly_fee = float(row.get("monthly_fee_target", 0) or 0)
-    term_savings = float(row.get("term_savings_target", 0) or 0)
+    n_fac = int(_num(row.get("n_facilities")))
+    rn_need = int(_num(row.get("rn_need")))
+    monthly_fee = _num(row.get("monthly_fee_target"))
+    term_savings = _num(row.get("term_savings_target"))
 
     # ─── Multi-logo consortium variant ────────────────────────────────
     # Styled initials badges for each child brand instead of remote logos
@@ -287,11 +307,13 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
     status_map = status_map or {}
     if (search or "").strip():
         merged = merged[merged.apply(
-            lambda r: _name_matches(search, r.get("display_name") or r.get("health_system") or ""),
+            lambda r: _name_matches(search, r.get("display_name"))
+                      or _name_matches(search, r.get("health_system")),
             axis=1,
         )]
     if merged.empty:
-        st.info("No systems match your search." if q else "No systems match the current filter.")
+        st.info("No systems match your search." if (search or "").strip()
+                else "No systems match the current filter.")
         return None
 
     visible = merged.head(max_tiles)
@@ -310,7 +332,7 @@ def render_inpatient_tile_grid(st, sys_agg: pd.DataFrame,
                 st.markdown(_tile_html(row.to_dict(), idx,
                                        status=status_map.get(str(sys_id))),
                             unsafe_allow_html=True)
-                name = row.get("display_name") or row.get("health_system")
+                name = _clean_str(row.get("display_name")) or _clean_str(row.get("health_system"))
                 ba, bb = st.columns(2)
                 with ba:
                     if st.button("Open system →", key=f"tile_open_{sys_id}",
