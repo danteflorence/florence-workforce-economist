@@ -1,0 +1,5 @@
+# Florence Hospital Booklet → Lob + PDF
+requests>=2.31
+# PDF batch (render_pdf.py):
+playwright>=1.40        # then: playwright install chromium
+# QR is generated in-browser (build page) via qrcode-generator (CDN) — no Python dep.

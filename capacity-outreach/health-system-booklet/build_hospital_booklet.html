@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Hospital Booklet — Lob template + PDF</title>
+<script src="https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"></script>
+<link rel="stylesheet" href="renderer/booklet-base.css">
+<link rel="stylesheet" href="renderer/hospital-booklet.css">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+body{font-family:'Inter',system-ui,sans-serif;margin:0;background:#F7FAFA;color:#101828;}
+.bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:15px 22px;background:#fff;border-bottom:1px solid #E4E7EC;position:sticky;top:0;z-index:10;}
+.bar h1{font-size:15px;margin:0;font-weight:600;}
+.bar h1 span{color:#98A2B3;font-weight:500;}
+.bar .sp{flex:1;}
+.bar label{font-size:12px;font-weight:600;color:#475467;}
+.bar select,.bar input{font-size:13px;border:1px solid #D0D5DD;border-radius:8px;padding:7px 10px;font-family:inherit;}
+.btn{border:0;background:#0ABAB5;color:#fff;font-weight:600;font-size:13px;border-radius:8px;padding:9px 15px;cursor:pointer;}
+.btn.alt{background:#101828;}
+.btn.ghost{background:#fff;color:#101828;border:1px solid #D0D5DD;}
+.btn:hover{filter:brightness(1.05);}
+.note{padding:13px 22px;font-size:13px;color:#475467;line-height:1.55;background:#fff;border-bottom:1px solid #E4E7EC;}
+.note code{background:#F2F4F7;border-radius:4px;padding:1px 6px;font-family:ui-monospace,Menlo,monospace;font-size:12px;}
+.wrap{padding:22px;display:flex;flex-direction:column;gap:16px;align-items:center;}
+.frame{width:864px;box-shadow:0 10px 30px rgba(16,24,40,.14);border-radius:6px;overflow:hidden;background:#fff;}
+.pgnav{display:flex;gap:8px;align-items:center;font-size:13px;color:#475467;}
+.pgnav button{width:30px;height:30px;border-radius:7px;border:1px solid #D0D5DD;background:#fff;cursor:pointer;}
+.seg{display:inline-flex;background:#F2F4F7;border-radius:9px;padding:3px;}
+.seg button{border:0;background:transparent;font-weight:600;font-size:12.5px;color:#475467;padding:6px 12px;border-radius:6px;cursor:pointer;}
+.seg button.on{background:#fff;color:#101828;box-shadow:0 1px 2px rgba(16,24,40,.1);}
+</style>
+</head>
+<body>
+<div class="bar">
+  <h1>Build Hospital Booklet <span>· 8pp · 9×6 · Lob + PDF</span></h1>
+  <div class="sp"></div>
+  <label>System</label>
+  <select id="sys"></select>
+  <div class="seg" id="themeseg"><button data-t="teal" class="on">Teal</button><button data-t="purple">Purple</button></div>
+  <label>Asset base</label>
+  <input id="base" value="https://florenceedu.com/" style="width:200px">
+  <button class="btn ghost" id="pdf">Print / Save PDF</button>
+  <button class="btn" id="dlTpl">Download Lob template</button>
+</div>
+<div class="note">
+  <b>Two outputs from one design.</b> <b>Print / Save PDF</b> renders the selected system with real values at 9×6 (one page per sheet) for vendor printing or proofs. <b>Download Lob template</b> emits the static, Lob-ready HTML with Handlebars merge vars (<code>{{system_name}}</code>, <code>{{short_name}}</code>, <code>{{effective_cost}}</code>, <code>{{list_rate}}</code>, <code>{{rn_need}}</code>, <code>{{n_facilities}}</code>) plus the per-system tracked <code>{{landing_url}}</code> / <code>{{qr_url}}</code> (UTM + campaign/account ids, no PII) — upload that to Lob and drive it with the audience CSV from <code>hospital_audience.py</code>. Set the <b>Asset base</b> to where you host <code>assets/florence-*.svg</code>.
+</div>
+<div class="wrap">
+  <div class="pgnav"><button id="prev">‹</button><span><b id="pn">1</b> / 8 · <span id="pnm">Cover</span></span><button id="next">›</button></div>
+  <div class="frame"><div id="preview" style="width:864px;height:576px;"></div></div>
+</div>
+
+<script src="renderer/hospital-systems.js"></script>
+<script src="renderer/hospital-booklet.js"></script>
+<script>
+const PAGES = window.HOSPITAL_BOOKLET_PAGES;
+const U = window.FLORENCE_UNIVERSE, ORDER = window.FLORENCE_UNIVERSE_ORDER;
+let theme="teal", pg=0, sysId=ORDER[0];
+const SPRINT="https://florenceedu.com/sprint";
+function qrDataURI(t){ try{ const q=qrcode(0,"M"); q.addData(t); q.make(); return q.createDataURL(7,0);}catch(e){return "";} }
+const QR=qrDataURI(SPRINT);
+
+function renderPreview(){
+  document.getElementById("preview").innerHTML = window.renderHospitalPage(PAGES[pg].id, U[sysId], {qr:QR, theme});
+  document.getElementById("pn").textContent = pg+1;
+  document.getElementById("pnm").textContent = PAGES[pg].name;
+}
+async function cssBundle(){
+  const [a,b] = await Promise.all([fetch("renderer/booklet-base.css").then(r=>r.text()), fetch("renderer/hospital-booklet.css").then(r=>r.text())]);
+  return a+"\n"+b;
+}
+function docShell(css, body, extraHead, printMode){
+  return `<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,700;0,800;0,900;1,500;1,700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+${css}
+:root{--font-display:'Playfair Display','GT Sectra Display',Georgia,serif !important;--font-serif:'Source Serif 4','GT Sectra',Georgia,serif !important;--font-sans:'Inter',system-ui,Helvetica,Arial,sans-serif !important;--font-mono:'JetBrains Mono',ui-monospace,Menlo,monospace !important;}
+@page{ size:9in 6in; margin:0; }
+html,body{ margin:0; padding:0; background:#fff; }
+.page{ width:9in; height:6in; box-shadow:none !important; border-radius:0 !important; page-break-after:always; break-after:page; page-break-inside:avoid; break-inside:avoid; position:relative; overflow:hidden; display:block; }
+.page:last-child{ page-break-after:auto; break-after:auto; }
+${extraHead||""}
+</style></head><body>${body}${printMode?'<script>window.onload=()=>{setTimeout(()=>window.print(),350)}<\/script>':''}</body></html>`;
+}
+async function buildTemplate(){
+  const base = document.getElementById("base").value.trim() || "https://florenceedu.com/";
+  const css = await cssBundle();
+  // Lob template: per-system tracked QR + landing URL come from the audience CSV
+  // ({{qr_url}}/{{landing_url}}), so the QR/URL are unique per recipient (UTM + ids).
+  let body = PAGES.map(p=>window.renderHospitalPage(p.id, window.HB_TEMPLATE_SYSTEM, {qr:"{{qr_url}}", urlLabel:"{{landing_url}}", theme})).join("\n");
+  body = body.split('src="assets/').join('src="'+base+'assets/');
+  return docShell(css, body);
+}
+async function buildFilled(){
+  const css = await cssBundle();
+  const base = document.getElementById("base").value.trim() || "";
+  let body = PAGES.map(p=>window.renderHospitalPage(p.id, U[sysId], {qr:QR, theme})).join("\n");
+  if(base) body = body.split('src="assets/').join('src="'+base+'assets/');
+  else body = body.split('src="assets/').join('src="renderer/assets/');
+  return docShell(css, body, "", true);
+}
+function dl(name, text){ const b=new Blob([text],{type:"text/html"}); const a=document.createElement("a"); a.href=URL.createObjectURL(b); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),1000); }
+
+(function(){ const s=document.getElementById("sys"); s.innerHTML=ORDER.map(id=>`<option value="${id}">${U[id].name}</option>`).join(""); s.value=sysId; s.onchange=()=>{sysId=s.value;renderPreview();}; })();
+document.getElementById("prev").onclick=()=>{pg=(pg-1+8)%8;renderPreview();};
+document.getElementById("next").onclick=()=>{pg=(pg+1)%8;renderPreview();};
+document.querySelectorAll("#themeseg button").forEach(b=>b.onclick=()=>{theme=b.dataset.t;document.querySelectorAll("#themeseg button").forEach(x=>x.classList.toggle("on",x===b));renderPreview();});
+document.getElementById("dlTpl").onclick=async()=>{ dl(`florence-hospital-booklet-${theme}.html`, await buildTemplate()); };
+document.getElementById("pdf").onclick=async()=>{ const w=window.open("","_blank"); w.document.write(await buildFilled()); w.document.close(); };
+
+renderPreview();
+</script>
+</body>
+</html>

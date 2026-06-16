@@ -1,0 +1,38 @@
+/* ============================================================
+   Florence University Network booklet — BASE atoms
+   Shared by the interactive viewer AND the Lob template builder.
+   Tokens + page frame + shared atoms + co-brand lockup.
+   (Direction-specific rules live in booklet-directions.css.)
+   ============================================================ */
+:root{
+  --florence-teal:#0ABAB5; --florence-teal-deep:#00A4B4; --florence-teal-text:#067F7B;
+  --florence-teal-wash:#E6F8F7; --florence-teal-tint:#B7EBE8;
+  --royal-purple:#7340C4; --royal-purple-deep:#5B2DA8; --royal-purple-wash:#F1ECFB; --royal-purple-light:#AD8EDC;
+  --ink:#101828; --ink-2:#475467; --ink-3:#98A2B3; --ink-4:#D0D5DD;
+  --paper:#FFFFFF; --paper-warm:#F7FAFA; --paper-tint:#F2F4F7;
+  --rule:#E4E7EC; --rule-strong:#D0D5DD; --success:#16A34A;
+  --font-display:'GT Sectra Display','GT Sectra',Georgia,serif;
+  --font-serif:'GT Sectra','GT Sectra Display',Georgia,serif;
+  --font-sans:'Inter',system-ui,-apple-system,'Segoe UI',Helvetica,Arial,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+.page *{box-sizing:border-box;}
+.page{width:864px;height:576px;background:#fff;position:relative;overflow:hidden;}
+.wm{height:26px;display:block;}
+.kicker{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--florence-teal-text);}
+.kicker.purple{color:var(--royal-purple-deep);}
+.serif-h{font-family:var(--font-display);font-weight:700;letter-spacing:-.018em;color:var(--ink);text-wrap:balance;}
+.qr-box{width:108px;height:108px;border:1.5px solid var(--ink);border-radius:12px;padding:8px;background:#fff;}
+.qr-box img{width:100%;height:100%;display:block;}
+.inkfree{position:absolute;border:1px dashed var(--rule-strong);border-radius:6px;display:flex;align-items:flex-start;justify-content:flex-start;}
+.inkfree .note{font-size:9px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);padding:7px 9px;}
+
+/* Co-brand lockup: Florence × University */
+.cobrand{display:flex;align-items:center;gap:14px;}
+.cobrand .cb-fl{height:26px;width:auto;display:block;flex:0 0 auto;}
+.cobrand .cb-x{font-size:18px;line-height:1;color:var(--ink-3);font-weight:400;flex:0 0 auto;}
+.cobrand .cb-uni{display:inline-flex;align-items:center;height:30px;max-width:190px;}
+.cobrand .cb-uni img{max-height:26px;max-width:190px;width:auto;height:auto;object-fit:contain;display:block;}
+.cobrand.on-color .cb-x{color:rgba(255,255,255,.6);}
+.cobrand.on-color .cb-uni{background:#fff;border-radius:8px;padding:6px 11px;height:auto;max-width:178px;}
+.cobrand.on-color .cb-uni img{max-height:22px;max-width:156px;}

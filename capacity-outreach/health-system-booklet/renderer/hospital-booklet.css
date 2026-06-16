@@ -1,0 +1,139 @@
+/* ============================================================
+   Florence Hospital Booklet — page styles
+   Page frame (.page, 864×576) + atoms come from booklet-base.css.
+   Theme tokens (teal default / purple) + per-page layouts here.
+   ============================================================ */
+.page.hb{
+  --ac:var(--florence-teal); --ac-deep:var(--florence-teal-deep); --ac-text:var(--florence-teal-text);
+  --ac-wash:var(--florence-teal-wash); --ac-tint:var(--florence-teal-tint);
+  --sec:var(--royal-purple); --sec-text:var(--royal-purple-deep); --sec-wash:var(--royal-purple-wash);
+  font-family:var(--font-sans); color:var(--ink);
+}
+.page.hb.theme-purple{
+  --ac:var(--royal-purple); --ac-deep:var(--royal-purple-deep); --ac-text:var(--royal-purple-deep);
+  --ac-wash:var(--royal-purple-wash); --ac-tint:var(--royal-purple-light);
+  --sec:var(--florence-teal); --sec-text:var(--florence-teal-text); --sec-wash:var(--florence-teal-wash);
+}
+
+/* shared atoms */
+.page.hb .hb-pad{padding:42px 50px;height:100%;display:flex;flex-direction:column;}
+.page.hb .hb-khead{display:flex;align-items:baseline;justify-content:space-between;border-bottom:1px solid var(--rule);padding-bottom:11px;}
+.page.hb .hb-kick{font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ac-text);}
+.page.hb .hb-pno{font-family:var(--font-mono);font-size:12px;color:var(--ink-3);}
+.page.hb .hb-h2{font-family:var(--font-display);font-weight:700;font-size:33px;line-height:1.08;letter-spacing:-.02em;color:var(--ink);margin:20px 0 0;text-wrap:balance;}
+.page.hb .hb-h2.narrow{max-width:20ch;}
+.page.hb .hb-body{font-size:14.5px;line-height:1.6;color:var(--ink-2);max-width:48ch;margin:14px 0 0;}
+.page.hb .hb-body.wide{max-width:66ch;}
+
+.page.hb .hb-lockup{display:inline-flex;align-items:center;gap:15px;}
+.page.hb .hb-lockup img{height:24px;display:block;}
+.page.hb .hb-sep{width:1px;height:20px;background:var(--rule-strong);}
+.page.hb .hb-lockup.on-dark .hb-sep{background:rgba(255,255,255,.35);}
+.page.hb .hb-cli{font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--ink);letter-spacing:-.01em;line-height:1;max-width:300px;}
+.page.hb .hb-lockup.on-dark .hb-cli{color:#fff;}
+.page.hb .hb-eyebrow{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ac-text);}
+.page.hb .hb-eyebrow.on-dark{color:rgba(255,255,255,.82);}
+
+/* ── 1 · Cover (gradient) ── */
+.page.hb .hb-cover{position:absolute;inset:0;padding:44px 50px 40px;display:flex;flex-direction:column;color:#fff;
+  background:radial-gradient(760px 520px at 12% 6%,rgba(255,255,255,.16),transparent 60%),
+             radial-gradient(720px 600px at 104% 106%,color-mix(in srgb,var(--sec) 52%,transparent),transparent 60%),
+             linear-gradient(135deg,var(--ac-deep) 0%,var(--ac) 60%,#0894C4 100%);}
+.page.hb.theme-purple .hb-cover{background:radial-gradient(760px 520px at 12% 6%,rgba(255,255,255,.14),transparent 60%),
+             radial-gradient(720px 600px at 104% 106%,color-mix(in srgb,var(--sec) 50%,transparent),transparent 60%),
+             linear-gradient(135deg,var(--royal-purple-deep) 0%,var(--royal-purple) 62%,#0ABAB5 130%);}
+.page.hb .hb-cov-top{display:flex;align-items:center;justify-content:space-between;}
+.page.hb .hb-conf{font-size:11.5px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:rgba(255,255,255,.72);}
+.page.hb .hb-cov-mid{flex:1;display:flex;flex-direction:column;justify-content:center;}
+.page.hb .hb-hero{font-family:var(--font-display);font-weight:800;font-size:50px;line-height:1.02;letter-spacing:-.028em;margin:12px 0 0;max-width:15ch;text-wrap:balance;}
+.page.hb .hb-rule{display:block;width:120px;height:5px;border-radius:3px;background:rgba(255,255,255,.9);margin:22px 0 0;}
+.page.hb .hb-cov-sub{font-family:var(--font-serif);font-style:italic;font-size:19px;line-height:1.4;color:rgba(255,255,255,.9);margin:20px 0 0;max-width:42ch;}
+.page.hb .hb-cov-bot{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;}
+.page.hb .hb-costcard{background:#fff;border-radius:14px;padding:16px 22px;display:flex;align-items:baseline;gap:13px;box-shadow:0 12px 30px rgba(16,24,40,.22);}
+.page.hb .hb-costcard .n{font-family:var(--font-display);font-weight:800;font-size:40px;line-height:1;letter-spacing:-.03em;color:var(--ac-text);font-variant-numeric:tabular-nums;}
+.page.hb .hb-costcard .meta{display:flex;flex-direction:column;}
+.page.hb .hb-costcard .u{font-size:13.5px;font-weight:600;color:var(--ink-2);}
+.page.hb .hb-costcard .x{font-size:11px;color:var(--ink-3);margin-top:2px;}
+.page.hb .hb-turn{font-family:var(--font-serif);font-style:italic;font-size:14.5px;color:rgba(255,255,255,.9);white-space:nowrap;}
+
+/* ── 2 · Opportunity ── */
+.page.hb .hb-two{display:grid;grid-template-columns:1fr 260px;gap:38px;margin-top:22px;align-items:center;flex:1;}
+.page.hb .hb-transition{margin-top:20px;font-family:var(--font-serif);font-style:italic;font-size:16px;line-height:1.4;color:var(--ink-2);}
+.page.hb .hb-transition b{font-style:normal;font-family:var(--font-sans);font-weight:600;color:var(--ac-text);}
+.page.hb .hb-statbox{border:1.5px solid var(--sec);border-radius:16px;background:var(--sec-wash);padding:28px 26px;}
+.page.hb .hb-stat{font-family:var(--font-display);font-weight:800;font-size:54px;line-height:.95;letter-spacing:-.03em;color:var(--sec-text);font-variant-numeric:tabular-nums;}
+.page.hb .hb-stat-l{font-size:13px;line-height:1.4;color:var(--ink-2);margin-top:12px;}
+
+/* ── 3 · What you get ── */
+.page.hb .hb-roles{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:auto;}
+.page.hb .hb-role{border:1px solid var(--rule);border-radius:14px;padding:20px 22px;}
+.page.hb .hb-role.fl{border:1.5px solid var(--ac);background:var(--ac-wash);}
+.page.hb .hb-role .rl{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);}
+.page.hb .hb-role.fl .rl{color:var(--ac-text);}
+.page.hb .hb-role .rw{font-family:var(--font-display);font-weight:700;font-size:23px;color:var(--ink);margin-top:7px;letter-spacing:-.01em;}
+.page.hb .hb-role .rt{font-size:13.5px;line-height:1.45;color:var(--ink-2);margin-top:9px;}
+
+/* ── 4 · Near-zero risk ── */
+.page.hb .hb-risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:22px;}
+.page.hb .hb-risk-card{border:1px solid var(--rule);border-radius:13px;padding:17px 19px;display:flex;flex-direction:column;}
+.page.hb .hb-risk-ck{width:30px;height:30px;border-radius:50%;background:var(--ac);color:#fff;display:flex;align-items:center;justify-content:center;}
+.page.hb .hb-ck{width:16px;height:16px;}
+.page.hb .hb-risk-t{font-family:var(--font-display);font-weight:700;font-size:18px;color:var(--ink);margin-top:12px;letter-spacing:-.01em;line-height:1.12;}
+.page.hb .hb-risk-d{font-size:13px;line-height:1.4;color:var(--ink-2);margin-top:6px;}
+.page.hb .hb-term{margin-top:auto;padding-top:18px;font-size:13px;color:var(--ink-3);border-top:1px solid var(--rule);}
+
+/* ── 5 · Effective cost ── */
+.page.hb .hb-cost-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;margin-top:22px;flex:1;align-items:center;}
+.page.hb .hb-cost-note{font-size:11px;color:var(--ink-3);line-height:1.45;margin-top:16px;max-width:42ch;}
+.page.hb .hb-cost-r{background:var(--ac-wash);border:1.5px solid var(--ac);border-radius:16px;padding:24px 26px;}
+.page.hb .hb-cost-row{display:flex;align-items:baseline;justify-content:space-between;gap:14px;}
+.page.hb .hb-cost-row .cl{font-size:13px;color:var(--ink-2);font-weight:500;}
+.page.hb .hb-cost-row .cv{font-family:var(--font-display);font-weight:700;font-size:26px;color:var(--ink-3);font-variant-numeric:tabular-nums;}
+.page.hb .hb-cost-row .cv.strike{text-decoration:line-through;text-decoration-color:var(--ink-4);}
+.page.hb .hb-cost-arrow{font-size:11.5px;color:var(--ac-text);font-weight:600;margin:12px 0;text-align:right;}
+.page.hb .hb-cost-row.big{border-top:1px solid var(--ac-tint);padding-top:14px;}
+.page.hb .hb-cost-row.big .cl{color:var(--ink);font-weight:600;}
+.page.hb .hb-cost-row.big .cv{font-size:46px;color:var(--ac-text);letter-spacing:-.03em;}
+.page.hb .hb-cost-foot{font-size:11.5px;color:var(--ink-3);margin-top:8px;text-align:right;}
+
+/* ── 6 · Activation waves ── */
+.page.hb .hb-waves{display:flex;align-items:stretch;gap:14px;margin-top:auto;}
+.page.hb .hb-wv{flex:1;border:1px solid var(--rule);border-radius:14px;padding:20px 20px;display:flex;flex-direction:column;}
+.page.hb .hb-wv.fin{border:1.5px solid var(--ac);background:var(--ac-wash);}
+.page.hb .hb-wv .wl{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);}
+.page.hb .hb-wv.fin .wl{color:var(--ac-text);}
+.page.hb .hb-wv .wn{font-family:var(--font-display);font-weight:800;font-size:48px;line-height:1;color:var(--ink);letter-spacing:-.03em;margin-top:6px;font-variant-numeric:tabular-nums;}
+.page.hb .hb-wv.fin .wn{color:var(--ac-text);}
+.page.hb .hb-wv .wn.sm{font-size:25px;padding-top:12px;}
+.page.hb .hb-wv .wp{font-size:12.5px;line-height:1.4;color:var(--ink-2);margin-top:10px;}
+.page.hb .hb-arrow{align-self:center;color:var(--ink-4);font-size:22px;}
+
+/* ── 7 · How it works ── */
+.page.hb .hb-pipeline{display:flex;flex-wrap:wrap;align-items:center;gap:7px 6px;margin-top:22px;}
+.page.hb .hb-chip{font-size:12px;font-weight:600;color:var(--ink-2);background:var(--paper-tint);border-radius:9999px;padding:6px 13px;}
+.page.hb .hb-chip.is-you{background:var(--ac);color:#fff;}
+.page.hb .hb-arw{color:var(--ink-4);font-size:12px;}
+.page.hb .hb-split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:auto;}
+.page.hb .hb-split-cell{border-radius:13px;padding:18px 20px;border:1px solid var(--rule);}
+.page.hb .hb-split-cell.fl{border:1.5px solid var(--ac);background:var(--ac-wash);}
+.page.hb .hb-split-cell .ss-who{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+.page.hb .hb-split-cell.fl .ss-who{color:var(--ac-text);}
+.page.hb .hb-split-cell .ss-does{font-family:var(--font-display);font-weight:700;font-size:19px;color:var(--ink);margin-top:6px;letter-spacing:-.01em;}
+
+/* ── 8 · The ask (back cover) ── */
+.page.hb .hb-ask{position:absolute;inset:0;display:flex;}
+.page.hb .hb-ask-l{flex:0 0 58%;background:var(--ink);color:#fff;padding:40px 40px 34px;display:flex;flex-direction:column;}
+.page.hb .hb-ask-l .wm{height:24px;}
+.page.hb .hb-ask-k{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--ac-tint);margin-top:24px;}
+.page.hb .hb-ask-head{font-family:var(--font-display);font-weight:700;font-size:30px;line-height:1.1;letter-spacing:-.02em;margin:11px 0 0;}
+.page.hb .hb-weeks{margin-top:20px;display:flex;flex-direction:column;gap:11px;}
+.page.hb .hb-wk{display:flex;gap:12px;font-size:13px;line-height:1.35;color:rgba(255,255,255,.86);}
+.page.hb .hb-wk b{color:var(--ac-tint);font-weight:600;flex:0 0 42px;}
+.page.hb .hb-ask-row{margin-top:auto;display:flex;gap:16px;align-items:center;padding-top:20px;}
+.page.hb .hb-ask-row .qr-box{width:104px;height:104px;border-color:#fff;flex:0 0 auto;}
+.page.hb .hb-ask-ct .u{font-family:var(--font-mono);font-size:13px;font-weight:600;color:#fff;}
+.page.hb .hb-ask-ct .lead{font-size:12.5px;color:rgba(255,255,255,.72);margin-top:10px;}
+.page.hb .hb-ask-ct .em{font-family:var(--font-mono);font-size:12.5px;color:var(--ac-tint);margin-top:2px;}
+.page.hb .hb-ask-r{flex:1;position:relative;padding:38px 34px;}
+.page.hb .hb-ask-r .wm{height:23px;}
+.page.hb .hb-from{font-size:11.5px;color:var(--ink-2);line-height:1.5;margin-top:14px;white-space:pre-line;}
