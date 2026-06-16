@@ -4,3 +4,5 @@
 fastapi>=0.110
 uvicorn[standard]>=0.29
 httpx>=0.27          # used by fastapi's TestClient in tests/test_pricing_api.py
+PyJWT[crypto]>=2.8   # OPTIONAL Core M2M auth (core_auth.py) — only used when
+                     # PRICING_API_REQUIRE_AUTH=1; without it, auth-on fails closed (401).
