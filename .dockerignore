@@ -67,6 +67,5 @@ Thumbs.db
 # never part of the Streamlit image.
 web/
 
-# Client pitch-deck generator — static HTML/JS artifact opened/hosted on its
-# own, not served by the Streamlit app.
-client-deck/
+# NOTE: client-deck/ IS bundled into the image — the in-app "Client Deck (HTML)"
+# export button (client_deck_export.py) reads its template + assets at runtime.
