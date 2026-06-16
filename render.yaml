@@ -24,12 +24,28 @@ services:
       mountPath: /app/data
       sizeGB: 1
     envVars:
-      # App auth OFF — Cloudflare Access gates who reaches the app (clean
-      # magic-link access for AMN / investors, no Streamlit login). Flip to "1"
-      # to use the in-app email-OTP / Google sign-in instead. See DEPLOY.md.
+      # FlorenceRN Core SSO — staff sign in once at id.florenceeducation.com and
+      # the shared fl_session cookie authorizes pricing.florenceeducation.com too;
+      # core_auth.py verifies it against Core's JWKS. These values MUST match the
+      # platform render.yaml `florence-shared` group. (Deploy Core first; until
+      # it's reachable, set FLORENCE_INTERNAL_AUTH=0 to run the app open.)
       - key: FLORENCE_INTERNAL_AUTH
-        value: "0"
-      # Set real values in the Render dashboard (sync:false keeps them out of git):
+        value: "1"
+      - key: CORE_ISSUER_URL
+        value: https://id.florenceeducation.com
+      - key: CORE_JWKS_URL
+        value: https://id.florenceeducation.com/.well-known/jwks.json
+      - key: PUBLIC_CORE_URL
+        value: https://id.florenceeducation.com
+      - key: PUBLIC_PRICING_URL
+        value: https://pricing.florenceeducation.com
+      - key: TOKEN_ISS
+        value: florence-auth
+      - key: TOKEN_AUD
+        value: florence
+      - key: COOKIE_SECURE
+        value: "1"
+      # Secrets — set real values in the Render dashboard (sync:false keeps them out of git):
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: BLS_REGISTRATION_KEY
