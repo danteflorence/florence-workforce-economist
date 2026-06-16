@@ -66,3 +66,7 @@ Thumbs.db
 # Customer-facing React app — deployed separately as a Render static site,
 # never part of the Streamlit image.
 web/
+
+# Client pitch-deck generator — static HTML/JS artifact opened/hosted on its
+# own, not served by the Streamlit app.
+client-deck/

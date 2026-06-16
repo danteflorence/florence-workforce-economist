@@ -1,0 +1,243 @@
+#!/usr/bin/env python3
+"""
+build_deck_data.py
+==================================================================
+Regenerates the two data files the HTML client deck reads:
+
+    template/universe.js   - every health system, grouped from the
+                             hospital universe, with per-facility
+                             customer-facing pricing computed.
+    template/logos.js      - system_id -> { domain, file } manifest
+                             (favicon-by-domain for the dropdown;
+                             curated local file for the deck cover).
+
+This is the Python twin of the one-off JS build used during the
+prototype, so the pipeline lives in the Florence platform stack and
+can run on the same cadence as the rest of the data refresh.
+
+INPUTS  (defaults assume the repo's data/ dir):
+    data/hospital_universe.csv     (CMS HCRIS 2023 + BLS OEWS)
+    data/system_directory.csv      (system -> domain map)
+
+USAGE:
+    python build_deck_data.py
+    python build_deck_data.py --data-dir data --out-dir template
+
+Pricing methodology (must match playbook/04_pricing_methodology.md):
+    fica_per_month = FICA_RATE * taxable_wage_per_hour * MONTHLY_HOURS
+    fee_per_rn_mo  = clamp(fica_per_month / OFFSET_TARGET, FEE_MIN, FEE_MAX)
+    effective      = fee_per_rn_mo - fica_per_month
+==================================================================
+"""
+from __future__ import annotations
+
+import argparse
+import csv
+import json
+import re
+from pathlib import Path
+
+# ---- calibration (keep in sync with the pricing engine) -------------
+MONTHLY_HOURS = 156          # FICA-eligible hrs/mo  (H_exempt 3744 / 24)
+FICA_RATE = 0.0765           # employer FICA
+OFFSET_TARGET = 0.40         # 40% offset target — matches pricing_engine.py (FICA_OFFSET_TARGET default)
+FEE_MIN, FEE_MAX = 750, 2000 # monthly fee guardrails
+TERM_MONTHS = 24
+TOP_N_FACILITIES = 6         # rows shown in the per-market table
+
+US_STATES = {
+    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
+    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
+    "DC": "District of Columbia", "FL": "Florida", "GA": "Georgia", "GU": "Guam",
+    "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa",
+    "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine",
+    "MD": "Maryland", "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota",
+    "MS": "Mississippi", "MO": "Missouri", "MT": "Montana", "NE": "Nebraska",
+    "NV": "Nevada", "NH": "New Hampshire", "NJ": "New Jersey", "NM": "New Mexico",
+    "NY": "New York", "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio",
+    "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania", "PR": "Puerto Rico",
+    "RI": "Rhode Island", "SC": "South Carolina", "SD": "South Dakota",
+    "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont",
+    "VA": "Virginia", "VI": "Virgin Islands", "WA": "Washington",
+    "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming",
+}
+
+# Curated local logos that already exist on disk. Add entries here as
+# you drop files into assets/systems/ (see template/README.md).
+CURATED_LOGOS = {
+    "kaiser_permanente": "assets/partners/kp-logo.png",
+}
+
+
+def clamp(v: float, lo: float, hi: float) -> float:
+    return max(lo, min(hi, v))
+
+
+def title_case(s: str) -> str:
+    """Turn a SCREAMING facility name into Title Case, keeping small words down."""
+    out = re.sub(r"\w[^\s\-/]*", lambda m: m.group(0)[:1] + m.group(0)[1:].lower(), s)
+    for w in (" And ", " Of ", " The ", " At "):
+        out = out.replace(w, w.lower())
+    return out.strip()
+
+
+def _entry_from_hospitals(entry_id: str, name: str, hosp: list[dict], single: bool = False) -> dict:
+    """Build one selectable universe entry from a list of facility rows."""
+    fees = sorted(h["fee"] for h in hosp)
+    wages = sorted(h["wage"] for h in hosp)
+    median_fee = fees[len(fees) // 2]
+    median_wage = round(wages[len(wages) // 2])
+    fica_med = round(FICA_RATE * median_wage * MONTHLY_HOURS)
+    top = sorted(hosp, key=lambda h: h["rnNeed"], reverse=True)[:TOP_N_FACILITIES]
+    states = sorted({h["state"] for h in hosp if h["state"]})
+    cities = list(dict.fromkeys(title_case(h["city"]) for h in hosp if h["city"]))
+    msas = list(dict.fromkeys(h["cbsa"] for h in hosp if h.get("cbsa")))
+    # search blob: name + cities + MSAs + state abbrs + full state names
+    search_bits = [name, *cities, *msas, *states, *[US_STATES.get(s, "") for s in states]]
+    entry = {
+        "id": entry_id,
+        "name": name,
+        "nFacilities": len(hosp),
+        "states": states,
+        "totalRnNeed": round(sum(h["rnNeed"] for h in hosp)),
+        "medianFee": median_fee,
+        "medianWage": median_wage,
+        "ficaPerMonth": fica_med,
+        "effectiveLow": median_fee - fica_med,
+        "primaryCity": title_case(top[0]["city"]) if top else "",
+        "primaryState": top[0]["state"] if top else "",
+        "msas": msas[:8],
+        "search": " ".join(b for b in search_bits if b).lower(),
+        "topHospitals": [{
+            "name": title_case(h["name"]),
+            "location": f'{title_case(h["city"])}, {h["state"]}',
+            "msa": h.get("cbsa", ""),
+            "rnNeed": round(h["rnNeed"]),
+            "feePerRn": h["fee"],
+            "effectivePerRn": h["eff"],
+        } for h in top],
+    }
+    if single:
+        entry["single"] = True
+    return entry
+
+
+def build_universe(rows: list[dict], include_independents: bool = True) -> tuple[dict, list]:
+    """Group hospital rows into selectable targets.
+
+    Named multi-hospital systems are grouped by health_system_id. Every
+    independent / unnamed hospital becomes its own single-facility target
+    (id `h_<ccn>`) so it is findable in the dropdown.
+    """
+    systems: dict[str, dict] = {}
+    independents: list[dict] = []
+    for r in rows:
+        sys_id = (r.get("health_system_id") or "").strip()
+        sys_name = (r.get("health_system") or "").strip()
+        try:
+            wage = float(r.get("taxable_wage_per_hour") or 0)
+        except ValueError:
+            wage = 0
+        if wage <= 0:
+            continue
+        try:
+            rn_need = float(r.get("estimated_rn_need_fte") or 0)
+        except ValueError:
+            rn_need = 0
+        fica = FICA_RATE * wage * MONTHLY_HOURS
+        fee = round(clamp(fica / OFFSET_TARGET, FEE_MIN, FEE_MAX))
+        eff = round(fee - fica)
+        hosp = {
+            "name": (r.get("name") or "").strip(),
+            "city": (r.get("city") or "").strip(),
+            "state": (r.get("state") or "").strip(),
+            "cbsa": (r.get("cbsa_title") or "").strip(),
+            "ccn": (r.get("ccn") or "").strip(),
+            "rnNeed": rn_need, "wage": wage, "fee": fee, "eff": eff,
+        }
+        is_independent = (not sys_id) or sys_id == "independent" or "unknown" in sys_name.lower()
+        if is_independent:
+            independents.append(hosp)
+        else:
+            s = systems.setdefault(sys_id, {"id": sys_id, "name": sys_name, "hospitals": []})
+            s["hospitals"].append(hosp)
+
+    named, indep = [], []
+    for sys_id, s in systems.items():
+        hosp = [h for h in s["hospitals"] if h["name"]]
+        if hosp:
+            named.append(_entry_from_hospitals(sys_id, s["name"], hosp))
+    if include_independents:
+        for h in independents:
+            if h["name"]:
+                indep.append(_entry_from_hospitals("h_" + h["ccn"], title_case(h["name"]), [h], single=True))
+
+    named.sort(key=lambda x: x["totalRnNeed"], reverse=True)
+    indep.sort(key=lambda x: x["totalRnNeed"], reverse=True)
+    ordered = named + indep                       # systems first, then single hospitals
+    return {e["id"]: e for e in ordered}, [e["id"] for e in ordered]
+
+
+def build_logos(rows: list[dict]) -> dict:
+    manifest: dict[str, dict] = {}
+    for r in rows:
+        sid = (r.get("florence_system_id") or "").strip()
+        if not sid:
+            continue
+        manifest[sid] = {
+            "domain": (r.get("domain") or "").strip() or None,
+            "file": CURATED_LOGOS.get(sid),
+        }
+    for sid, f in CURATED_LOGOS.items():
+        manifest.setdefault(sid, {"domain": None, "file": f})
+    return manifest
+
+
+def read_csv(path: Path) -> list[dict]:
+    with path.open(newline="", encoding="utf-8") as fh:
+        return list(csv.DictReader(fh))
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--data-dir", default="data")
+    ap.add_argument("--out-dir", default="template")
+    args = ap.parse_args()
+    data, out = Path(args.data_dir), Path(args.out_dir)
+    out.mkdir(parents=True, exist_ok=True)
+
+    uni, order = build_universe(read_csv(data / "hospital_universe.csv"))
+    n_single = sum(1 for e in uni.values() if e.get("single"))
+    n_named = len(order) - n_single
+    (out / "universe.js").write_text(
+        "/* AUTO-GENERATED by build_deck_data.py - do not hand-edit.\n"
+        f"   {n_named} named systems + {n_single} independent hospitals "
+        f"= {len(order)} selectable targets. */\n"
+        f"window.FLORENCE_UNIVERSE = {json.dumps(uni)};\n"
+        f"window.FLORENCE_UNIVERSE_ORDER = {json.dumps(order)};\n",
+        encoding="utf-8",
+    )
+    print(f"universe.js: {len(order)} targets ({n_named} systems + {n_single} hospitals)")
+
+    logos = build_logos(read_csv(data / "system_directory.csv"))
+    (out / "logos.js").write_text(
+        "/* AUTO-GENERATED by build_deck_data.py - curated `file` entries are\n"
+        "   preserved via CURATED_LOGOS at the top of the build script. */\n"
+        f"window.FLORENCE_LOGOS = {json.dumps(logos, indent=2)};\n\n"
+        "window.florenceFavicon = function (id) {\n"
+        "  var m = window.FLORENCE_LOGOS[id];\n"
+        "  if (!m || !m.domain) return null;\n"
+        "  return 'https://www.google.com/s2/favicons?domain=' + m.domain + '&sz=64';\n"
+        "};\n"
+        "window.florenceLogoFile = function (id) {\n"
+        "  var m = window.FLORENCE_LOGOS[id];\n"
+        "  return (m && m.file) || null;\n"
+        "};\n",
+        encoding="utf-8",
+    )
+    print(f"logos.js: {len(logos)} systems "
+          f"({sum(1 for m in logos.values() if m['file'])} curated)")
+
+
+if __name__ == "__main__":
+    main()

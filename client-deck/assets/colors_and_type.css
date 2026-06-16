@@ -1,0 +1,374 @@
+/* ============================================================
+   Florence Design System — Colors & Type
+   Import this file at the top of any Florence HTML/CSS.
+   ============================================================ */
+
+/* --- Fonts (Google Fonts substitutes for licensed Florence faces) --- */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400;1,700&family=Source+Serif+4:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+  /* ---------- Brand colors ---------- */
+  --florence-teal:        #0ABAB5;   /* Tiffany Blue — primary */
+  --florence-teal-deep:   #00A4B4;   /* hover / press */
+  --florence-teal-wash:   #E6F8F7;   /* soft fill */
+  --florence-teal-tint:   #B7EBE8;   /* mid wash for chips */
+
+  --royal-purple:         #7340C4;   /* Florence Capital — secondary */
+  --royal-purple-deep:    #5B2DA8;
+  --royal-purple-light:   #AD8EDC;
+  --royal-purple-wash:    #F1ECFB;
+
+  /* ---------- Ink / neutrals ---------- */
+  --ink:                  #101828;   /* body text, headlines */
+  --ink-2:                #475467;   /* secondary text */
+  --ink-3:                #98A2B3;   /* tertiary text */
+  --ink-4:                #D0D5DD;   /* disabled, faint icons */
+
+  --paper:                #FFFFFF;
+  --paper-warm:           #F7FAFA;   /* alt section bg */
+  --paper-tint:           #F2F4F7;   /* table row alt */
+
+  --rule:                 #E4E7EC;   /* hairlines */
+  --rule-strong:          #D0D5DD;
+
+  /* ---------- Semantic ---------- */
+  --success: #16A34A;
+  --warn:    #D97706;
+  --danger:  #DC2626;
+  --info:    var(--florence-teal);
+
+  /* ---------- Typography families ---------- */
+  --font-display: 'Playfair Display', 'Source Serif 4', 'Times New Roman', Georgia, serif;
+  --font-serif:   'Source Serif 4', 'Playfair Display', Georgia, serif;
+  --font-sans:    'Inter', system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* ---------- Type scale (px) ---------- */
+  --fs-12: 0.75rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-18: 1.125rem;
+  --fs-20: 1.25rem;
+  --fs-24: 1.5rem;
+  --fs-30: 1.875rem;
+  --fs-36: 2.25rem;
+  --fs-48: 3rem;
+  --fs-60: 3.75rem;
+  --fs-72: 4.5rem;
+  --fs-96: 6rem;
+
+  /* ---------- Spacing (8pt) ---------- */
+  --s-1:  4px;
+  --s-2:  8px;
+  --s-3:  12px;
+  --s-4:  16px;
+  --s-5:  24px;
+  --s-6:  32px;
+  --s-7:  48px;
+  --s-8:  64px;
+  --s-9:  96px;
+  --s-10: 128px;
+
+  /* ---------- Radii ---------- */
+  --r-sm:   6px;
+  --r-md:  12px;
+  --r-lg:  16px;
+  --r-xl:  20px;
+  --r-pill: 9999px;
+
+  /* ---------- Shadows ---------- */
+  --shadow-sm:         0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-card:       0 4px 14px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
+  --shadow-card-hover: 0 8px 24px rgba(16, 24, 40, 0.10), 0 2px 4px rgba(16, 24, 40, 0.05);
+  --shadow-overlay:    0 24px 48px -12px rgba(16, 24, 40, 0.18);
+
+  /* ---------- Motion ---------- */
+  --ease-out: cubic-bezier(0.2, 0, 0, 1);
+  --dur-fast: 150ms;
+  --dur-med:  250ms;
+  --dur-slow: 400ms;
+
+  /* ---------- Layout ---------- */
+  --content-max: 1120px;
+  --slide-w: 1920px;
+  --slide-h: 1080px;
+  --slide-padding: 64px;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+html {
+  font-family: var(--font-sans);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-size: var(--fs-16);
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--paper);
+  margin: 0;
+}
+
+::selection { background: var(--florence-teal-wash); color: var(--ink); }
+
+/* ============================================================
+   Semantic typography
+   ============================================================ */
+h1, .h1 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(var(--fs-36), 5vw, var(--fs-72));
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin: 0 0 var(--s-5);
+  text-wrap: balance;
+}
+
+h2, .h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(var(--fs-30), 3.5vw, var(--fs-48));
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  margin: 0 0 var(--s-4);
+  text-wrap: balance;
+}
+
+h3, .h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-30);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin: 0 0 var(--s-3);
+}
+
+h4, .h4 {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: var(--fs-20);
+  line-height: 1.3;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+  margin: 0 0 var(--s-2);
+}
+
+h5, .h5 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-16);
+  line-height: 1.4;
+  letter-spacing: 0.02em;
+  color: var(--ink-2);
+  text-transform: uppercase;
+  margin: 0 0 var(--s-2);
+}
+
+.eyebrow {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-12);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--florence-teal);
+}
+
+p, .p {
+  font-family: var(--font-sans);
+  font-size: var(--fs-16);
+  line-height: 1.6;
+  color: var(--ink);
+  margin: 0 0 var(--s-3);
+  text-wrap: pretty;
+}
+
+.lede {
+  font-family: var(--font-serif);
+  font-size: var(--fs-20);
+  line-height: 1.55;
+  font-style: italic;
+  color: var(--ink-2);
+}
+
+.caption {
+  font-family: var(--font-sans);
+  font-size: var(--fs-12);
+  color: var(--ink-3);
+  letter-spacing: 0.01em;
+}
+
+.stat {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(var(--fs-48), 6vw, var(--fs-96));
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--florence-teal);
+  font-variant-numeric: tabular-nums;
+}
+.stat.--purple { color: var(--royal-purple); }
+.stat.--ink    { color: var(--ink); }
+
+.stat-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-14);
+  font-weight: 500;
+  color: var(--ink-2);
+  letter-spacing: 0.01em;
+}
+
+a {
+  color: var(--florence-teal);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+a:hover { color: var(--florence-teal-deep); border-bottom-color: currentColor; }
+a:focus-visible { outline: 2px solid var(--florence-teal); outline-offset: 2px; }
+
+code, kbd, samp {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  background: var(--paper-tint);
+  padding: 0.1em 0.35em;
+  border-radius: var(--r-sm);
+  color: var(--ink);
+}
+
+hr { border: 0; border-top: 1px solid var(--rule); margin: var(--s-6) 0; }
+
+/* ============================================================
+   Components
+   ============================================================ */
+
+/* ---- Numbered step badge (01 / 02 / 03 / 04) ---- */
+.fl-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border-radius: 9999px;
+  background: var(--florence-teal);
+  color: #fff;
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-14);
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.fl-step.--purple { background: var(--royal-purple); }
+.fl-step.--lg { width: 44px; height: 44px; font-size: var(--fs-16); }
+
+/* ---- Florence card ---- */
+.florence-card {
+  background: var(--paper);
+  border: 1.5px solid var(--florence-teal);
+  border-radius: var(--r-lg);
+  padding: var(--s-5);
+  position: relative;
+}
+.florence-card.--quiet {
+  border: 1px solid var(--rule);
+}
+.florence-card.--purple { border-color: var(--royal-purple); }
+.florence-card.--shadow { box-shadow: var(--shadow-card); border-color: var(--rule); }
+
+.florence-card__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-24);
+  color: var(--ink);
+  margin: 0 0 var(--s-3);
+  position: relative;
+  padding-bottom: var(--s-3);
+}
+.florence-card__title::after {
+  content: ''; display: block; width: 48px; height: 2px;
+  background: var(--florence-teal);
+  position: absolute; left: 0; bottom: 0;
+}
+.florence-card.--purple .florence-card__title::after { background: var(--royal-purple); }
+
+/* ---- Pill / chip ---- */
+.fl-pill {
+  display: inline-flex; align-items: center; gap: var(--s-2);
+  background: var(--florence-teal-wash);
+  color: var(--florence-teal-deep);
+  padding: var(--s-2) var(--s-4);
+  border-radius: var(--r-pill);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-14);
+  line-height: 1.2;
+}
+.fl-pill.--purple { background: var(--royal-purple-wash); color: var(--royal-purple-deep); }
+.fl-pill.--ink    { background: var(--paper-tint);       color: var(--ink); }
+
+/* ---- Buttons ---- */
+.fl-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: var(--fs-16);
+  padding: var(--s-3) var(--s-5);
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+  text-decoration: none;
+  line-height: 1.2;
+}
+.fl-btn.--primary {
+  background: var(--florence-teal); color: #fff;
+}
+.fl-btn.--primary:hover { background: var(--florence-teal-deep); }
+.fl-btn.--secondary {
+  background: #fff; color: var(--ink);
+  border-color: var(--rule-strong);
+}
+.fl-btn.--secondary:hover { border-color: var(--ink); }
+.fl-btn.--purple { background: var(--royal-purple); color: #fff; }
+.fl-btn.--purple:hover { background: var(--royal-purple-deep); }
+.fl-btn.--ghost { background: transparent; color: var(--florence-teal); }
+.fl-btn.--ghost:hover { background: var(--florence-teal-wash); }
+.fl-btn:focus-visible { outline: 2px solid var(--florence-teal); outline-offset: 2px; }
+.fl-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+/* ---- Inputs ---- */
+.fl-input, .fl-select, .fl-textarea {
+  font-family: var(--font-sans);
+  font-size: var(--fs-16);
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-md);
+  padding: var(--s-3) var(--s-4);
+  width: 100%;
+  outline: none;
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.fl-input:focus, .fl-select:focus, .fl-textarea:focus {
+  border-color: var(--florence-teal);
+  box-shadow: 0 0 0 4px rgba(10, 186, 181, 0.15);
+}
+.fl-input::placeholder, .fl-textarea::placeholder { color: var(--ink-3); }
+.fl-label {
+  display: block;
+  font-family: var(--font-sans);
+  font-weight: 500;
+  font-size: var(--fs-14);
+  color: var(--ink-2);
+  margin-bottom: var(--s-2);
+}
+
+/* ---- Divider w/ underline accent ---- */
+.fl-underline { display: inline-block; padding-bottom: var(--s-2); border-bottom: 2px solid var(--florence-teal); }
+.fl-underline.--purple { border-bottom-color: var(--royal-purple); }

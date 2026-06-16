@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Florence Client Deck — Template</title>
+<link rel="stylesheet" href="assets/colors_and_type.css" />
+<style>
+  :root {
+    --kp-blue: #006BA6;
+    --amn-navy: #0B2F5C;
+    --pad-x: 112px;
+    --pad-top: 96px;
+    --pad-bottom: 88px;
+  }
+
+  deck-stage:not(:defined) { visibility: hidden; }
+  html, body { background: #0a0a0a; }
+
+  section[data-slide] {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    overflow: hidden;
+  }
+  .slide-frame {
+    position: absolute; inset: 0;
+    padding: var(--pad-top) var(--pad-x) var(--pad-bottom);
+    display: flex; flex-direction: column; box-sizing: border-box;
+  }
+  .slide-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 44px;
+  }
+  .slide-header__brand { display: flex; align-items: center; gap: 18px; }
+  .slide-header__brand img { height: 34px; width: auto; display: block; }
+  .slide-header__brand .sep { width: 1px; height: 24px; background: var(--rule-strong); }
+  .slide-header__brand .partner {
+    font-family: var(--font-sans); font-weight: 600; font-size: 18px;
+    letter-spacing: 0.02em; color: var(--ink-3);
+  }
+  .slide-eyebrow {
+    font-family: var(--font-sans); font-weight: 600; font-size: 18px;
+    letter-spacing: 0.18em; text-transform: uppercase; color: var(--florence-teal);
+  }
+  .slide-footer {
+    position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 40px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-family: var(--font-sans); font-size: 16px; color: var(--ink-3);
+    letter-spacing: 0.04em;
+  }
+  .slide-footer .left b { color: var(--florence-teal); font-weight: 600; }
+  .slide-footer .pgnum { font-variant-numeric: tabular-nums; }
+
+  .slide-title {
+    font-family: var(--font-display); font-weight: 800; font-size: 72px;
+    line-height: 1.02; letter-spacing: -0.022em; color: var(--ink);
+    margin: 0; text-wrap: balance;
+  }
+  .slide-body {
+    font-family: var(--font-sans); font-size: 24px; line-height: 1.5;
+    color: var(--ink-2); margin: 0; text-wrap: pretty;
+  }
+  .accent-rule { display: block; height: 4px; width: 96px; background: var(--florence-teal); border-radius: 2px; }
+  .src { font-family: var(--font-sans); font-size: 16px; color: var(--ink-3); line-height: 1.5; }
+  .src b { color: var(--ink-2); font-weight: 600; }
+
+  .fcard {
+    position: relative; background: var(--paper);
+    border: 1.5px solid var(--florence-teal); border-radius: 22px;
+    padding: 36px 32px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .fcard.--quiet { border: 1px solid var(--rule); }
+  .fcard.--wash { background: var(--florence-teal-wash); border-color: var(--florence-teal); }
+
+  .checkrow {
+    display: flex; align-items: flex-start; gap: 16px;
+    font-family: var(--font-sans); font-size: 23px; color: var(--ink); line-height: 1.4;
+  }
+  .checkrow svg { color: var(--florence-teal); flex-shrink: 0; width: 26px; height: 26px; margin-top: 4px; }
+  .checkrow .sub { display: block; color: var(--ink-2); font-size: 19px; margin-top: 2px; }
+
+  .splash {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(900px 600px at 12% 12%, rgba(255,255,255,0.18), transparent 60%),
+      radial-gradient(900px 700px at 100% 100%, rgba(115,64,196,0.55), transparent 60%),
+      linear-gradient(135deg, var(--florence-teal-deep) 0%, var(--florence-teal) 55%, #0894C4 100%);
+    color: #fff;
+    display: flex; flex-direction: column;
+    padding: var(--pad-top) var(--pad-x) var(--pad-bottom);
+    box-sizing: border-box;
+  }
+  .splash__footer {
+    position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 40px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-sans); font-size: 16px; letter-spacing: 0.04em;
+    color: rgba(255,255,255,0.65);
+  }
+  .splash__footer b { color: #fff; font-weight: 600; }
+
+  .lockup { display: flex; align-items: center; gap: 28px; flex-wrap: wrap; }
+  .lockup img { display: block; }
+
+  /* Roles strip (slide 2) */
+  .roles { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .role-cell {
+    border: 1px solid var(--rule); border-radius: 18px; padding: 26px 28px;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .role-cell .r-label {
+    font-family: var(--font-sans); font-weight: 600; font-size: 15px;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--amn-navy);
+  }
+  .role-cell.--fl .r-label { color: var(--florence-teal-deep); }
+  .role-cell.--kp .r-label { color: var(--kp-blue); }
+  .role-cell .r-who { font-family: var(--font-display); font-weight: 800; font-size: 34px; color: var(--ink); letter-spacing: -0.012em; }
+  .role-cell .r-what { font-family: var(--font-sans); font-size: 18px; line-height: 1.4; color: var(--ink-2); }
+
+  /* Economics table */
+  .etable { width: 100%; border-collapse: separate; border-spacing: 0; font-family: var(--font-sans); }
+  .etable th {
+    text-align: left; font-weight: 600; font-size: 18px;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-3);
+    padding: 0 28px 16px 0; border-bottom: 2px solid var(--ink);
+  }
+  .etable th.num { text-align: right; padding-right: 0; }
+  .etable td {
+    font-size: 25px; color: var(--ink); line-height: 1.35;
+    padding: 22px 28px 22px 0; border-bottom: 1px solid var(--rule);
+    vertical-align: baseline;
+  }
+  .etable td.num {
+    text-align: right; padding-right: 0;
+    font-family: var(--font-display); font-weight: 700; font-size: 32px;
+    font-variant-numeric: tabular-nums; letter-spacing: -0.01em; white-space: nowrap;
+  }
+  .etable tr.total td { border-bottom: none; border-top: 2px solid var(--ink); padding-top: 26px; font-weight: 600; }
+  .etable tr.total td.num { color: var(--florence-teal-deep); font-size: 40px; }
+  .etable td .note { display: block; font-size: 17px; color: var(--ink-3); margin-top: 4px; font-weight: 400; }
+  .etable td.neg { color: var(--ink-2); }
+  .etable td.num.neg { color: var(--royal-purple-deep); }
+  /* compact variant for multi-row per-market tables */
+  .etable.--compact th { padding-bottom: 12px; font-size: 16px; }
+  .etable.--compact td { padding: 13px 24px 13px 0; font-size: 22px; }
+  .etable.--compact td.num { font-size: 27px; }
+  .etable.--compact td .note { font-size: 15px; margin-top: 2px; }
+
+  /* Waves */
+  .waves { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 24px; }
+  .wave {
+    background: var(--paper); border: 1.5px solid var(--rule); border-radius: 22px;
+    padding: 36px 32px; display: flex; flex-direction: column; gap: 12px; position: relative;
+  }
+  .wave.--final { border-color: var(--florence-teal); background: var(--florence-teal-wash); }
+  .wave__label {
+    font-family: var(--font-sans); font-weight: 600; font-size: 16px;
+    letter-spacing: 0.16em; text-transform: uppercase; color: var(--ink-3);
+  }
+  .wave.--final .wave__label { color: var(--florence-teal-deep); }
+  .wave__num {
+    font-family: var(--font-display); font-weight: 800; font-size: 110px;
+    line-height: 0.95; letter-spacing: -0.03em; color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .wave.--final .wave__num { color: var(--florence-teal-deep); }
+  .wave__purpose { font-family: var(--font-sans); font-size: 20px; line-height: 1.45; color: var(--ink-2); margin: 0; }
+  .wave__gate {
+    margin-top: auto; display: inline-flex; align-items: center; gap: 10px;
+    font-family: var(--font-sans); font-weight: 600; font-size: 16px; color: var(--ink-2);
+    padding-top: 14px; border-top: 1px solid var(--rule);
+  }
+  .wave.--final .wave__gate { border-top-color: var(--florence-teal); color: var(--ink); }
+  .wave__gate svg { width: 20px; height: 20px; color: var(--florence-teal); flex-shrink: 0; }
+
+  .money { font-variant-numeric: tabular-nums; }
+  body.hide-money .money {
+    color: transparent !important;
+    background: var(--ink-4);
+    border-radius: 4px;
+    padding: 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<!-- Deck is rendered into this element from template/presets.js + template/render.js -->
+<deck-stage width="1920" height="1080"></deck-stage>
+
+<!-- 1. universe data, 2. logo manifest, 3. config presets + resolver, 4. render engine, 5. deck-stage upgrades -->
+<script src="template/universe.js"></script>
+<script src="template/logos.js"></script>
+<script src="template/presets.js"></script>
+<script src="template/render.js"></script>
+<script src="deck-stage.js"></script>
+
+<!-- ============ Tweaks ============ -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<div id="tweaks-root"></div>
+
+<script type="text/babel">
+const TEMPLATE_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "client": window.FLORENCE_ACTIVE_CLIENT || "kaiser",
+  "showPrice": true
+}/*EDITMODE-END*/;
+
+/* Build the full pick-list: featured presets first, then every universe
+   system (minus the ones a featured preset already overrides). */
+function buildClientOptions() {
+  const featuredFor = window.FLORENCE_FEATURED || {};
+  const overridden = new Set(Object.keys(featuredFor)); // universe ids covered by a preset
+  const opts = [];
+  // featured
+  Object.keys(window.FLORENCE_PRESETS).forEach((k) => {
+    const p = window.FLORENCE_PRESETS[k];
+    // favicon via the universe id this preset overrides (kaiser -> kaiser_permanente)
+    const uniId = Object.keys(featuredFor).find((uid) => featuredFor[uid] === k);
+    opts.push({ value: k, label: p.displayName, sub: "Featured", featured: true,
+      search: (p.displayName + " featured").toLowerCase(),
+      favicon: uniId && window.florenceFavicon ? window.florenceFavicon(uniId) : null });
+  });
+  // universe
+  (window.FLORENCE_UNIVERSE_ORDER || []).forEach((id) => {
+    if (overridden.has(id)) return;
+    const u = window.FLORENCE_UNIVERSE[id];
+    const where = u.single
+      ? `${u.primaryCity ? u.primaryCity + ", " : ""}${u.primaryState}`
+      : `${u.states.slice(0, 4).join("/")}${u.states.length > 4 ? "\u2026" : ""}`;
+    opts.push({
+      value: id,
+      label: u.name,
+      sub: `${u.nFacilities} facilit${u.nFacilities === 1 ? "y" : "ies"} \u00b7 ${where} \u00b7 median $${u.medianFee}/mo`,
+      featured: false,
+      single: !!u.single,
+      search: u.search || (u.name + " " + u.states.join(" ")).toLowerCase(),
+      favicon: window.florenceFavicon ? window.florenceFavicon(id) : null,
+    });
+  });
+  return opts;
+}
+
+function ClientPicker({ value, options, onPick }) {
+  const [open, setOpen] = React.useState(false);
+  const [q, setQ] = React.useState("");
+  const current = options.find((o) => o.value === value);
+  const filtered = React.useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return options.slice(0, 60);
+    // every whitespace-separated term must match somewhere in the option's
+    // search blob (name + city + MSA + state) so "sutter sacramento" narrows.
+    const terms = s.split(/\s+/);
+    return options
+      .filter((o) => { const hay = o.search || (o.label + " " + o.sub).toLowerCase(); return terms.every((t) => hay.includes(t)); })
+      .slice(0, 60);
+  }, [q, options]);
+
+  const box = {
+    width: "100%", textAlign: "left", padding: "10px 12px", borderRadius: 10,
+    border: "1px solid #D0D5DD", background: "#fff", fontSize: 14, color: "#101828",
+    cursor: "pointer", fontFamily: "inherit", display: "flex", justifyContent: "space-between",
+    alignItems: "center", gap: 8,
+  };
+  return (
+    <div style={{ position: "relative" }}>
+      <button type="button" style={box} onClick={() => setOpen((o) => !o)}>
+        <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {current ? current.label : "Select a system\u2026"}
+        </span>
+        <span style={{ color: "#98A2B3", flexShrink: 0 }}>{open ? "\u25b4" : "\u25be"}</span>
+      </button>
+      {open && (
+        <div style={{ position: "absolute", zIndex: 50, top: "calc(100% + 6px)", left: 0, right: 0,
+          background: "#fff", border: "1px solid #D0D5DD", borderRadius: 12,
+          boxShadow: "0 18px 40px rgba(16,24,40,0.18)", overflow: "hidden" }}>
+          <input
+            autoFocus
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder={`Search ${options.length} by name, city, state, or MSA\u2026`}
+            style={{ width: "100%", boxSizing: "border-box", padding: "11px 12px", border: "none",
+              borderBottom: "1px solid #E4E7EC", fontSize: 14, outline: "none", fontFamily: "inherit" }}
+          />
+          <div style={{ maxHeight: 320, overflowY: "auto" }}>
+            {filtered.length === 0 && (
+              <div style={{ padding: "14px 12px", color: "#98A2B3", fontSize: 13 }}>No matches.</div>
+            )}
+            {filtered.map((o) => (
+              <div
+                key={o.value}
+                onClick={() => { onPick(o.value); setOpen(false); setQ(""); }}
+                style={{ padding: "9px 12px", cursor: "pointer",
+                  background: o.value === value ? "#E6F8F7" : "transparent",
+                  borderBottom: "1px solid #F2F4F7" }}
+                onMouseEnter={(e) => { if (o.value !== value) e.currentTarget.style.background = "#F7FAFA"; }}
+                onMouseLeave={(e) => { if (o.value !== value) e.currentTarget.style.background = "transparent"; }}
+              >
+              <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+                {o.favicon ? (
+                  <img src={o.favicon} alt="" width={18} height={18}
+                    style={{ borderRadius: 4, flexShrink: 0 }}
+                    onError={(e) => { e.currentTarget.style.visibility = "hidden"; }} />
+                ) : (
+                  <span style={{ width: 18, height: 18, borderRadius: 4, flexShrink: 0,
+                    background: "#EDF0F4", color: "#98A2B3", fontSize: 11, fontWeight: 700,
+                    display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
+                    {o.label.charAt(0)}
+                  </span>
+                )}
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 14, color: "#101828", fontWeight: o.featured ? 700 : 500, display: "flex", alignItems: "center", gap: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {o.featured && <span style={{ color: "#0ABAB5" }}>{"\u2605"}</span>}
+                    {o.label}
+                  </div>
+                  <div style={{ fontSize: 11.5, color: "#667085", marginTop: 1 }}>{o.sub}</div>
+                </div>
+              </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TemplateTweaks() {
+  const [tweaks, setTweak] = useTweaks(TEMPLATE_TWEAK_DEFAULTS);
+
+  // money visibility
+  React.useEffect(() => {
+    document.body.classList.toggle("hide-money", !tweaks.showPrice);
+  }, [tweaks.showPrice]);
+
+  // client switch — persist + reload so the deck re-renders from the chosen config
+  React.useEffect(() => {
+    const current = window.FLORENCE_ACTIVE_CLIENT;
+    if (tweaks.client && tweaks.client !== current) {
+      try { localStorage.setItem("florence_deck_client", tweaks.client); } catch (e) {}
+      const url = new URL(location.href);
+      url.searchParams.set("client", tweaks.client);
+      location.replace(url.toString());
+    }
+  }, [tweaks.client]);
+
+  const options = React.useMemo(buildClientOptions, []);
+  const active = window.FLORENCE_ACTIVE_CONFIG;
+  const meta = active && active.meta;
+  const sysId = active.id;
+  const sysMax = Math.max(200, (meta && meta.totalRnNeed) || 1000);
+
+  // Phase I size is per-system (persisted by client id) and re-renders live.
+  const [phase, setPhase] = React.useState(() => {
+    try { return parseInt(localStorage.getItem("florence_phase_" + sysId), 10) || active.volume.total; }
+    catch (e) { return active.volume.total; }
+  });
+  function commitPhase(v) {
+    setPhase(v);
+    try { localStorage.setItem("florence_phase_" + sysId, String(v)); } catch (e) {}
+    if (window.FLORENCE_RENDER) window.FLORENCE_RENDER();
+  }
+
+  // Channel (Direct vs AMN-sponsored) is per-system and re-renders live.
+  const [channel, setChannel] = React.useState(() => {
+    try { return localStorage.getItem("florence_channel_" + sysId) || active.channel; }
+    catch (e) { return active.channel; }
+  });
+  function commitChannel(v) {
+    setChannel(v);
+    try { localStorage.setItem("florence_channel_" + sysId, v); } catch (e) {}
+    if (window.FLORENCE_RENDER) window.FLORENCE_RENDER();
+  }
+
+  // Nurse-profiles slide is global (Florence pipeline, not per-system) and re-renders live.
+  const [showProfiles, setShowProfiles] = React.useState(() => {
+    try { return localStorage.getItem("florence_show_profiles") === "1"; } catch (e) { return false; }
+  });
+  function commitProfiles(v) {
+    setShowProfiles(v);
+    try { localStorage.setItem("florence_show_profiles", v ? "1" : "0"); } catch (e) {}
+    if (window.FLORENCE_RENDER) window.FLORENCE_RENDER();
+  }
+
+  return (
+    <TweaksPanel title="Tweaks">
+      <TweakSection title="Client">
+        <ClientPicker
+          value={tweaks.client}
+          options={options}
+          onPick={(v) => setTweak("client", v)}
+        />
+        <div style={{ fontSize: 12, color: "#667085", lineHeight: 1.5, marginTop: 8 }}>
+          {options.length} systems from the workforce-economist universe. Picking one
+          rebuilds the whole deck — channel, per-facility pricing, and integration follow.
+          {meta && meta.totalRnNeed ? (
+            <span> &nbsp;<b>{active.displayName}</b>: {meta.nFacilities} facilities, {meta.totalRnNeed.toLocaleString()} RN need.</span>
+          ) : null}
+        </div>
+      </TweakSection>
+      <TweakSection title="Phase I size">
+        <TweakSlider
+          label={phase.toLocaleString() + " RNs"}
+          min={25}
+          max={sysMax}
+          step={25}
+          value={Math.min(phase, sysMax)}
+          onChange={commitPhase}
+        />
+        <div style={{ fontSize: 12, color: "#667085", lineHeight: 1.5, marginTop: 6 }}>
+          Scaled to {active.displayName}&rsquo;s need{meta && meta.totalRnNeed ? " (" + meta.totalRnNeed.toLocaleString() + " RN across " + meta.nFacilities + " facilities)" : ""}.
+          Waves, program total, and the ask all update live.
+        </div>
+      </TweakSection>
+      <TweakSection title="Channel">
+        <TweakRadio
+          label="Distribution"
+          value={channel}
+          options={[{ value: "direct", label: "Direct" }, { value: "partner", label: "AMN" }]}
+          onChange={commitChannel}
+        />
+        <div style={{ fontSize: 12, color: "#667085", lineHeight: 1.5, marginTop: 6 }}>
+          {channel === "partner"
+            ? "AMN-sponsored: 3-logo cover, AMN in the Sponsors seat, AMN-led workflow."
+            : "Florence-direct: 2-logo cover, no partner, plus the ATS + tracked-links integration slide."}
+        </div>
+      </TweakSection>
+      <TweakSection title="Nurse profiles">
+        <TweakToggle
+          label="Show profile slide"
+          value={showProfiles}
+          onChange={commitProfiles}
+        />
+        <div style={{ fontSize: 12, color: "#667085", lineHeight: 1.5, marginTop: 6 }}>
+          Adds a &ldquo;Who these nurses are&rdquo; slide — BSN / Master&rsquo;s-seeking (MSN, MBA, MHA) +
+          sample cohort profiles. Best for quality / retention or skeptical audiences; leave off for the lean money-first cut.
+        </div>
+      </TweakSection>
+      <TweakSection title="Display">
+        <TweakToggle
+          label="Show $ figures"
+          value={tweaks.showPrice}
+          onChange={(v) => setTweak("showPrice", v)}
+        />
+      </TweakSection>
+    </TweaksPanel>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("tweaks-root")).render(<TemplateTweaks />);
+</script>
+
+</body>
+</html>
