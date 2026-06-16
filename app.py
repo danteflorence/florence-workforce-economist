@@ -2695,6 +2695,29 @@ if view == "inpatient":
                 disabled=not _zbytes,
             )
 
+    # Client Deck (HTML) — the data-driven pitch deck for this system as ONE
+    # self-contained, emailable file (client-deck/; FICA-disclosed proposal).
+    if st.button(":material/web:  Client Deck (HTML)", key="reco_deck",
+                 use_container_width=True):
+        try:
+            import client_deck_export as _cde
+            _deck_html = _cde.export_deck_html(selected_sys_id)
+        except Exception as _e:
+            st.warning(f"Deck export failed: {_e}")
+            _deck_html = None
+        if _deck_html is None:
+            st.caption("No client deck for this system yet (not in the deck universe).")
+        else:
+            st.session_state[f"reco_deck_{safe_sys}"] = _deck_html.encode("utf-8")
+    if f"reco_deck_{safe_sys}" in st.session_state:
+        st.download_button(
+            ":material/download: Download Client Deck (.html)",
+            st.session_state[f"reco_deck_{safe_sys}"],
+            file_name=f"Florence - {selected_sys_name} - Client Deck.html",
+            mime="text/html",
+            use_container_width=True,
+        )
+
     # ─────────────────────────────────────────────────────────────────
     # 03 · PER-FACILITY SAVINGS STORY
     # ─────────────────────────────────────────────────────────────────

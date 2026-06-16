@@ -1,0 +1,103 @@
+[
+  {
+    "id": "hca",
+    "name": "HCA",
+    "hex": "#092240"
+  },
+  {
+    "id": "trinity_health",
+    "name": "Trinity Health",
+    "hex": "#9CC860"
+  },
+  {
+    "id": "ascension",
+    "name": "Ascension",
+    "hex": "#1B4297"
+  },
+  {
+    "id": "northwell_health",
+    "name": "Northwell Health",
+    "hex": "#0059A5"
+  },
+  {
+    "id": "advocate_health",
+    "name": "Advocate Health",
+    "hex": "#7E82C2"
+  },
+  {
+    "id": "adventhealth",
+    "name": "AdventHealth",
+    "hex": "#005C95"
+  },
+  {
+    "id": "providence",
+    "name": "Providence",
+    "hex": "#00338E"
+  },
+  {
+    "id": "commonspirit",
+    "name": "CommonSpirit Health",
+    "hex": "#BA4896"
+  },
+  {
+    "id": "cleveland_clinic",
+    "name": "Cleveland Clinic",
+    "hex": "#0468CD"
+  },
+  {
+    "id": "university_of_california_health",
+    "name": "University of California Health",
+    "hex": "#1295D8"
+  },
+  {
+    "id": "kaiser_permanente",
+    "name": "Kaiser Permanente",
+    "hex": "#006BA6",
+    "file": "assets/partners/kp-logo.png"
+  },
+  {
+    "id": "mass_general_brigham",
+    "name": "Mass General Brigham",
+    "hex": "#008BB0"
+  },
+  {
+    "id": "tenet_healthcare",
+    "name": "Tenet Healthcare",
+    "hex": "#1F6094"
+  },
+  {
+    "id": "upmc",
+    "name": "UPMC",
+    "hex": "#6E267B"
+  },
+  {
+    "id": "new_york_presbyterian_healthcare_system",
+    "name": "New York Presbyterian Healthcare System",
+    "hex": "#E2231A"
+  },
+  {
+    "id": "community_health_systems",
+    "name": "Community Health Systems",
+    "hex": "#006C68"
+  },
+  {
+    "id": "new_york_city_health_and_hospitals_corporation",
+    "name": "New York City Health and Hospitals Corporation",
+    "hex": "#1E478E"
+  },
+  {
+    "id": "corewell_health",
+    "name": "Corewell Health",
+    "hex": "#67F48C"
+  },
+  {
+    "id": "mayo_clinic",
+    "name": "Mayo Clinic",
+    "hex": "#0E3293"
+  },
+  {
+    "id": "baylor_scott_white",
+    "name": "Baylor Scott & White",
+    "hex": "#003DA5"
+  }
+]

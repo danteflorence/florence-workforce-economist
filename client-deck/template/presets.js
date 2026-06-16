@@ -205,7 +205,8 @@ window.configFromUniverse = function (sysId) {
     displayName: u.name,
     shortName: short,
     logo: (window.florenceLogoFile && window.florenceLogoFile(sysId)) || null,   // curated file or text wordmark
-    accent: "#1E6091",
+    accent: (window.FLORENCE_ACCENTS && window.FLORENCE_ACCENTS[sysId]) || "#1E6091",   // researched brand color
+
     date: "June 2026",
     fromUniverse: true,
     meta: { nFacilities: u.nFacilities, states: u.states, totalRnNeed: u.totalRnNeed },
