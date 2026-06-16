@@ -21,11 +21,31 @@ from __future__ import annotations
 import os
 from typing import Optional
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Header, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from pricing_engine import Calibration, CohortMix, HospitalProfile, price
+from market_lookup import lookup_market
+
+# Optional Core M2M auth. OFF by default (CORS-gated, internal). When
+# PRICING_API_REQUIRE_AUTH is truthy, every pricing call must present a valid
+# FlorenceRN Core bearer token (verified via core_auth's JWKS).
+_REQUIRE_AUTH = os.environ.get("PRICING_API_REQUIRE_AUTH", "").lower() in ("1", "true", "yes")
+
+
+def require_auth(authorization: str = Header(default="")) -> Optional[dict]:
+    if not _REQUIRE_AUTH:
+        return None
+    token = authorization[7:].strip() if authorization.lower().startswith("bearer ") else ""
+    try:
+        import core_auth  # lazy: avoid a hard PyJWT dep when auth is off
+        claims = core_auth.verify_token(token) if token else None
+    except Exception:
+        claims = None
+    if not claims:
+        raise HTTPException(status_code=401, detail="unauthorized")
+    return claims
 
 app = FastAPI(
     title="Florence Pricing API",
@@ -117,6 +137,35 @@ class PriceResponse(BaseModel):
     customer_total_monthly: float
 
 
+class LookupResponse(BaseModel):
+    state: str
+    setting: Optional[str] = None
+    role: str
+    taxable_wage_per_hour: Optional[float] = None
+    benefit_load_per_hour: Optional[float] = None
+    all_in_agency_per_hour: Optional[float] = None
+    agency_premium_per_hour: Optional[float] = None
+    n: int
+    basis: str
+    agency_rate_confidence: float
+
+
+class PriceJobRequest(BaseModel):
+    """Demand Radar's convenience path: price from {state, setting, role} alone.
+    The API looks up the local wage/agency profile, then runs the engine."""
+    state: str = Field(..., examples=["CA"])
+    setting: Optional[str] = Field(None, examples=["hospital"])
+    role: str = "RN — Med/Surg"
+    employer_name: str = "FlorenceRN-matched employer"
+    cohort: CohortIn = CohortIn()
+    calibration: CalibrationIn = CalibrationIn()
+
+
+class PriceJobResponse(BaseModel):
+    lookup: LookupResponse
+    pricing: PriceResponse
+
+
 def _calibration_from(cal_in: CalibrationIn) -> Calibration:
     """Only pass through knobs the caller actually set; the rest stay at the
     engine's defaults."""
@@ -124,38 +173,9 @@ def _calibration_from(cal_in: CalibrationIn) -> Calibration:
     return Calibration(**overrides)
 
 
-@app.get("/health")
-def health() -> dict:
-    return {"status": "ok"}
-
-
-@app.get("/")
-def root() -> dict:
-    return {
-        "service": "Florence Pricing API",
-        "version": app.version,
-        "docs": "/docs",
-        "price": "POST /price",
-    }
-
-
-@app.post("/price", response_model=PriceResponse)
-def price_endpoint(req: PriceRequest) -> PriceResponse:
-    profile = HospitalProfile(
-        name=req.hospital.name, city=req.hospital.city, state=req.hospital.state,
-        role=req.hospital.role,
-        taxable_wage_per_hour=req.hospital.taxable_wage_per_hour,
-        benefit_load_per_hour=req.hospital.benefit_load_per_hour,
-        all_in_agency_per_hour=req.hospital.all_in_agency_per_hour,
-        agency_rate_confidence=req.hospital.agency_rate_confidence,
-        agency_rate_source=req.hospital.agency_rate_source,
-        notes=req.hospital.notes,
-    )
-    cohort = CohortMix(eta=req.cohort.eta, eligible_months=req.cohort.eligible_months)
-    r = price(profile, cohort, _calibration_from(req.calibration))
-
+def _price_response(r, state: str) -> "PriceResponse":
     return PriceResponse(
-        hospital=r.hospital, state=req.hospital.state,
+        hospital=r.hospital, state=state,
         channel=r.channel.value if hasattr(r.channel, "value") else str(r.channel),
         feasible=r.feasible, manual_review_flag=r.manual_review_flag,
         manual_review_reason=r.manual_review_reason,
@@ -174,6 +194,63 @@ def price_endpoint(req: PriceRequest) -> PriceResponse:
         florence_net_monthly=r.florence_net_monthly,
         customer_total_monthly=r.customer_total_monthly,
     )
+
+
+@app.get("/health")
+def health() -> dict:
+    return {"status": "ok"}
+
+
+@app.get("/")
+def root() -> dict:
+    return {
+        "service": "Florence Pricing API",
+        "version": app.version,
+        "docs": "/docs",
+        "price": "POST /price",
+    }
+
+
+@app.get("/lookup", response_model=LookupResponse)
+def lookup_endpoint(
+    state: str, setting: Optional[str] = None, role: str = "RN — Med/Surg",
+    _auth: Optional[dict] = Depends(require_auth),
+) -> LookupResponse:
+    return LookupResponse(**lookup_market(state, setting, role))
+
+
+@app.post("/price-job", response_model=PriceJobResponse)
+def price_job_endpoint(req: PriceJobRequest, _auth: Optional[dict] = Depends(require_auth)) -> PriceJobResponse:
+    m = lookup_market(req.state, req.setting, req.role)
+    profile = HospitalProfile(
+        name=req.employer_name, city="", state=m["state"], role=req.role,
+        taxable_wage_per_hour=m["taxable_wage_per_hour"] or 0.0,
+        benefit_load_per_hour=m["benefit_load_per_hour"] or 0.0,
+        all_in_agency_per_hour=m["all_in_agency_per_hour"] or 0.0,
+        agency_rate_confidence=m["agency_rate_confidence"],
+        agency_rate_source="market_lookup",
+    )
+    cohort = CohortMix(eta=req.cohort.eta, eligible_months=req.cohort.eligible_months)
+    r = price(profile, cohort, _calibration_from(req.calibration))
+    pricing = _price_response(r, m["state"])
+    return PriceJobResponse(lookup=LookupResponse(**m), pricing=pricing)
+
+
+@app.post("/price", response_model=PriceResponse)
+def price_endpoint(req: PriceRequest, _auth: Optional[dict] = Depends(require_auth)) -> PriceResponse:
+    profile = HospitalProfile(
+        name=req.hospital.name, city=req.hospital.city, state=req.hospital.state,
+        role=req.hospital.role,
+        taxable_wage_per_hour=req.hospital.taxable_wage_per_hour,
+        benefit_load_per_hour=req.hospital.benefit_load_per_hour,
+        all_in_agency_per_hour=req.hospital.all_in_agency_per_hour,
+        agency_rate_confidence=req.hospital.agency_rate_confidence,
+        agency_rate_source=req.hospital.agency_rate_source,
+        notes=req.hospital.notes,
+    )
+    cohort = CohortMix(eta=req.cohort.eta, eligible_months=req.cohort.eligible_months)
+    r = price(profile, cohort, _calibration_from(req.calibration))
+    return _price_response(r, req.hospital.state)
 
 
 if __name__ == "__main__":

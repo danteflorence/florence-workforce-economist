@@ -1,4 +1,5 @@
-streamlit>=1.32
+streamlit>=1.42          # st.context.cookies (Core SSO) + st.login
+PyJWT[crypto]>=2.8       # verify FlorenceRN Core RS256 fl_session cookie (core_auth.py)
 pandas>=2.0
 numpy>=1.24
 pyarrow>=14.0          # parquet engine (previously pulled in only transitively via streamlit)

@@ -1776,63 +1776,76 @@ net_savings = term_net_savings
 
 
 # ---------------------------------------------------------------------------
-# Internal auth gate (opt-in)
+# Auth gate — FlorenceRN Core SSO (shared fl_session cookie), with fallbacks
 # ---------------------------------------------------------------------------
-# Off by default so local dev runs without ceremony. To require login in any
-# shared / staging / production deployment, set:
+# Off by default so local dev runs without ceremony. In any shared / staging /
+# production deployment set:
 #     export FLORENCE_INTERNAL_AUTH=1
-# Then operators sign in with email-OTP (auth.py) and roles are enforced by
-# rbac.py. First user to sign in is auto-promoted to admin so the system is
-# bootstrappable from scratch.
+# PREFERRED path: FlorenceRN Core SSO — the shared cookie is verified against
+# Core's JWKS (core_auth.py) and the Core role maps to rbac.py's admin/ops/rep;
+# territory comes from the token, else the rbac CSV. The Google-OIDC
+# (florence_auth.py) and email-OTP (auth.py) paths remain as fallbacks.
 import os as _os
 _AUTH_REQUIRED = _os.environ.get("FLORENCE_INTERNAL_AUTH") == "1"
 current_user = None
 current_role = "admin"   # default in unauthenticated local mode
 current_territory = "ALL"
 
-# Google sign-in (Streamlit native OIDC). Conditional — enforces login ONLY when
-# a [auth] section exists in secrets; otherwise it no-ops so the app runs open
-# and nobody is locked out before the OAuth client is provisioned. florence_auth.
-import florence_auth as _gauth
-_g_user = _gauth.require_login(st)
-if _g_user is not None:
-    current_user = {"email": _g_user["email"], "name": _g_user.get("name", "")}
-    st.session_state["current_user_email"] = _g_user["email"]
-    try:
-        import rbac as _rbac
-        _rbac.bootstrap_first_admin(_g_user["email"])
-        current_role = _rbac.get_role(_g_user["email"]) or "rep"
-        current_territory = _rbac.get_territory(_g_user["email"]) or "ALL"
-    except Exception:
-        pass
-
-if _g_user is None and _AUTH_REQUIRED:
-    import auth as _flo_auth
+try:
     import rbac as _rbac
-    _tok = st.session_state.get("florence_session_token")
-    current_user = _flo_auth.get_session(_tok) if _tok else None
-    if _tok and current_user is None:
-        st.session_state["florence_session_token"] = None
-    if current_user is None:
-        st.markdown(
-            "<div style='max-width:520px; margin:80px auto; padding:32px; "
-            "border:1px solid #E5E8EE; border-radius:12px; background:white;'>",
-            unsafe_allow_html=True,
-        )
-        st.markdown("### Florence Workforce Economist")
-        st.caption("Internal tool — staff sign-in required.")
-        current_user = _flo_auth.streamlit_login(
-            st, default_role="rep",
-            title="", blurb="",
-        )
-        st.markdown("</div>", unsafe_allow_html=True)
+except Exception:
+    _rbac = None
+
+# 1) FlorenceRN Core SSO — verify the shared cookie (preferred across the fleet).
+import core_auth as _core
+_core_user = _core.current_user(st) if _core.is_configured() else None
+if _core_user and _core_user.get("role"):
+    current_user = {"email": _core_user["email"], "name": _core_user.get("name", "")}
+    current_role = _core_user["role"]
+    current_territory = _core_user.get("territory") or (
+        _rbac.get_territory(_core_user["email"]) if _rbac else None) or "ALL"
+elif _AUTH_REQUIRED and _core.is_configured():
+    # Auth required but no valid Core session → send the user to Core to sign in.
+    _core.require_login(st)  # renders a sign-in card and st.stop()s
+
+# 2) Legacy fallbacks (only when Core didn't resolve a signed-in user).
+if current_user is None:
+    import florence_auth as _gauth
+    _g_user = _gauth.require_login(st)  # Google OIDC; no-ops unless [auth] secrets exist
+    if _g_user is not None:
+        current_user = {"email": _g_user["email"], "name": _g_user.get("name", "")}
+        if _rbac:
+            try:
+                _rbac.bootstrap_first_admin(_g_user["email"])
+                current_role = _rbac.get_role(_g_user["email"]) or "rep"
+                current_territory = _rbac.get_territory(_g_user["email"]) or "ALL"
+            except Exception:
+                pass
+    if _g_user is None and _AUTH_REQUIRED and _rbac:
+        import auth as _flo_auth
+        _tok = st.session_state.get("florence_session_token")
+        current_user = _flo_auth.get_session(_tok) if _tok else None
+        if _tok and current_user is None:
+            st.session_state["florence_session_token"] = None
         if current_user is None:
-            st.stop()
-        # Bootstrap: first user becomes admin
-        _rbac.bootstrap_first_admin(current_user["email"])
-        current_user = _flo_auth.get_user(current_user["email"]) or current_user
-    current_role = _rbac.get_role(current_user["email"]) or "rep"
-    current_territory = _rbac.get_territory(current_user["email"]) or "ALL"
+            st.markdown(
+                "<div style='max-width:520px; margin:80px auto; padding:32px; "
+                "border:1px solid #E5E8EE; border-radius:12px; background:white;'>",
+                unsafe_allow_html=True,
+            )
+            st.markdown("### Florence Workforce Economist")
+            st.caption("Internal tool — staff sign-in required.")
+            current_user = _flo_auth.streamlit_login(st, default_role="rep", title="", blurb="")
+            st.markdown("</div>", unsafe_allow_html=True)
+            if current_user is None:
+                st.stop()
+            # Bootstrap: first user becomes admin
+            _rbac.bootstrap_first_admin(current_user["email"])
+            current_user = _flo_auth.get_user(current_user["email"]) or current_user
+        current_role = _rbac.get_role(current_user["email"]) or "rep"
+        current_territory = _rbac.get_territory(current_user["email"]) or "ALL"
+else:
+    import florence_auth as _gauth  # ensure _gauth exists for the logout control below
 
 # Expose for downstream code (tabs can call _rbac.require_role() etc.)
 st.session_state["current_user"] = current_user
@@ -1840,7 +1853,14 @@ st.session_state["current_role"] = current_role
 st.session_state["current_territory"] = current_territory
 if current_user and current_user.get("email"):
     st.session_state["current_user_email"] = current_user["email"]
-_gauth.logout_button(st)  # sidebar sign-out — no-op unless Google auth is configured
+
+# Sidebar sign-out: Core logout when signed in via Core; else the native (Google)
+# control, which no-ops unless Google auth is configured.
+if _core_user and _core_user.get("role"):
+    st.sidebar.caption(f"Signed in · {_core_user['email']} ({current_role})")
+    st.sidebar.link_button("Sign out", _core.logout_url(_core.app_origin(st)))
+else:
+    _gauth.logout_button(st)
 
 
 # ---------------------------------------------------------------------------
