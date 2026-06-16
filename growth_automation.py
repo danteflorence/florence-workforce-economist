@@ -102,9 +102,9 @@ UNIVERSITY_STAGE_LABEL = {
 }
 
 STAGE_COLOR = {
-    0: "#5B6675", 1: "#5B6675", 2: "#F4A261", 3: "#F4A261",
-    4: "#089478", 5: "#0BC5A0", 6: "#0BC5A0", 7: "#0BC5A0",
-    8: "#0BC5A0", 9: "#0F1B2D", 10: "#0F1B2D", 11: "#0F1B2D",
+    0: "#475467", 1: "#475467", 2: "#F4A261", 3: "#F4A261",
+    4: "#067F7B", 5: "#0ABAB5", 6: "#0ABAB5", 7: "#0ABAB5",
+    8: "#0ABAB5", 9: "#101828", 10: "#101828", 11: "#101828",
 }
 
 EMPLOYER_FIELDS = [
@@ -695,7 +695,7 @@ def _stat_html(icon: str, value, label: str) -> str:
 
 def _stage_chip(stage: str, stages: list[str], labels: dict) -> str:
     idx = stages.index(stage) if stage in stages else 0
-    color = STAGE_COLOR.get(idx, "#5B6675")
+    color = STAGE_COLOR.get(idx, "#475467")
     return (
         f"<span style='display:inline-block; padding:2px 10px; "
         f"border-radius:12px; background:{color}1A; color:{color}; "
@@ -830,11 +830,11 @@ def _contact_line_html(t) -> str:
     parts = []
     person = ""
     if name:
-        person = f"<b style='color:#0F1B2D'>{name}</b>"
+        person = f"<b style='color:#101828'>{name}</b>"
         if title:
-            person += f" <span style='color:#5B6675'>· {title}</span>"
+            person += f" <span style='color:#475467'>· {title}</span>"
     if phone:
-        person += f"{' · ' if person else ''}<span style='color:#0F1B2D'>{phone}</span>"
+        person += f"{' · ' if person else ''}<span style='color:#101828'>{phone}</span>"
     if person:
         parts.append(f"<div style='font-size:0.85rem; margin-top:6px;'>{person}</div>")
     elif needs_nppes:
@@ -846,10 +846,10 @@ def _contact_line_html(t) -> str:
     op = ""
     if org:
         sites = f" · {n_sites} sites" if n_sites and n_sites not in ("0", "") else ""
-        op = f"<span style='color:#5B6675'>Operator: {org}{sites}</span>"
+        op = f"<span style='color:#475467'>Operator: {org}{sites}</span>"
     badges = ""
     if is_mgmt:
-        badges += ("<span style='background:#0F1B2D;color:#fff;border-radius:4px;"
+        badges += ("<span style='background:#101828;color:#fff;border-radius:4px;"
                    "padding:1px 7px;font-size:0.68rem;margin-left:6px;'>MANAGEMENT CO</span>")
     if pe:
         badges += ("<span style='background:#8A6D3B;color:#fff;border-radius:4px;"
@@ -1034,9 +1034,9 @@ def _streamlit_employer_tab(st, priced_df, rep_email, territory_states) -> None:
             with head_l:
                 st.markdown(
                     _stage_chip(t["stage"], EMPLOYER_STAGES, EMPLOYER_STAGE_LABEL)
-                    + f"<div style='font-family:Newsreader,serif; font-size:1.2rem; "
-                    f"color:#0F1B2D; margin-top:4px;'>{str(t['name']).title()}</div>"
-                    f"<div style='color:#5B6675; font-size:0.83rem;'>"
+                    + f"<div style='font-family:Playfair Display,serif; font-size:1.2rem; "
+                    f"color:#101828; margin-top:4px;'>{str(t['name']).title()}</div>"
+                    f"<div style='color:#475467; font-size:0.83rem;'>"
                     f"{t['facility_type']} · {str(t['city']).title()}, {t['state']} · "
                     f"{t['rn_estimate']} RN capacity</div>"
                     + _contact_line_html(t),
@@ -1121,9 +1121,9 @@ def _streamlit_university_tab(st, rep_email) -> None:
                 )
                 st.markdown(
                     _stage_chip(t["stage"], UNIVERSITY_STAGES, UNIVERSITY_STAGE_LABEL)
-                    + f"<div style='font-family:Newsreader,serif; font-size:1.2rem; "
-                    f"color:#0F1B2D; margin-top:4px;'>{t['name']}</div>"
-                    + (f"<div style='color:#5B6675; font-size:0.83rem;'>{meta}</div>"
+                    + f"<div style='font-family:Playfair Display,serif; font-size:1.2rem; "
+                    f"color:#101828; margin-top:4px;'>{t['name']}</div>"
+                    + (f"<div style='color:#475467; font-size:0.83rem;'>{meta}</div>"
                        if meta else ""),
                     unsafe_allow_html=True,
                 )

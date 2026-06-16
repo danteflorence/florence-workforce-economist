@@ -31,21 +31,21 @@ st.set_page_config(
 # ─── Florence brand ──────────────────────────────────────────────────
 FLORENCE_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
 :root {
-    --f-teal: #0BC5A0;
-    --f-teal-dark: #089478;
-    --f-navy: #0F1B2D;
+    --f-teal: #0ABAB5;
+    --f-teal-dark: #067F7B;
+    --f-navy: #101828;
     --f-gray: #F4F6F8;
     --f-border: #E5E8EE;
-    --f-muted: #5B6675;
+    --f-muted: #475467;
 }
 html, body, .stApp { font-family: 'Inter', -apple-system, sans-serif; }
 [data-testid="stIconMaterial"] {
     font-family: "Material Symbols Rounded", "Material Symbols Outlined" !important;
 }
 h1, h2, h3, h4 {
-    font-family: 'Newsreader', Georgia, serif !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
     color: var(--f-navy);
     font-weight: 600;
     letter-spacing: -0.015em;
@@ -56,7 +56,7 @@ h3 { font-size: 1.4rem; }
 
 .florence-mark {
     display: flex; align-items: center; gap: 10px;
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.4rem; font-weight: 600; color: var(--f-navy);
 }
 .florence-mark .f-box {
@@ -73,7 +73,7 @@ h3 { font-size: 1.4rem; }
     margin: 6px 0 10px 0;
 }
 .florence-headline {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 3rem; font-weight: 600;
     line-height: 1.08; letter-spacing: -0.02em;
     color: var(--f-navy);
@@ -100,7 +100,7 @@ h3 { font-size: 1.4rem; }
 .callout-card.dark h3 { color: white !important; }
 .callout-card.dark p { color: rgba(255,255,255,0.85); }
 .callout-card .number {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 3.2rem; font-weight: 600;
     line-height: 1.0;
     color: var(--f-teal-dark);
@@ -158,7 +158,7 @@ with hdr_r:
     st.markdown(
         f"<div style='text-align:right; font-family:Inter,sans-serif; "
         f"font-size:0.8rem; letter-spacing:0.18em; text-transform:uppercase; "
-        f"color:#5B6675; padding-top:6px;'>"
+        f"color:#475467; padding-top:6px;'>"
         f"PUBLIC EDITION · UPDATED {date.today().strftime('%B %Y')}"
         f"</div>",
         unsafe_allow_html=True,
@@ -288,7 +288,7 @@ with ex_l:
         <div class="callout-card">
           <div class="label">Demand side</div>
           <h3>Aging population</h3>
-          <p style='font-family:Inter,sans-serif; color:#5B6675; line-height:1.55;'>
+          <p style='font-family:Inter,sans-serif; color:#475467; line-height:1.55;'>
             By 2030, all baby boomers will be over 65. Medicare enrollment is
             growing 3% annually. Care complexity rises with age — driving
             demand for RNs at every site of care from acute hospitals to home health.
@@ -303,7 +303,7 @@ with ex_m:
         <div class="callout-card">
           <div class="label">Supply side</div>
           <h3>Domestic pipeline constraints</h3>
-          <p style='font-family:Inter,sans-serif; color:#5B6675; line-height:1.55;'>
+          <p style='font-family:Inter,sans-serif; color:#475467; line-height:1.55;'>
             U.S. nursing schools turn away ~80,000 qualified applicants
             annually due to faculty shortages and clinical placement caps.
             ~200,000 RNs reach retirement age each year. The math doesn't close.
@@ -318,7 +318,7 @@ with ex_r:
         <div class="callout-card">
           <div class="label">Cost side</div>
           <h3>Agency labor premium</h3>
-          <p style='font-family:Inter,sans-serif; color:#5B6675; line-height:1.55;'>
+          <p style='font-family:Inter,sans-serif; color:#475467; line-height:1.55;'>
             Operators paying $85-150/hour for contract RNs versus $40-60/hour
             for staff RNs. The premium funds turnover, recruitment, training,
             and margin — and recurs every cycle. Hospitals spent $24B on agency
@@ -347,11 +347,11 @@ for col, (num, title, body) in zip(flow_cols, steps):
         f"""
         <div style='background:#F4F6F8; border:1px solid #E5E8EE;
                     border-radius:12px; padding:24px 22px; height:280px;'>
-          <div style='font-family:Newsreader,serif; font-size:1.8rem;
-                      color:#0BC5A0; margin-bottom:8px;'>{num}</div>
+          <div style='font-family:Playfair Display,serif; font-size:1.8rem;
+                      color:#0ABAB5; margin-bottom:8px;'>{num}</div>
           <h3 style='font-size:1.15rem; margin-bottom:10px;'>{title}</h3>
           <p style='font-family:Inter,sans-serif; font-size:0.92rem;
-                    color:#5B6675; line-height:1.55;'>{body}</p>
+                    color:#475467; line-height:1.55;'>{body}</p>
         </div>
         """,
         unsafe_allow_html=True,

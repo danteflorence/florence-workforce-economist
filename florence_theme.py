@@ -78,7 +78,13 @@ def inject_theme(st) -> None:
 html, body, .stApp, [data-testid="stAppViewContainer"] {{ font-family:var(--f-sans); color:var(--ink); background:var(--surface); }}
 .stApp {{ background:var(--surface); }}
 [data-testid="stIconMaterial"], .material-symbols-rounded, .material-symbols-outlined {{ font-family:"Material Symbols Rounded","Material Symbols Outlined" !important; }}
-.main .block-container {{ padding-top:1.1rem; max-width:1480px; }}
+.main .block-container {{ padding-top:1.35rem; max-width:1480px; }}
+
+/* ---- deck base polish (mirrors colors_and_type.css base) ---- */
+html, body, .stApp {{ -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; text-rendering:optimizeLegibility; }}
+::selection {{ background:var(--teal-wash); color:var(--ink); }}
+.stApp a:not([data-testid][role="button"]):not([kind]) {{ color:var(--teal-text); border-bottom:1px solid transparent; transition:border-color .15s ease; }}
+.stApp a:not([data-testid][role="button"]):not([kind]):hover {{ border-bottom-color:currentColor; }}
 
 /* ---- editorial serif headings ---- */
 h1,h2,h3,h4,
@@ -159,9 +165,9 @@ h3 {{ font-size:1.4rem; }}
 /* Prominent system search — thick teal outline so it can't be missed */
 [class*="st-key-inpatient_search"] label {{ font-weight:700 !important; color:var(--ink) !important; font-size:.95rem !important; }}
 [class*="st-key-inpatient_search"] [data-baseweb="input"] {{ border:none !important; box-shadow:none !important; background:transparent !important; }}
-[class*="st-key-inpatient_search"] input {{ border:3px solid #0B2545 !important; border-radius:12px !important; background:#fff !important; font-size:1.05rem !important; padding:12px 14px !important; box-shadow:0 2px 8px rgba(11,37,69,.18) !important; }}
+[class*="st-key-inpatient_search"] input {{ border:2.5px solid var(--teal) !important; border-radius:12px !important; background:#fff !important; font-size:1.05rem !important; padding:12px 14px !important; box-shadow:0 2px 10px rgba(10,186,181,.16) !important; }}
 [class*="st-key-inpatient_search"] input::placeholder {{ color:#667085 !important; }}
-[class*="st-key-inpatient_search"] input:focus {{ border-color:#0B2545 !important; box-shadow:0 0 0 3px rgba(11,37,69,.28) !important; }}
+[class*="st-key-inpatient_search"] input:focus {{ border-color:var(--teal-deep) !important; box-shadow:0 0 0 4px rgba(10,186,181,.22) !important; }}
 </style>""", unsafe_allow_html=True)
 
 

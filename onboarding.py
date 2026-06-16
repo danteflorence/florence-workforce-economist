@@ -246,10 +246,10 @@ def streamlit_rep_view(st, rep_email: str) -> None:
     pct = overall_pct(rep_email)
     st.markdown(
         f"<div style='font-family:Inter,sans-serif; font-size:0.8rem; "
-        f"letter-spacing:0.18em; text-transform:uppercase; color:#5B6675;'>"
+        f"letter-spacing:0.18em; text-transform:uppercase; color:#475467;'>"
         f"YOUR ONBOARDING</div>"
-        f"<h2 style='font-family:Newsreader,Georgia,serif; font-weight:500; "
-        f"color:#0F1B2D; margin-top:0; font-size:2.2rem;'>"
+        f"<h2 style='font-family:Playfair Display,Georgia,serif; font-weight:500; "
+        f"color:#101828; margin-top:0; font-size:2.2rem;'>"
         f"5 days to your first live deal.</h2>",
         unsafe_allow_html=True,
     )
@@ -281,7 +281,7 @@ def streamlit_rep_view(st, rep_email: str) -> None:
                 cols = st.columns([6, 2, 2])
                 with cols[0]:
                     star = " ★" if signoff_required else ""
-                    label_color = "#5B6675" if done else "#0F1B2D"
+                    label_color = "#475467" if done else "#101828"
                     icon = ":material/check_circle:" if done else ":material/radio_button_unchecked:"
                     st.markdown(
                         f"{icon} <span style='color:{label_color};'>"
@@ -342,10 +342,10 @@ def streamlit_leader_view(st) -> None:
     """Sales-leadership view: see all reps' progress + sign off pending."""
     st.markdown(
         "<div style='font-family:Inter,sans-serif; font-size:0.8rem; "
-        "letter-spacing:0.18em; text-transform:uppercase; color:#5B6675;'>"
+        "letter-spacing:0.18em; text-transform:uppercase; color:#475467;'>"
         "TEAM PROGRESS</div>"
-        "<h2 style='font-family:Newsreader,Georgia,serif; font-weight:500; "
-        "color:#0F1B2D; margin-top:0; font-size:2.2rem;'>"
+        "<h2 style='font-family:Playfair Display,Georgia,serif; font-weight:500; "
+        "color:#101828; margin-top:0; font-size:2.2rem;'>"
         "Your reps' onboarding.</h2>",
         unsafe_allow_html=True,
     )

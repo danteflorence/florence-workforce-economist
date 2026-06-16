@@ -42,23 +42,23 @@ st.set_page_config(
 # ─── Florence brand styles (copied from main app for consistency) ────
 FLORENCE_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
 
 :root {
-    --f-teal: #0BC5A0;
-    --f-teal-dark: #089478;
-    --f-navy: #0F1B2D;
-    --f-gray: #F4F6F8;
-    --f-border: #E5E8EE;
-    --f-ink: #0F1B2D;
-    --f-muted: #5B6675;
+    --f-teal: #0ABAB5;
+    --f-teal-dark: #067F7B;
+    --f-navy: #101828;
+    --f-gray: #FAFBFB;
+    --f-border: #E4E7EC;
+    --f-ink: #101828;
+    --f-muted: #475467;
 }
 html, body, .stApp { font-family: 'Inter', -apple-system, sans-serif; }
 [data-testid="stIconMaterial"] {
     font-family: "Material Symbols Rounded", "Material Symbols Outlined" !important;
 }
 h1, h2, h3, h4 {
-    font-family: 'Newsreader', Georgia, serif !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
     color: var(--f-navy);
     font-weight: 600;
     letter-spacing: -0.015em;
@@ -69,7 +69,7 @@ h3 { font-size: 1.5rem; }
 
 .florence-mark {
     display: flex; align-items: center; gap: 10px;
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.4rem; font-weight: 600; color: var(--f-navy);
 }
 .florence-mark .f-box {
@@ -79,7 +79,7 @@ h3 { font-size: 1.5rem; }
     font-family: 'Inter', sans-serif; font-size: 1.05rem;
 }
 .florence-headline {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 3.2rem; font-weight: 600;
     line-height: 1.05; letter-spacing: -0.02em;
     color: var(--f-navy);
@@ -113,7 +113,7 @@ h3 { font-size: 1.5rem; }
     color: rgba(255,255,255,0.85);
 }
 .result-card .number {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 4.5rem; font-weight: 600;
     line-height: 1.0;
     color: white;
@@ -142,7 +142,7 @@ h3 { font-size: 1.5rem; }
 }
 .detail-card .row-value {
     color: var(--f-navy); font-weight: 600;
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
 }
 .stripe-cta {
     background: var(--f-navy);
@@ -175,7 +175,7 @@ h3 { font-size: 1.5rem; }
     border: 1.5px solid var(--f-teal);
     color: var(--f-teal) !important;
 }
-.cta-button.secondary:hover { background: rgba(11,197,160,0.1); }
+.cta-button.secondary:hover { background: rgba(10,186,181,0.1); }
 .disclosure {
     font-family: 'Inter', sans-serif;
     font-size: 0.8rem;
@@ -334,7 +334,7 @@ with hdr_l:
 with hdr_r:
     st.markdown(
         "<div style='text-align:right; font-family:Inter,sans-serif; font-size:0.8rem; "
-        "letter-spacing:0.18em; text-transform:uppercase; color:#5B6675; padding-top:6px;'>"
+        "letter-spacing:0.18em; text-transform:uppercase; color:#475467; padding-top:6px;'>"
         "FOR HOMECARE, HOSPICE, SNF, ASC, HOSPITAL OPERATORS"
         "</div>",
         unsafe_allow_html=True,
@@ -368,9 +368,9 @@ with hero_r:
         <div style='background:#F4F6F8; border:1px solid #E5E8EE; border-radius:12px;
                     padding:22px 26px; margin-top:6px;'>
           <div style='font-family:Inter,sans-serif; font-size:0.76rem; font-weight:600;
-                      letter-spacing:0.22em; text-transform:uppercase; color:#5B6675;
+                      letter-spacing:0.22em; text-transform:uppercase; color:#475467;
                       margin-bottom:10px;'>What you get</div>
-          <ul style='font-family:Inter,sans-serif; font-size:0.95rem; color:#0F1B2D;
+          <ul style='font-family:Inter,sans-serif; font-size:0.95rem; color:#101828;
                      line-height:1.7; padding-left:20px; margin:0;'>
             <li>An RN your team owns, not a contingent worker</li>
             <li>Three-year minimum tenure built into the program</li>
@@ -446,7 +446,7 @@ st.markdown(
     f"""
     <div class="detail-card">
       <div style='font-family:Inter,sans-serif; font-size:0.76rem; font-weight:600;
-                  letter-spacing:0.22em; text-transform:uppercase; color:#5B6675; margin-bottom:14px;'>
+                  letter-spacing:0.22em; text-transform:uppercase; color:#475467; margin-bottom:14px;'>
         Per-RN economics
       </div>
       <div class="row">
@@ -459,7 +459,7 @@ st.markdown(
       </div>
       <div class="row">
         <div class="row-label"><b>Net benefit per RN per month</b></div>
-        <div class="row-value" style='color:#089478;'>
+        <div class="row-value" style='color:#067F7B;'>
           <b>${net_benefit_per_rn_month:,.0f}/mo</b>
         </div>
       </div>
@@ -482,7 +482,7 @@ st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
 st.markdown('<div class="florence-eyebrow">Get the full breakdown</div>', unsafe_allow_html=True)
 st.markdown("<h2>Take this analysis with you.</h2>", unsafe_allow_html=True)
 st.markdown(
-    '<div style="font-family:Inter,sans-serif; color:#5B6675; max-width:680px;">'
+    '<div style="font-family:Inter,sans-serif; color:#475467; max-width:680px;">'
     "Enter your email to unlock the printable PDF report with your full per-RN economics, "
     "Florence implementation timeline, and methodology. "
     "We use your email only to send your report and follow up — never sold or shared."
@@ -551,8 +551,8 @@ if submitted:
                     Monthly subscription to ongoing labor-market analysis and
                     pricing updates for your business. Cancel anytime.
                   </p>
-                  <div style='font-family:Newsreader,serif; font-size:2.2rem;
-                              color:#0BC5A0; margin:8px 0;'>$99<span style='font-size:1.1rem;
+                  <div style='font-family:Playfair Display,serif; font-size:2.2rem;
+                              color:#0ABAB5; margin:8px 0;'>$99<span style='font-size:1.1rem;
                               color:rgba(255,255,255,0.85);'>/month</span></div>
                   {_sub_cta}
                 </div>
@@ -569,8 +569,8 @@ if submitted:
                     successful employment start — replacement protection
                     for early attrition included.
                   </p>
-                  <div style='font-family:Newsreader,serif; font-size:2.2rem;
-                              color:#0BC5A0; margin:8px 0;'>$50K<span style='font-size:1.1rem;
+                  <div style='font-family:Playfair Display,serif; font-size:2.2rem;
+                              color:#0ABAB5; margin:8px 0;'>$50K<span style='font-size:1.1rem;
                               color:rgba(255,255,255,0.85);'>/RN</span></div>
                   {_place_cta}
                 </div>

@@ -205,7 +205,7 @@ def _tile_html(row: dict, idx: int = 0, status: Optional[str] = None) -> str:
 
     Deck-styled (Avila×Florence): white card with a colored accent rail + a
     serif initials badge in one of the two brand colors (teal / indigo,
-    alternating across the grid), a Newsreader serif name, an uppercase tracked
+    alternating across the grid), a Playfair Display serif name, an uppercase tracked
     rank pill, and a 2×2 stat grid whose 24-month-impact number is
     rendered in the accent color. A multi-badge strip replaces the single badge
     for consortium tiles (child_domains populated, e.g. UC Health).
@@ -235,7 +235,7 @@ def _tile_html(row: dict, idx: int = 0, status: Optional[str] = None) -> str:
     status_html = ""
     if status:
         _lbl = STAGE_LABEL.get(status, status)
-        _clr = STAGE_COLOR.get(status, "#5B6675")
+        _clr = STAGE_COLOR.get(status, "#475467")
         status_html = (
             f"<div style='display:inline-block;margin-top:6px;padding:2px 9px;"
             f"border-radius:999px;font-size:0.62rem;font-weight:700;"

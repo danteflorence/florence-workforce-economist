@@ -230,7 +230,7 @@ def render_streamlit_view(st) -> None:
         f"""
         <div style="background:#F4F6F8; border:1px solid #E5E8EE; border-radius:10px;
                     padding:18px 24px;">
-          <ul style="font-family:Inter,sans-serif; color:#0F1B2D; line-height:1.8;">
+          <ul style="font-family:Inter,sans-serif; color:#101828; line-height:1.8;">
             <li>Florence collects <b>${u['placement_fee_per_rn']:,.0f}</b> per RN placed</li>
             <li>Amortized over a <b>{u['fee_amortization_months']}-month</b> placement term</li>
             <li>Equivalent monthly rate: <b>${u['fee_per_rn_per_month']:,.0f}/RN/mo</b></li>
@@ -270,7 +270,7 @@ def render_streamlit_view(st) -> None:
         st.markdown('<div class="florence-eyebrow">Top 15 target systems</div>',
                     unsafe_allow_html=True)
         st.markdown(
-            "<div style='font-family:Inter,sans-serif; color:#5B6675; max-width:640px;'>"
+            "<div style='font-family:Inter,sans-serif; color:#475467; max-width:640px;'>"
             "Ranked by Florence-fit composite score (size, agency premium, "
             "contract-labor intensity, deal score, data confidence)."
             "</div>",
@@ -292,12 +292,12 @@ def render_streamlit_view(st) -> None:
     for label, body in metrics["data_moats"].items():
         st.markdown(
             f"""
-            <div style="background:#F4F6F8; border-left:4px solid #0BC5A0;
+            <div style="background:#F4F6F8; border-left:4px solid #0ABAB5;
                         padding:12px 18px; border-radius:0 8px 8px 0; margin: 8px 0;
                         font-family:Inter,sans-serif;">
               <div style="font-size:0.72rem; font-weight:600; letter-spacing:0.18em;
-                          text-transform:uppercase; color:#089478;">{label.replace('_', ' ')}</div>
-              <div style="color:#0F1B2D; margin-top:4px;">{body}</div>
+                          text-transform:uppercase; color:#067F7B;">{label.replace('_', ' ')}</div>
+              <div style="color:#101828; margin-top:4px;">{body}</div>
             </div>
             """,
             unsafe_allow_html=True,

@@ -19,7 +19,7 @@ def _apply_florence_layout(fig: go.Figure, *, title: str = "", height: int = 420
     fig.update_layout(
         title=dict(
             text=title,
-            font=dict(family="Newsreader, Georgia, serif", size=20, color=FLORENCE_NAVY),
+            font=dict(family="Playfair Display, Georgia, serif", size=20, color=FLORENCE_NAVY),
             x=0, xanchor="left",
         ),
         font=dict(family="Inter, sans-serif", color=FLORENCE_NAVY, size=12),

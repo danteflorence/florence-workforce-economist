@@ -78,27 +78,27 @@ def _lookup_nurse_profile(email: str) -> dict:
 # ─── Florence brand styles ──────────────────────────────────────────
 FLORENCE_CSS = """
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600;6..72,700&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap');
 :root {
-    --f-teal: #0BC5A0;
-    --f-teal-dark: #089478;
-    --f-navy: #0F1B2D;
-    --f-gray: #F4F6F8;
-    --f-border: #E5E8EE;
-    --f-muted: #5B6675;
+    --f-teal: #0ABAB5;
+    --f-teal-dark: #067F7B;
+    --f-navy: #101828;
+    --f-gray: #FAFBFB;
+    --f-border: #E4E7EC;
+    --f-muted: #475467;
 }
 html, body, .stApp { font-family: 'Inter', -apple-system, sans-serif; }
 [data-testid="stIconMaterial"] {
     font-family: "Material Symbols Rounded", "Material Symbols Outlined" !important;
 }
 h1, h2, h3, h4 {
-    font-family: 'Newsreader', Georgia, serif !important;
+    font-family: 'Playfair Display', Georgia, serif !important;
     color: var(--f-navy);
     font-weight: 600;
 }
 .florence-mark {
     display: flex; align-items: center; gap: 10px;
-    font-family: 'Newsreader', Georgia, serif;
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.4rem; font-weight: 600; color: var(--f-navy);
 }
 .florence-mark .f-box {
@@ -142,7 +142,7 @@ h1, h2, h3, h4 {
     color: var(--f-muted);
 }
 .metric-card .value {
-    font-family: 'Newsreader', serif;
+    font-family: 'Playfair Display', serif;
     font-size: 2.1rem; font-weight: 600;
     line-height: 1.0;
     color: var(--f-navy);
@@ -236,12 +236,12 @@ if auth_user is None:
     with hdr_r:
         st.markdown(
             "<div style='text-align:right; font-family:Inter,sans-serif; font-size:0.8rem; "
-            "letter-spacing:0.18em; text-transform:uppercase; color:#5B6675; padding-top:6px;'>"
+            "letter-spacing:0.18em; text-transform:uppercase; color:#475467; padding-top:6px;'>"
             "FOR FLORENCE-PLACED NURSES"
             "</div>",
             unsafe_allow_html=True,
         )
-    st.markdown("<hr style='border-color:#E5E8EE; margin:14px 0 32px 0;'>", unsafe_allow_html=True)
+    st.markdown("<hr style='border-color:#E4E7EC; margin:14px 0 32px 0;'>", unsafe_allow_html=True)
 
     spacer_l, login_col, spacer_r = st.columns([1, 2, 1])
     with login_col:
@@ -249,7 +249,7 @@ if auth_user is None:
         st.markdown('<h1 style="font-size:2.6rem;">Your career, your data.</h1>',
                     unsafe_allow_html=True)
         st.markdown(
-            '<div style="font-family:Inter,sans-serif; color:#5B6675; line-height:1.6; '
+            '<div style="font-family:Inter,sans-serif; color:#475467; line-height:1.6; '
             'font-size:1.05rem; margin-bottom:24px;">'
             "This is your personal Florence dashboard — wage benchmarking, "
             "career-path planning, and continuous market intelligence. "
@@ -289,7 +289,7 @@ with hdr_r:
     with col_a:
         st.markdown(
             f"<div style='text-align:right; font-family:Inter,sans-serif; "
-            f"font-size:0.85rem; color:#5B6675; padding-top:10px;'>"
+            f"font-size:0.85rem; color:#475467; padding-top:10px;'>"
             f"Signed in as <b>{nurse['nurse_name']}</b>"
             f"</div>",
             unsafe_allow_html=True,
@@ -299,7 +299,7 @@ with hdr_r:
             flo_auth.streamlit_logout(st)
             st.rerun()
 
-st.markdown("<hr style='border-color:#E5E8EE; margin:14px 0 8px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border-color:#E4E7EC; margin:14px 0 8px 0;'>", unsafe_allow_html=True)
 
 
 # ─── Personalized greeting / hero ───────────────────────────────────
@@ -386,7 +386,7 @@ st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
 st.markdown('<div class="florence-eyebrow">Career mobility</div>', unsafe_allow_html=True)
 st.markdown("<h2>Where could you earn more?</h2>", unsafe_allow_html=True)
 st.markdown(
-    f"<div style='font-family:Inter,sans-serif; color:#5B6675; max-width:640px; "
+    f"<div style='font-family:Inter,sans-serif; color:#475467; max-width:640px; "
     f"margin-bottom:14px;'>"
     f"Your estimated wage in {current_state} is <b>${estimated_wage:,.2f}/hour</b>. "
     f"Here are the top 5 states where the same {specialty} role pays meaningfully more."
@@ -431,7 +431,7 @@ st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
 st.markdown('<div class="florence-eyebrow">Specialty premiums</div>', unsafe_allow_html=True)
 st.markdown("<h2>RN specialty differential map.</h2>", unsafe_allow_html=True)
 st.markdown(
-    "<div style='font-family:Inter,sans-serif; color:#5B6675; max-width:640px; "
+    "<div style='font-family:Inter,sans-serif; color:#475467; max-width:640px; "
     "margin-bottom:14px;'>"
     "Each specialty carries a differential above the baseline RN wage. "
     "Differentials reflect skill premium, demand, and certification requirements."
@@ -458,7 +458,7 @@ st.markdown("<div style='height:30px;'></div>", unsafe_allow_html=True)
 st.markdown('<div class="florence-eyebrow">Your career path</div>', unsafe_allow_html=True)
 st.markdown("<h2>From RN to clinical leadership.</h2>", unsafe_allow_html=True)
 st.markdown(
-    "<div style='font-family:Inter,sans-serif; color:#5B6675; max-width:640px; "
+    "<div style='font-family:Inter,sans-serif; color:#475467; max-width:640px; "
     "margin-bottom:14px;'>"
     "Florence supports your continuing education and advancement. Typical career "
     "progressions from staff RN — each step adds credential time + earning power."

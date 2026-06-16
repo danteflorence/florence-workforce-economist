@@ -55,11 +55,11 @@ STAGE_LABEL = {
 }
 
 STAGE_COLOR = {
-    "prospect": "#5B6675",
+    "prospect": "#475467",
     "discovery": "#F4A261",
-    "proposal": "#089478",
-    "review": "#0BC5A0",
-    "closed_won": "#0F1B2D",
+    "proposal": "#067F7B",
+    "review": "#0ABAB5",
+    "closed_won": "#101828",
     "closed_lost": "#B33A3A",
 }
 
@@ -297,7 +297,7 @@ def streamlit_pipeline_view(st, rep_email: str) -> Optional[str]:
     else:
         for _, d in deals.iterrows():
             stage = d["stage"]
-            label_color = STAGE_COLOR.get(stage, "#5B6675")
+            label_color = STAGE_COLOR.get(stage, "#475467")
             with st.container(border=True):
                 row_l, row_r = st.columns([4, 1])
                 with row_l:
@@ -307,19 +307,19 @@ def streamlit_pipeline_view(st, rep_email: str) -> Optional[str]:
                         f"color:{label_color}; font-family:Inter,sans-serif; "
                         f"font-size:0.7rem; font-weight:600; letter-spacing:0.06em; "
                         f"text-transform:uppercase;'>{STAGE_LABEL[stage]}</span>"
-                        f"<div style='font-family:Newsreader,Georgia,serif; "
-                        f"font-size:1.3rem; color:#0F1B2D; margin-top:4px;'>"
+                        f"<div style='font-family:Playfair Display,Georgia,serif; "
+                        f"font-size:1.3rem; color:#101828; margin-top:4px;'>"
                         f"{d['system_name']}</div>"
-                        f"<div style='color:#5B6675; font-size:0.85rem;'>"
+                        f"<div style='color:#475467; font-size:0.85rem;'>"
                         f"Created {d['created_at'][:10]} · "
                         f"Last touched {d['last_touched_at'][:10]}</div>",
                         unsafe_allow_html=True,
                     )
                     nbm = next_best_move(d.to_dict())
                     st.markdown(
-                        f"<div style='color:#0F1B2D; font-size:0.9rem; "
+                        f"<div style='color:#101828; font-size:0.9rem; "
                         f"margin-top:6px; padding:6px 10px; background:#F4F6F8; "
-                        f"border-left:3px solid #0BC5A0; border-radius:4px;'>"
+                        f"border-left:3px solid #0ABAB5; border-radius:4px;'>"
                         f"<b>Next:</b> {nbm['label']}</div>",
                         unsafe_allow_html=True,
                     )
@@ -353,15 +353,15 @@ def streamlit_deal_detail(st, deal_id: str,
         st.rerun()
 
     stage = deal["stage"]
-    color = STAGE_COLOR.get(stage, "#5B6675")
+    color = STAGE_COLOR.get(stage, "#475467")
     st.markdown(
         f"<span style='display:inline-block; padding:3px 12px; "
         f"border-radius:14px; background:{color}1A; color:{color}; "
         f"font-family:Inter,sans-serif; font-size:0.75rem; "
         f"letter-spacing:0.08em; font-weight:600; text-transform:uppercase;'>"
         f"{STAGE_LABEL[stage]}</span>"
-        f"<h2 style='font-family:Newsreader,Georgia,serif; font-weight:500; "
-        f"color:#0F1B2D; margin-top:6px; font-size:2rem;'>"
+        f"<h2 style='font-family:Playfair Display,Georgia,serif; font-weight:500; "
+        f"color:#101828; margin-top:6px; font-size:2rem;'>"
         f"{deal['system_name']}</h2>",
         unsafe_allow_html=True,
     )
@@ -399,11 +399,11 @@ def streamlit_deal_detail(st, deal_id: str,
     with nbm_col_l:
         st.markdown(
             f"<div style='padding:14px 18px; background:#F4F6F8; "
-            f"border-left:3px solid #0BC5A0; border-radius:6px; margin:8px 0;'>"
+            f"border-left:3px solid #0ABAB5; border-radius:6px; margin:8px 0;'>"
             f"<div style='font-family:Inter,sans-serif; font-size:0.75rem; "
-            f"letter-spacing:0.1em; text-transform:uppercase; color:#5B6675;'>"
+            f"letter-spacing:0.1em; text-transform:uppercase; color:#475467;'>"
             f"NEXT BEST MOVE</div>"
-            f"<div style='color:#0F1B2D; font-size:1rem; margin-top:4px;'>"
+            f"<div style='color:#101828; font-size:1rem; margin-top:4px;'>"
             f"{nbm['label']}</div></div>",
             unsafe_allow_html=True,
         )

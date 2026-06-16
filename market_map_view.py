@@ -21,7 +21,7 @@ import facility_map_data as FD
 
 HEAT = [[0.0, "#CFF5F3"], [0.35, "#0ABAB5"], [0.70, "#7340C4"], [1.0, "#5B2DA8"]]
 SPREAD_SCALE = [[0.0, "#F2C9C2"], [0.5, "#CFF5F3"], [1.0, "#067F7B"]]
-NAVY = "#0B2545"
+NAVY = "#101828"
 LAYER_COL = {"Florence rate": "florence", "+20% distribution partner": "partner",
              "FICA-effective (net)": "effective",
              "Opportunity — annual $": "florence_rev_mo"}
@@ -260,7 +260,7 @@ def render() -> None:
                              "Quoted $/RN/mo": int(g.median()),
                              "FICA-effective $/RN/mo": int((g - ds["fica_savings"]).clip(lower=0).median())})
             st.dataframe(pd.DataFrame(rows), hide_index=True, use_container_width=True)
-            palette = ["#0ABAB5", "#7340C4", "#F2994A", "#0B2545"]
+            palette = ["#0ABAB5", "#7340C4", "#F2994A", "#101828"]
             cfig = go.Figure()
             for i, s in enumerate(cmp):
                 ds = df[df["health_system"] == s]

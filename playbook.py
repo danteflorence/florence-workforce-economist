@@ -230,13 +230,13 @@ def streamlit_render(st, current_role: str = "admin",
     # ─── Header ──────────────────────────────────────────────────────
     st.markdown(
         "<div style='font-family:Inter,sans-serif; font-size:0.8rem; "
-        "letter-spacing:0.18em; text-transform:uppercase; color:#5B6675; "
+        "letter-spacing:0.18em; text-transform:uppercase; color:#475467; "
         "margin-bottom:4px;'>SALES PLAYBOOK</div>",
         unsafe_allow_html=True,
     )
     st.markdown(
-        "<h2 style='font-family:Newsreader,Georgia,serif; font-weight:500; "
-        "color:#0F1B2D; margin-top:0; font-size:2.2rem;'>"
+        "<h2 style='font-family:Playfair Display,Georgia,serif; font-weight:500; "
+        "color:#101828; margin-top:0; font-size:2.2rem;'>"
         "Everything you need to sell Florence."
         "</h2>",
         unsafe_allow_html=True,
@@ -283,7 +283,7 @@ def streamlit_render(st, current_role: str = "admin",
     with nav_col:
         st.markdown(
             "<div style='font-family:Inter,sans-serif; font-size:0.75rem; "
-            "letter-spacing:0.18em; text-transform:uppercase; color:#5B6675; "
+            "letter-spacing:0.18em; text-transform:uppercase; color:#475467; "
             "margin-bottom:8px;'>CONTENTS</div>",
             unsafe_allow_html=True,
         )
@@ -308,7 +308,7 @@ def streamlit_render(st, current_role: str = "admin",
         if eyebrow:
             st.markdown(
                 f"<div style='font-family:Inter,sans-serif; font-size:0.75rem; "
-                f"letter-spacing:0.18em; color:#0BC5A0; margin-bottom:6px;'>"
+                f"letter-spacing:0.18em; color:#0ABAB5; margin-bottom:6px;'>"
                 f"{eyebrow}</div>",
                 unsafe_allow_html=True,
             )

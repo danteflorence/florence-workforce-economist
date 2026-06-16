@@ -56,7 +56,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 # Florence brand design system — matches the customer-facing deck language
 # ---------------------------------------------------------------------------
-FLORENCE_TEAL = "#0ABAB5"          # editorial brand teal (corrects legacy #0BC5A0)
+FLORENCE_TEAL = "#0ABAB5"          # editorial brand teal (corrects legacy #0ABAB5)
 FLORENCE_TEAL_DARK = "#067F7B"     # teal that passes contrast on white
 FLORENCE_NAVY = "#101828"
 FLORENCE_NAVY_SOFT = "#1D2939"
@@ -531,7 +531,7 @@ footer { visibility: hidden; }
     font-family: 'Material Symbols Rounded';
     font-size: 28px;
     color: var(--f-teal);
-    background: rgba(11,197,160,0.12);
+    background: rgba(10,186,181,0.12);
     border-radius: 9px;
     width: 44px; height: 44px;
     display: flex; align-items: center; justify-content: center;
@@ -1011,7 +1011,7 @@ def open_system_quick_actions(system_id: str, placeholder_msp_markup_pct: float)
     stage = workbench.system_stage_map().get(system_id, "")
     if stage:
         lbl = workbench.STAGE_LABEL.get(stage, stage)
-        clr = workbench.STAGE_COLOR.get(stage, "#5B6675")
+        clr = workbench.STAGE_COLOR.get(stage, "#475467")
         st.markdown(
             f"<span style='display:inline-block;margin-top:4px;padding:2px 10px;"
             f"border-radius:999px;font-size:0.72rem;font-weight:600;"
@@ -1635,7 +1635,7 @@ fica_eligible_months = 24       # FICA-exempt months per nurse
 # ── 1. Pricing mode — the top-level choice ──
 st.sidebar.markdown(
     "<div style='font-family:Inter,sans-serif; font-size:0.7rem; "
-    "letter-spacing:0.18em; text-transform:uppercase; color:#089478; "
+    "letter-spacing:0.18em; text-transform:uppercase; color:#067F7B; "
     "font-weight:600; margin: 0 0 6px 0;'>Market-based pricing</div>",
     unsafe_allow_html=True,
 )
@@ -1911,7 +1911,7 @@ def _nav_button(label: str, view_key: str, icon: str = "") -> None:
 def _nav_section(title: str) -> None:
     st.sidebar.markdown(
         f"<div style='font-family:Inter,sans-serif; font-size:0.7rem; "
-        f"letter-spacing:0.14em; text-transform:uppercase; color:#5B6675; "
+        f"letter-spacing:0.14em; text-transform:uppercase; color:#475467; "
         f"margin:18px 0 6px 0; font-weight:600;'>{title}</div>",
         unsafe_allow_html=True,
     )
@@ -1922,14 +1922,14 @@ st.sidebar.markdown(
     "<div style='display:flex; align-items:center; gap:10px; "
     "padding:6px 0 4px 0; margin-bottom:6px;'>"
     "<span style='display:inline-block; width:32px; height:32px; "
-    "background:#0BC5A0; color:#fff; border-radius:7px; text-align:center; "
+    "background:#0ABAB5; color:#fff; border-radius:7px; text-align:center; "
     "line-height:32px; font-family:Playfair Display,Georgia,serif; "
     "font-size:1.15rem; font-weight:500;'>F</span>"
     "<span style='font-family:Playfair Display,Georgia,serif; font-size:1.05rem; "
-    "color:#0F1B2D; font-weight:500; line-height:1.1;'>"
+    "color:#101828; font-weight:500; line-height:1.1;'>"
     "Workforce<br>Economist</span></div>"
     "<div style='font-family:Inter,sans-serif; font-size:0.7rem; "
-    "letter-spacing:0.14em; color:#5B6675; text-transform:uppercase;'>"
+    "letter-spacing:0.14em; color:#475467; text-transform:uppercase;'>"
     "INTERNAL</div>",
     unsafe_allow_html=True,
 )
@@ -1983,11 +1983,11 @@ if _AUTH_REQUIRED and current_user is not None:
     with st.sidebar:
         st.markdown(
             f"<div style='font-size:0.7rem; letter-spacing:0.12em; "
-            f"text-transform:uppercase; color:#5B6675; font-weight:600;'>"
+            f"text-transform:uppercase; color:#475467; font-weight:600;'>"
             f"SIGNED IN</div>"
-            f"<div style='font-weight:600; color:#0F1B2D; font-size:0.9rem; "
+            f"<div style='font-weight:600; color:#101828; font-size:0.9rem; "
             f"margin-top:2px;'>{current_user['email']}</div>"
-            f"<div style='font-size:0.78rem; color:#5B6675; margin-top:2px;'>"
+            f"<div style='font-size:0.78rem; color:#475467; margin-top:2px;'>"
             f"Role: <b>{current_role}</b> · Territory: <b>{current_territory}</b>"
             f"</div>",
             unsafe_allow_html=True,
@@ -2464,10 +2464,10 @@ if view == "inpatient":
         f"""
         <div style="display:flex; align-items:baseline; gap:14px; margin: 6px 0 22px 0;">
           <div style="font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600;
-                      letter-spacing:0.22em; text-transform:uppercase; color:#5B6675;">SAME</div>
+                      letter-spacing:0.22em; text-transform:uppercase; color:#475467;">SAME</div>
           <div style="font-family:'Playfair Display',serif; font-size:1.9rem; font-weight:600;
-                      color:#0F1B2D;">{annual_rn_hours/1e6:,.1f}M</div>
-          <div style="font-family:'Inter',sans-serif; font-size:0.95rem; color:#5B6675;">
+                      color:#101828;">{annual_rn_hours/1e6:,.1f}M</div>
+          <div style="font-family:'Inter',sans-serif; font-size:0.95rem; color:#475467;">
             RN hours per year · {selected_sys_name} baseline, expected to recur
           </div>
         </div>
@@ -2493,7 +2493,7 @@ if view == "inpatient":
         )
     with card_arrow:
         st.markdown(
-            "<div style='font-family:Playfair Display,serif; font-size:2rem; color:#0BC5A0;"
+            "<div style='font-family:Playfair Display,serif; font-size:2rem; color:#0ABAB5;"
             " text-align:center; padding-top:75px;'>→</div>",
             unsafe_allow_html=True,
         )
@@ -2840,7 +2840,7 @@ if view == "inpatient":
                     else f"${savings_monthly:,.0f}/mo"
                 )
 
-                col.markdown(f"**{icon}** &nbsp;<span style='color:#5B6675;'>{label}</span>",
+                col.markdown(f"**{icon}** &nbsp;<span style='color:#475467;'>{label}</span>",
                              unsafe_allow_html=True)
                 col.metric(
                     "Hospital saves",
@@ -3497,11 +3497,11 @@ if view == "market_intel":
             kind, payload = query_result
             st.markdown(
                 f"""
-                <div style="background:#F4F6F8; border-left:4px solid #0BC5A0;
+                <div style="background:#F4F6F8; border-left:4px solid #0ABAB5;
                             padding:14px 22px; border-radius:0 8px 8px 0; margin: 18px 0;">
                   <div style="font-family:Inter,sans-serif; font-size:0.72rem;
                               font-weight:600; letter-spacing:0.18em; text-transform:uppercase;
-                              color:#089478; margin-bottom:6px;">Query result</div>
+                              color:#067F7B; margin-bottom:6px;">Query result</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
@@ -3608,7 +3608,7 @@ if view == "market_intel":
         for i, ins in enumerate(items):
             col = cols[i % n_cols]
             arrow = "↑" if ins["delta_pct"] >= 0 else "↓"
-            severity_color = "#0BC5A0" if ins["severity"] == "high" else "#5B6675"
+            severity_color = "#0ABAB5" if ins["severity"] == "high" else "#475467"
             col.markdown(
                 f"""
                 <div style="background:#F4F6F8; border:1px solid #E5E8EE;
@@ -3616,20 +3616,20 @@ if view == "market_intel":
                             height:160px;">
                   <div style="font-family:Inter,sans-serif; font-size:0.72rem;
                               font-weight:600; letter-spacing:0.12em; text-transform:uppercase;
-                              color:#5B6675;">{ins['metric'].upper()}</div>
+                              color:#475467;">{ins['metric'].upper()}</div>
                   <div style="font-family:Playfair Display,serif; font-size:1.65rem;
-                              font-weight:600; color:#0F1B2D; margin-top:6px;">
+                              font-weight:600; color:#101828; margin-top:6px;">
                     {ins['current']:,.1f}
                   </div>
                   <div style="font-family:Inter,sans-serif; font-size:0.85rem;
                               color:{severity_color}; font-weight:600;">
                     {arrow} {ins['delta_pct']:+.1f}%
-                    <span style="color:#5B6675; font-weight:400;">
+                    <span style="color:#475467; font-weight:400;">
                       from {ins['prior_period']}
                     </span>
                   </div>
                   <div style="font-family:Inter,sans-serif; font-size:0.78rem;
-                              color:#5B6675; line-height:1.4; margin-top:8px;">
+                              color:#475467; line-height:1.4; margin-top:8px;">
                     {ins['interpretation']}
                   </div>
                 </div>
@@ -3770,15 +3770,15 @@ if view == "forecast":
 
         st.markdown(
             f"""
-            <div style="background: {'#0BC5A0' if tightening else '#F4A261'}1A;
-                        border-left: 4px solid {'#0BC5A0' if tightening else '#F4A261'};
+            <div style="background: {'#0ABAB5' if tightening else '#F4A261'}1A;
+                        border-left: 4px solid {'#0ABAB5' if tightening else '#F4A261'};
                         padding: 16px 20px; border-radius: 8px; margin: 12px 0;">
               <div style="font-family: Inter, sans-serif; font-size: 12px;
                           letter-spacing: 0.08em; color: #5A6B82; text-transform: uppercase;">
                 Forward-looking headline
               </div>
               <div style="font-family: Playfair Display, Georgia, serif; font-size: 24px;
-                          color: #0F1B2D; font-weight: 500; margin: 6px 0 4px 0;">
+                          color: #101828; font-weight: 500; margin: 6px 0 4px 0;">
                 Healthcare labor market projected to be <b>{direction}</b> over the next {horizon} months.
               </div>
               <div style="font-family: Inter, sans-serif; font-size: 14px; color: #2C3E50;">
@@ -4110,10 +4110,10 @@ if view == "outpatient":
         f"""
         <div style="display:flex; align-items:baseline; gap:14px; margin: 6px 0 22px 0;">
           <div style="font-family:'Inter',sans-serif; font-size:0.78rem; font-weight:600;
-                      letter-spacing:0.22em; text-transform:uppercase; color:#5B6675;">UNIVERSE</div>
+                      letter-spacing:0.22em; text-transform:uppercase; color:#475467;">UNIVERSE</div>
           <div style="font-family:'Playfair Display',serif; font-size:1.9rem; font-weight:600;
-                      color:#0F1B2D;">{total_facilities:,}</div>
-          <div style="font-family:'Inter',sans-serif; font-size:0.95rem; color:#5B6675;">
+                      color:#101828;">{total_facilities:,}</div>
+          <div style="font-family:'Inter',sans-serif; font-size:0.95rem; color:#475467;">
             facilities · {total_rns:,} placeable RNs · {type_label}
           </div>
         </div>
@@ -4137,7 +4137,7 @@ if view == "outpatient":
         )
     with card_arrow:
         st.markdown(
-            "<div style='font-family:Playfair Display,serif; font-size:2rem; color:#0BC5A0;"
+            "<div style='font-family:Playfair Display,serif; font-size:2rem; color:#0ABAB5;"
             " text-align:center; padding-top:75px;'>→</div>",
             unsafe_allow_html=True,
         )
@@ -4217,13 +4217,13 @@ if view == "outpatient":
           <div class="fl-timeline-track">
             <div class="fl-timeline-node start">
               <div class="dot">M1</div>
-              <div class="amount">${median_fee_per_rn * 2:,.0f}<span style="font-size:0.7rem; color:#5B6675; margin-left:3px;">/RN</span></div>
+              <div class="amount">${median_fee_per_rn * 2:,.0f}<span style="font-size:0.7rem; color:#475467; margin-left:3px;">/RN</span></div>
               <div class="label">At signing</div>
               <div class="caption">Deposit + first month</div>
             </div>
             <div class="fl-timeline-node">
               <div class="dot">M2 – 23</div>
-              <div class="amount">${median_fee_per_rn:,.0f}<span style="font-size:0.7rem; color:#5B6675; margin-left:3px;">/RN/mo</span></div>
+              <div class="amount">${median_fee_per_rn:,.0f}<span style="font-size:0.7rem; color:#475467; margin-left:3px;">/RN/mo</span></div>
               <div class="label">Recurring</div>
               <div class="caption">Auto-charged monthly</div>
             </div>
@@ -4243,8 +4243,8 @@ if view == "outpatient":
     st.markdown(
         f"""
         <div style="margin-top:14px; padding:12px 18px; background:#F4F6F8;
-                    border-left:3px solid #0BC5A0; border-radius:6px;
-                    font-family:Inter,sans-serif; font-size:0.9rem; color:#0F1B2D;">
+                    border-left:3px solid #0ABAB5; border-radius:6px;
+                    font-family:Inter,sans-serif; font-size:0.9rem; color:#101828;">
           <b>Example · 8-RN cohort:</b>
           <b>${_ex_first_month:,.0f}</b> at signing →
           <b>${_ex_monthly:,.0f}/mo</b> for 22 months →
@@ -5571,14 +5571,14 @@ with st.expander(":material/bar_chart: National calibration aggregates · Floren
 st.markdown("<div style='height:24px;'></div>", unsafe_allow_html=True)
 st.markdown(
     """
-    <div style="font-family:'Inter',sans-serif; font-size:0.78rem; color:#5B6675;
+    <div style="font-family:'Inter',sans-serif; font-size:0.78rem; color:#475467;
                 line-height:1.55; padding-top:10px; border-top:1px solid #E5E8EE;">
-      <strong style="color:#0F1B2D;">Cohort assumption.</strong>
+      <strong style="color:#101828;">Cohort assumption.</strong>
       All quotes assume Florence's confirmed F-1 student pipeline (η = 1.0) with 24 FICA-exempt
       months per nurse. The F-1 student FICA exemption applies during the nonresident-alien
       period under
       <a href="https://www.irs.gov/individuals/international-taxpayers/foreign-student-liability-for-social-security-and-medicare-taxes"
-         style="color:#089478; text-decoration:none; border-bottom:1px solid #0BC5A0;"
+         style="color:#067F7B; text-decoration:none; border-bottom:1px solid #0ABAB5;"
          target="_blank">
         IRC §3121(b)(19) (IRS — Foreign Student Liability for SS/Medicare Taxes)
       </a>
