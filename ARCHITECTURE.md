@@ -1,5 +1,11 @@
 # Florence Workforce Intelligence — Architecture
 
+> **Scope note (2026-07-12):** this overview reflects the platform as of Jun 1 2026.
+> Surfaces added after that date — Client Deck generator, Capacity Outreach Engine,
+> pricing API (`pricing_api.py`), distribution flywheel, provenance tab — are listed
+> in [README → "Shipped since the v0.6 data pass"](README.md); code + `git log` win
+> over this diagram where they differ.
+
 A continuously-updating, multi-surface workforce intelligence platform for the
 U.S. nursing labor market.
 

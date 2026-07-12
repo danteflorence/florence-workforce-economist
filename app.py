@@ -5421,7 +5421,7 @@ if view == "data_quality":
 **Geocoding:** 100% of hospitals geocoded (exact ZIP centroid + 3-digit ZIP prefix fallback).
 **Health system inference:** 15% of hospitals matched by name keyword; production version needs AHA parent-system mapping.
 
-**To increase confidence further** — see [HCRIS_NMRC_NEXT.md](HCRIS_NMRC_NEXT.md) for the agency-hours ingest scope.
+**To increase confidence further** — the NMRC agency-hours ingest shipped (see `hcris_nmrc_parser.py`); remaining levers are customer disclosures and additional MSP overlays (`system_overlays.py`).
 """)
 
 # =====================================================================

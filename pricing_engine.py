@@ -1,7 +1,8 @@
 """
 Florence Labor Economics Agent — reference pricing engine.
 
-Implements the dynamic pricing model described in WHITE_PAPER_REVISIONS.md §5.
+Implements the dynamic pricing model described in docs/archive/2026-07/WHITE_PAPER_REVISIONS.md §5
+(methodology summary: playbook/04_pricing_methodology.md).
 This is the canonical Python implementation; the TypeScript port lives in
 care-capacity-index/src/lib/ficaAdvantage.ts (employer-side FICA component only).
 
