@@ -148,6 +148,19 @@ def record_outcome(deal_id: str, outcome: str, *,
     with open(OUTCOMES_FILE, "a", newline="") as f:
         csv.DictWriter(f, fieldnames=OUTCOME_FIELDS).writerow(row)
 
+    if outcome == "won":
+        # Won accounts flow into ATS Connect (durable outbox; gated delivery;
+        # never blocks the close flow).
+        try:
+            import ats_handoff
+            ats_handoff.queue_closed_won(
+                deal,
+                agreed_fee_per_rn_mo=agreed_fee_per_rn_mo,
+                engine_quote_per_rn_mo=row["engine_quote_per_rn_mo"] or None,
+                n_rns=n_rns, notes=notes)
+        except Exception:
+            pass
+
 
 def outcomes_df() -> pd.DataFrame:
     """All recorded outcomes (empty DataFrame with the schema when none yet)."""

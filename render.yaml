@@ -53,6 +53,14 @@ services:
       # Error monitoring (error_monitoring.py) — optional; empty = local errors.log only
       - key: SENTRY_DSN
         sync: false
+      # ATS Connect handoff (ats_handoff.py) — closed-won deals POST to the
+      # ATS intake when enabled; queued durably in data/ats_outbox.jsonl either way.
+      - key: ATS_HANDOFF_ENABLED
+        value: "0"
+      - key: ATS_HANDOFF_URL
+        sync: false
+      - key: ATS_HANDOFF_TOKEN
+        sync: false
       # Offsite backups (ops_backup.py, run daily by docker-entrypoint.sh).
       # Local rotating snapshots always run; set these for offsite S3/R2/B2:
       - key: BACKUP_S3_BUCKET
@@ -127,13 +135,16 @@ services:
       - key: CALCULATOR_URL
         sync: false   # the deployed florence-calculator URL (CTA link target)
 
-  # ─── Nurse Portal (login-gated) ───────────────────────────────────
-  - type: web
-    name: florence-nurses
-    runtime: python
-    plan: starter
-    buildCommand: pip install -r requirements.txt
-    startCommand: streamlit run nurse_portal.py --server.port $PORT --server.headless true --server.enableCORS false
+  # ─── Nurse Portal — NOT deployed (scaffold) ───────────────────────
+  # nurse_portal.py is a scaffold: community features and cohort views are
+  # placeholder-grade. Deploying it publicly would put a half-built surface
+  # in front of nurses. Uncomment when it's a real product.
+  # - type: web
+  #   name: florence-nurses
+  #   runtime: python
+  #   plan: starter
+  #   buildCommand: pip install -r requirements.txt
+  #   startCommand: streamlit run nurse_portal.py --server.port $PORT --server.headless true --server.enableCORS false
 
   # ─── Surveillance Cron (monthly briefing refresh) ─────────────────
   - type: cron

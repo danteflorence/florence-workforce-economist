@@ -1952,7 +1952,11 @@ _nav_button("Growth automation", "growth", "rocket_launch")
 # ─── Live intelligence ───────────────────────────────────────────
 _nav_section("Live intelligence")
 _nav_button("Market intelligence", "market_intel", "trending_up")
-_nav_button("Forecasting", "forecast", "insights")
+# Labs: demo-grade surfaces stay out of nav (and out of demos) unless
+# explicitly enabled. The views still exist and stay smoke-tested.
+_SHOW_LABS = _os.environ.get("FLORENCE_SHOW_LABS", "").lower() in ("1", "true", "yes")
+if _SHOW_LABS:
+    _nav_button("Forecasting", "forecast", "insights")
 
 # ─── Sales training ──────────────────────────────────────────────
 _nav_section("Sales training")
