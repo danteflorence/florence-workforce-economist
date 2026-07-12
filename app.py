@@ -2721,6 +2721,11 @@ if view == "inpatient":
             use_container_width=True,
         )
 
+    # Every number a buyer sees carries its vintage; amber when refresh is due.
+    import provenance as _prov
+    st.caption(_prov.as_of_line())
+    _prov.freshness_badge(st)
+
     # ─────────────────────────────────────────────────────────────────
     # 03 · PER-FACILITY SAVINGS STORY
     # ─────────────────────────────────────────────────────────────────
@@ -2752,6 +2757,16 @@ if view == "inpatient":
     def _fmt_fee(v: float) -> str:
         return f"${v:,.2f}" if use_hourly else f"${v:,.0f}"
 
+    def _conf_label(v) -> str:
+        """Buyer-facing estimate confidence, from the engine's data-confidence
+        signal (HCRIS-anchored agency rate vs modeled fallback)."""
+        try:
+            c = float(v)
+        except (TypeError, ValueError):
+            return "Modeled estimate"
+        return ("High-confidence" if c >= 0.75
+                else "Standard estimate" if c >= 0.5 else "Modeled estimate")
+
     for i, (_, r) in enumerate(sys_recs_sorted.iterrows()):
         fac_savings = r["target_term_net_savings_account"]
         fac_fee = r["target_term_florence_fee_account"]
@@ -2760,7 +2775,8 @@ if view == "inpatient":
         with st.expander(
             f"{r['name']}  ·  {r['city']}, {r['state']}  ·  "
             f"{_fmt_big(fac_savings)} impact over 24 mo  ·  "
-            f"Florence fee {_fmt_fee(t_fee)}{unit_label}",
+            f"Florence fee {_fmt_fee(t_fee)}{unit_label}  ·  "
+            f"{_conf_label(r.get('signal_data_confidence'))}",
             expanded=(i == 0),
         ):
             # Deck-style two-pane comparison

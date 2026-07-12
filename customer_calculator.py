@@ -684,3 +684,8 @@ st.markdown(
     """,
     unsafe_allow_html=True,
 )
+try:
+    import provenance as _prov
+    st.caption(_prov.as_of_line())
+except Exception:
+    pass

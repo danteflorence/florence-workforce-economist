@@ -103,6 +103,15 @@ def _gather(target_rows: pd.DataFrame, cal: Calibration, cohort: CohortMix) -> d
 # HTML renderer
 # ---------------------------------------------------------------------------
 
+def _as_of_line() -> str:
+    """Data vintage from the shared provenance module (single source of truth)."""
+    try:
+        import provenance
+        return provenance.as_of_line()
+    except Exception:
+        return ""
+
+
 def _render_html(target_name: str, target_type: str, scope_desc: str,
                  cal: Calibration, cohort: CohortMix, m: dict) -> str:
     today = date.today().isoformat()
@@ -285,6 +294,7 @@ td.num {{ text-align:right; font-variant-numeric:tabular-nums; }}
   Per-hospital salaries, FTE, contract labor: CMS HCRIS Hospital Provider Cost Report 2023.
   RN wage benchmarks: BLS OEWS state-level. Agency rate benchmarks: hybrid (customer-disclosed
   where available, CommonSpirit anchor, state median).
+  <br/>{_as_of_line()}
 </p>
 
 <div class="compliance">
