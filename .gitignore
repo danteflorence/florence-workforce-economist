@@ -75,5 +75,6 @@ data/output/*.xlsx
 data/output/*.pdf
 data/output/*.pptx
 
-# Skipped for demo deploy (PAT lacks workflow scope)
-.github/workflows/
+# CI workflows are tracked. If a push is rejected with "refusing to allow a
+# Personal Access Token to create or update workflow", the stored PAT needs
+# the `workflow` scope added at github.com/settings/tokens.
