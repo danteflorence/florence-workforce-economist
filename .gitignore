@@ -18,6 +18,8 @@ data/system_owners.csv
 data/snoozes.csv
 # Call-center claim locks (mutable)
 data/call_claims.csv
+# Server-side error log (error_monitoring.py; mutable)
+data/errors.log
 .env
 .env.*
 secrets.toml
@@ -46,6 +48,7 @@ data/geo/*
 data/2024_Gaz_zcta_national.txt
 
 # ─── Backups + working files ────────────────────────────────────────
+data/backups/
 data/*.bak_*
 data/*.bak.*
 *.swp

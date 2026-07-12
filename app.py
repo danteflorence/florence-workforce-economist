@@ -43,6 +43,9 @@ import tempfile
 import zipfile
 
 from florence_theme import inject_theme, kpi_strip, section_head  # editorial design system
+from error_monitoring import init_monitoring
+
+init_monitoring("economist")
 
 DATA_DIR = Path(__file__).parent / "data"
 

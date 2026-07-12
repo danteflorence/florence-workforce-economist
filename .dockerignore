@@ -41,6 +41,7 @@ data/snoozes.csv
 data/call_claims.csv
 data/growth_employer_pipeline.csv
 data/growth_university_pipeline.csv
+data/errors.log
 
 # Large re-downloadable raw sources (not read at runtime)
 data/hcris_raw/
@@ -49,6 +50,7 @@ data/raw_cms_non_hospital/
 data/2024_Gaz_zcta_national.txt
 
 # Backups, working files, regenerated bundles
+data/backups/
 data/*.bak_*
 data/*.bak.*
 data/output/

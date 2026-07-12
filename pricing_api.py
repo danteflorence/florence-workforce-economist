@@ -27,6 +27,9 @@ from pydantic import BaseModel, Field
 
 from pricing_engine import Calibration, CohortMix, HospitalProfile, price
 from market_lookup import lookup_market
+from error_monitoring import init_monitoring
+
+init_monitoring("pricing-api")
 
 # Optional Core M2M auth. OFF by default (CORS-gated, internal). When
 # PRICING_API_REQUIRE_AUTH is truthy, every pricing call must present a valid

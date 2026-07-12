@@ -64,6 +64,28 @@ declared as `sync: false` in `render.yaml`:
 If you use in-app Google sign-in, also add a Streamlit `[auth]` secret per
 `florence_auth.py` (otherwise it no-ops and the app runs open behind CF Access).
 
+### Error monitoring (optional, 5 min)
+
+Errors always append to `data/errors.log` on the persistent disk. To also get
+alerts: create a free Sentry project (sentry.io → Create Project → Python),
+copy its DSN, and set `SENTRY_DSN` on `florence-economist` and
+`florence-pricing-api`. Nothing else to configure — `error_monitoring.py`
+tags each event with the service name and sends no PII.
+
+### Backups (local always; offsite optional, 10 min)
+
+`docker-entrypoint.sh` snapshots all mutable state (leads, pipeline, contacts,
+outcomes, auth) to `data/backups/` daily, keeping the last 14
+(`BACKUP_KEEP`). That survives redeploys but not disk loss — for offsite
+copies, create any S3-compatible bucket (AWS S3 or Cloudflare R2) plus an
+access key, and set on `florence-economist`:
+
+- `BACKUP_S3_BUCKET` (enables offsite), `BACKUP_S3_REGION`
+- `BACKUP_S3_ENDPOINT` — only for non-AWS (e.g. `<account>.r2.cloudflarestorage.com`)
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
+
+Restore drill: download a `state-*.tar.gz`, `tar -xzf` it into `data/`, redeploy.
+
 ## Part C — Custom domain
 
 1. On `florence-economist` → **Settings → Custom Domains** → add
