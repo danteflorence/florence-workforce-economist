@@ -3306,6 +3306,9 @@ if view == "pipeline":
             st, rep_email=_pipe_rep_email,
         )
 
+        # Quoted-vs-closed calibration (fed by close-out capture)
+        _workbench_pipeline.streamlit_calibration_section(st)
+
         st.markdown("---")
         # New-deal form — derive system list from cached_universe (works
         # for any care setting). Apply RBAC territory filter when auth is on.

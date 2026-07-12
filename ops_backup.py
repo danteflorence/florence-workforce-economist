@@ -37,12 +37,15 @@ STATE_FILES = [
     "contact_overrides.csv", "mail_log.csv", "activations.csv", "activity_log.csv",
     "system_owners.csv", "snoozes.csv", "call_claims.csv",
     "growth_employer_pipeline.csv", "growth_university_pipeline.csv",
-    "customer_leads.csv", "deal_outcomes.csv", "ats_outbox.jsonl", "errors.log",
+    "sales_pipeline.csv", "customer_leads.csv", "deal_outcomes.csv",
+    "ats_outbox.jsonl", "errors.log",
 ]
+STATE_DIRS = ["customer_invoices"]  # uploaded agency invoices (calculator re-price)
 
 
 def snapshot() -> Path | None:
     present = [DATA / f for f in STATE_FILES if (DATA / f).exists()]
+    present += [DATA / d for d in STATE_DIRS if (DATA / d).is_dir()]
     if not present:
         print("no mutable state present — nothing to back up")
         return None
@@ -52,7 +55,7 @@ def snapshot() -> Path | None:
     with tarfile.open(out, "w:gz") as tar:
         for p in present:
             tar.add(p, arcname=p.name)
-    print(f"snapshot {out.name}: {len(present)} files, {out.stat().st_size:,} bytes")
+    print(f"snapshot {out.name}: {len(present)} entries, {out.stat().st_size:,} bytes")
     return out
 
 

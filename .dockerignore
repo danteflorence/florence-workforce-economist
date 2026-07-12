@@ -42,6 +42,10 @@ data/call_claims.csv
 data/growth_employer_pipeline.csv
 data/growth_university_pipeline.csv
 data/errors.log
+data/sales_pipeline.csv
+data/deal_outcomes.csv
+data/customer_leads.csv
+data/customer_invoices/
 
 # Large re-downloadable raw sources (not read at runtime)
 data/hcris_raw/

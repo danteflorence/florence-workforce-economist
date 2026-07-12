@@ -34,12 +34,26 @@ import pandas as pd
 
 DATA_DIR = Path(__file__).parent / "data"
 PIPELINE_FILE = DATA_DIR / "sales_pipeline.csv"
+OUTCOMES_FILE = DATA_DIR / "deal_outcomes.csv"
 
 FIELDS = [
     "deal_id", "rep_email", "system_id", "system_name",
     "stage", "created_at", "last_touched_at",
     "discovery_notes", "proposal_url", "contract_terms",
     "closed_at", "closed_reason",
+]
+
+# The calibration data asset: every close writes one row of ground truth the
+# pricing engine can learn from — what we quoted vs what the market said.
+OUTCOME_FIELDS = [
+    "ts", "deal_id", "rep_email", "system_id", "system_name", "outcome",
+    "agreed_fee_per_rn_mo",   # what the customer actually agreed to (won)
+    "engine_quote_per_rn_mo", # the engine's target fee at close time (auto-stamped)
+    "n_rns",                  # cohort size
+    "competitor",             # who we lost to / displaced
+    "objection",              # the objection that decided it
+    "actual_agency_rate_hr",  # customer-stated agency bill rate, if learned
+    "notes",
 ]
 
 STAGES = ["prospect", "discovery", "proposal", "review",
@@ -74,7 +88,11 @@ def _ensure_header() -> None:
 
 def _read() -> pd.DataFrame:
     _ensure_header()
-    return pd.read_csv(PIPELINE_FILE, dtype=str).fillna("")
+    df = pd.read_csv(PIPELINE_FILE, dtype=str).fillna("")
+    for col in FIELDS:  # schema migration: older files may lack newer columns
+        if col not in df.columns:
+            df[col] = ""
+    return df
 
 
 def _rewrite(df: pd.DataFrame) -> None:
@@ -83,6 +101,63 @@ def _rewrite(df: pd.DataFrame) -> None:
 
 def _now() -> str:
     return datetime.utcnow().isoformat(timespec="seconds")
+
+
+# ─── Outcome capture (the calibration data asset) ──────────────────
+def engine_quote_for_system(system_id: str) -> Optional[float]:
+    """The engine's current median Target-tier fee for a system's facilities.
+    Stamped onto every outcome row so quoted-vs-agreed needs no rep effort.
+    None when the system isn't in the recommendations file."""
+    try:
+        recs = pd.read_parquet(DATA_DIR / "recommendations.parquet",
+                               columns=["health_system_id", "target_monthly_fee"])
+        fees = recs.loc[recs["health_system_id"] == str(system_id),
+                        "target_monthly_fee"].dropna()
+        return round(float(fees.median()), 2) if len(fees) else None
+    except Exception:
+        return None
+
+
+def record_outcome(deal_id: str, outcome: str, *,
+                   agreed_fee_per_rn_mo: Optional[float] = None,
+                   n_rns: Optional[int] = None,
+                   competitor: str = "", objection: str = "",
+                   actual_agency_rate_hr: Optional[float] = None,
+                   notes: str = "") -> None:
+    """Append one ground-truth row to deal_outcomes.csv at close time."""
+    deal = get_deal(deal_id) or {}
+    if not OUTCOMES_FILE.exists():
+        OUTCOMES_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(OUTCOMES_FILE, "w", newline="") as f:
+            csv.writer(f).writerow(OUTCOME_FIELDS)
+    row = {
+        "ts": _now(),
+        "deal_id": deal_id,
+        "rep_email": deal.get("rep_email", ""),
+        "system_id": deal.get("system_id", ""),
+        "system_name": deal.get("system_name", ""),
+        "outcome": outcome,
+        "agreed_fee_per_rn_mo": agreed_fee_per_rn_mo if agreed_fee_per_rn_mo else "",
+        "engine_quote_per_rn_mo": engine_quote_for_system(deal.get("system_id", "")) or "",
+        "n_rns": n_rns if n_rns else "",
+        "competitor": competitor.strip(),
+        "objection": objection.strip(),
+        "actual_agency_rate_hr": actual_agency_rate_hr if actual_agency_rate_hr else "",
+        "notes": notes.strip(),
+    }
+    with open(OUTCOMES_FILE, "a", newline="") as f:
+        csv.DictWriter(f, fieldnames=OUTCOME_FIELDS).writerow(row)
+
+
+def outcomes_df() -> pd.DataFrame:
+    """All recorded outcomes (empty DataFrame with the schema when none yet)."""
+    if not OUTCOMES_FILE.exists():
+        return pd.DataFrame(columns=OUTCOME_FIELDS)
+    df = pd.read_csv(OUTCOMES_FILE, dtype=str).fillna("")
+    for col in OUTCOME_FIELDS:
+        if col not in df.columns:
+            df[col] = ""
+    return df
 
 
 def deal_for_system(system_id: str, rep_email: Optional[str] = None) -> Optional[str]:
@@ -114,6 +189,10 @@ def upsert_system_stage(system_id: str, system_name: str, new_stage: str,
     if did is None:
         did = create_deal(rep_email or "unassigned@florence", system_id, system_name)
     advance_stage(did, new_stage, closed_reason=note if new_stage == "closed_lost" else "")
+    if new_stage in ("closed_won", "closed_lost"):
+        # One-click closes still accrue calibration data (engine quote stamped).
+        record_outcome(did, "won" if new_stage == "closed_won" else "lost",
+                       notes=note)
     if note:
         d = get_deal(did) or {}
         update_deal(did, contract_terms=(d.get("contract_terms", "")
@@ -412,7 +491,73 @@ def streamlit_deal_detail(st, deal_id: str,
             if st.button(nbm["action_button"], type="primary",
                          use_container_width=True,
                          key=f"advance_{deal_id}"):
-                advance_stage(deal_id, nbm["advance_to"])
+                if nbm["advance_to"] in ("closed_won", "closed_lost"):
+                    # Closing goes through outcome capture, not straight through.
+                    st.session_state[f"wb_closing_{deal_id}"] = nbm["advance_to"]
+                else:
+                    advance_stage(deal_id, nbm["advance_to"])
+                st.rerun()
+
+    # ── Close-out: every close records ground truth for pricing calibration ──
+    if stage not in ("closed_won", "closed_lost"):
+        cw, cl = st.columns(2)
+        if cw.button(":material/verified: Close as won…", key=f"cw_{deal_id}",
+                     use_container_width=True):
+            st.session_state[f"wb_closing_{deal_id}"] = "closed_won"
+            st.rerun()
+        if cl.button(":material/cancel: Close as lost…", key=f"cl_{deal_id}",
+                     use_container_width=True):
+            st.session_state[f"wb_closing_{deal_id}"] = "closed_lost"
+            st.rerun()
+
+    closing_to = st.session_state.get(f"wb_closing_{deal_id}")
+    if closing_to in ("closed_won", "closed_lost"):
+        won = closing_to == "closed_won"
+        quote = engine_quote_for_system(deal.get("system_id", ""))
+        with st.form(key=f"close_form_{deal_id}", border=True):
+            st.markdown(f"##### Close out — {'won' if won else 'lost'}")
+            if quote:
+                st.caption(f"Engine target at close: **${quote:,.0f}/RN/mo** "
+                           "(auto-recorded for calibration).")
+            c1, c2 = st.columns(2)
+            agreed = c1.number_input(
+                "Agreed fee ($/RN/mo)" if won else "Their best acceptable fee, if stated ($/RN/mo)",
+                min_value=0, max_value=10_000,
+                value=int(quote) if (won and quote) else 0, step=50,
+                help="0 = unknown / not applicable")
+            n_rns = c2.number_input("RN cohort size", min_value=0, max_value=5000,
+                                    value=0, step=5, help="0 = unknown")
+            c3, c4 = st.columns(2)
+            competitor = c3.text_input(
+                "Competitor" if not won else "Displaced vendor (agency/MSP)",
+                placeholder="e.g. AMN, Aya, internal float pool")
+            agency_rate = c4.number_input(
+                "Their actual agency bill rate ($/hr), if learned",
+                min_value=0.0, max_value=500.0, value=0.0, step=5.0,
+                help="From their invoice or the call — the single most valuable "
+                     "calibration number. 0 = unknown")
+            objection = st.text_input(
+                "Deciding factor / objection",
+                placeholder="e.g. price vs FTE budget line, board timing, term length")
+            close_notes = st.text_area("Notes", height=68)
+            s1, s2 = st.columns(2)
+            if s1.form_submit_button("Record + close", type="primary",
+                                     use_container_width=True):
+                record_outcome(
+                    deal_id, "won" if won else "lost",
+                    agreed_fee_per_rn_mo=float(agreed) or None,
+                    n_rns=int(n_rns) or None,
+                    competitor=competitor,
+                    objection=objection,
+                    actual_agency_rate_hr=float(agency_rate) or None,
+                    notes=close_notes,
+                )
+                advance_stage(deal_id, closing_to,
+                              closed_reason=objection or close_notes)
+                st.session_state.pop(f"wb_closing_{deal_id}", None)
+                st.rerun()
+            if s2.form_submit_button("Cancel", use_container_width=True):
+                st.session_state.pop(f"wb_closing_{deal_id}", None)
                 st.rerun()
 
     # Discovery notes
@@ -524,6 +669,68 @@ def streamlit_new_deal_form(st, rep_email: str,
         st.success(f"Opened deal for {sys_options[picked]}.")
         return deal_id
     return None
+
+
+def streamlit_calibration_section(st) -> None:
+    """Quoted-vs-closed calibration: how the market prices against the engine.
+
+    Renders below the pipeline. Graceful empty state until outcomes accrue;
+    every closed deal makes the pricing engine measurably less theoretical.
+    """
+    df = outcomes_df()
+    with st.expander(f"Pricing calibration — quoted vs closed ({len(df)} outcomes)",
+                     expanded=False):
+        if df.empty:
+            st.caption(
+                "No closed deals recorded yet. Every close-out (won or lost) "
+                "logs the engine's quote next to what the market actually said — "
+                "agreed fee, competitor, and their real agency rate. This panel "
+                "turns those rows into calibration: quote deltas by market, and "
+                "win rate by price band."
+            )
+            return
+
+        num = df.copy()
+        for c in ("agreed_fee_per_rn_mo", "engine_quote_per_rn_mo",
+                  "actual_agency_rate_hr", "n_rns"):
+            num[c] = pd.to_numeric(num[c], errors="coerce")
+
+        wins = int((num["outcome"] == "won").sum())
+        total = len(num)
+        c1, c2, c3 = st.columns(3)
+        c1.metric("Recorded outcomes", f"{total}")
+        c2.metric("Win rate", f"{wins / total:.0%}" if total else "—")
+
+        # Quote delta: agreed vs engine, on rows where both exist
+        both = num.dropna(subset=["agreed_fee_per_rn_mo", "engine_quote_per_rn_mo"])
+        both = both[(both["agreed_fee_per_rn_mo"] > 0)
+                    & (both["engine_quote_per_rn_mo"] > 0)]
+        if len(both):
+            delta_pct = ((both["agreed_fee_per_rn_mo"] - both["engine_quote_per_rn_mo"])
+                         / both["engine_quote_per_rn_mo"])
+            c3.metric("Median agreed vs engine quote",
+                      f"{delta_pct.median():+.0%}",
+                      help="Negative = the market settles below the engine's "
+                           "Target tier; consider recalibrating that market.")
+        else:
+            c3.metric("Median agreed vs engine quote", "—",
+                      help="Needs closes with an agreed fee recorded.")
+
+        show = df[["ts", "system_name", "outcome", "agreed_fee_per_rn_mo",
+                   "engine_quote_per_rn_mo", "n_rns", "competitor",
+                   "objection"]].copy()
+        show.columns = ["When", "System", "Outcome", "Agreed $/RN/mo",
+                        "Engine $/RN/mo", "RNs", "Competitor", "Deciding factor"]
+        st.dataframe(show.sort_values("When", ascending=False),
+                     use_container_width=True, hide_index=True)
+
+        rates = num.dropna(subset=["actual_agency_rate_hr"])
+        rates = rates[rates["actual_agency_rate_hr"] > 0]
+        if len(rates):
+            st.caption(
+                f"**{len(rates)}** customer-stated agency rate(s) captured — "
+                "ground truth to check the HCRIS-derived anchors against."
+            )
 
 
 # ─── CLI smoke test ─────────────────────────────────────────────────

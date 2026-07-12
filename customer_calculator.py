@@ -244,20 +244,54 @@ STRIPE_PLACEMENT_URL = os.environ.get("STRIPE_PLACEMENT_URL", "")
 FLORENCE_CONTACT_EMAIL = os.environ.get("FLORENCE_CONTACT_EMAIL", "partnerships@florenceeducation.com")
 
 
+# ─── Attribution (QR / mailpiece / campaign links) ───────────────────
+# The capacity-outreach mailers point their tracked QR codes here with
+# utm_* query params. First touch wins for the session.
+def _capture_utm() -> dict:
+    if "utm" not in st.session_state:
+        try:
+            qp = st.query_params
+            st.session_state["utm"] = {
+                "utm_source": (qp.get("utm_source") or "")[:64],
+                "utm_medium": (qp.get("utm_medium") or "")[:64],
+                "utm_campaign": (qp.get("utm_campaign") or "")[:64],
+            }
+        except Exception:
+            st.session_state["utm"] = {"utm_source": "", "utm_medium": "",
+                                       "utm_campaign": ""}
+    return st.session_state["utm"]
+
+
+LEAD_FIELDS = [
+    "timestamp", "email", "state", "facility_type", "n_rns",
+    "florence_fee_per_rn_month", "fica_savings_per_rn_month",
+    "net_cost_per_rn_month", "annual_revenue_uplift", "term_savings_total",
+    "source", "utm_source", "utm_medium", "utm_campaign", "invoice_file",
+]
+
+
 # ─── Helpers ────────────────────────────────────────────────────────
-def log_lead(email: str, state: str, facility_type: str, n_rns: int, results: dict) -> None:
-    """Append the lead's data to data/customer_leads.csv."""
+def log_lead(email: str, state: str, facility_type: str, n_rns: int,
+             results: dict, source: str = "calculator",
+             invoice_file: str = "") -> None:
+    """Append the lead to data/customer_leads.csv (schema-migrating older files)."""
     LEADS_LOG.parent.mkdir(parents=True, exist_ok=True)
+    if LEADS_LOG.exists():
+        try:  # migrate legacy files that predate the attribution columns
+            legacy = pd.read_csv(LEADS_LOG, dtype=str).fillna("")
+            if list(legacy.columns) != LEAD_FIELDS:
+                for col in LEAD_FIELDS:
+                    if col not in legacy.columns:
+                        legacy[col] = ""
+                legacy.to_csv(LEADS_LOG, index=False, columns=LEAD_FIELDS)
+        except Exception:
+            pass
     is_new = not LEADS_LOG.exists()
+    utm = _capture_utm()
     with open(LEADS_LOG, "a", newline="") as f:
         writer = csv.writer(f)
         if is_new:
-            writer.writerow([
-                "timestamp", "email", "state", "facility_type", "n_rns",
-                "florence_fee_per_rn_month", "fica_savings_per_rn_month",
-                "net_cost_per_rn_month", "annual_revenue_uplift",
-                "term_savings_total",
-            ])
+            writer.writerow(LEAD_FIELDS)
         writer.writerow([
             datetime.utcnow().isoformat(timespec="seconds"),
             email, state, facility_type, n_rns,
@@ -266,6 +300,8 @@ def log_lead(email: str, state: str, facility_type: str, n_rns: int, results: di
             f"{results.get('net_cost_per_rn_month', 0):.0f}",
             f"{results.get('annual_revenue_uplift', 0):.0f}",
             f"{results.get('term_savings_total', 0):.0f}",
+            source, utm["utm_source"], utm["utm_medium"], utm["utm_campaign"],
+            invoice_file,
         ])
 
 
@@ -577,6 +613,54 @@ if submitted:
                 """,
                 unsafe_allow_html=True,
             )
+
+# ─── Exact re-price: upload the current staffing invoice ─────────────
+st.markdown("<div style='height:32px;'></div>", unsafe_allow_html=True)
+st.markdown('<div class="florence-eyebrow">Want an exact number?</div>',
+            unsafe_allow_html=True)
+st.markdown("<h2>Upload a recent staffing invoice.</h2>", unsafe_allow_html=True)
+st.markdown(
+    '<div style="font-family:Inter,sans-serif; color:#475467; max-width:680px;">'
+    "The estimate above uses state-level wage data. If you share a recent "
+    "staffing-agency invoice or rate sheet, our team re-prices the analysis "
+    "against the rates you actually pay and sends back a facility-specific "
+    "comparison — usually within one business day. Files are used only to "
+    "prepare your analysis."
+    "</div>",
+    unsafe_allow_html=True,
+)
+with st.form("invoice_form", clear_on_submit=True):
+    inv_email = st.text_input("Work email", placeholder="you@company.com",
+                              key="inv_email")
+    inv_file = st.file_uploader(
+        "Invoice or rate sheet (PDF, Excel, CSV, or a photo)",
+        type=["pdf", "xlsx", "xls", "csv", "png", "jpg", "jpeg"],
+    )
+    inv_submit = st.form_submit_button("Request my exact analysis →",
+                                       type="primary")
+if inv_submit:
+    if not valid_email(inv_email):
+        st.error("Please enter a valid work email address.")
+    elif inv_file is None:
+        st.warning("Please attach an invoice or rate sheet.")
+    elif getattr(inv_file, "size", 0) > 15 * 1024 * 1024:
+        st.error("File is over 15 MB — please send it to "
+                 f"{FLORENCE_CONTACT_EMAIL} instead.")
+    else:
+        inv_dir = DATA_DIR / "customer_invoices"
+        inv_dir.mkdir(parents=True, exist_ok=True)
+        safe_email = re.sub(r"[^A-Za-z0-9._-]", "_", inv_email)
+        safe_name = re.sub(r"[^A-Za-z0-9._-]", "_", inv_file.name)[-80:]
+        stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        dest = inv_dir / f"{stamp}-{safe_email}-{safe_name}"
+        dest.write_bytes(inv_file.getbuffer())
+        log_lead(inv_email, state, facility_type, n_rns, result,
+                 source="invoice_reprice", invoice_file=dest.name)
+        st.success(
+            f"Received — **{inv_file.name}** is with our team. Your "
+            f"facility-specific analysis will arrive at **{inv_email}** "
+            "within one business day."
+        )
 
 # ─── Methodology disclosure ──────────────────────────────────────────
 st.markdown(

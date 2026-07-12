@@ -16,6 +16,11 @@ data/activity_log.csv
 data/system_owners.csv
 # Snooze / reminders (mutable)
 data/snoozes.csv
+# Sales pipeline + deal outcomes (mutable)
+data/sales_pipeline.csv
+data/deal_outcomes.csv
+data/customer_leads.csv
+data/customer_invoices/
 # Call-center claim locks (mutable)
 data/call_claims.csv
 # Server-side error log (error_monitoring.py; mutable)
