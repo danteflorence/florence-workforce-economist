@@ -671,6 +671,66 @@ def streamlit_new_deal_form(st, rep_email: str,
     return None
 
 
+def streamlit_inbound_leads_section(st, rep_email: str) -> None:
+    """Inbound calculator/intel leads → one click into the pipeline.
+
+    Reads data/customer_leads.csv (written by the public calculator and the
+    intel page). A converted lead becomes a deal with system_id
+    'inbound:<email>' — that marker is also the de-dupe key.
+    """
+    leads_path = DATA_DIR / "customer_leads.csv"
+    if not leads_path.exists():
+        return
+    try:
+        leads = pd.read_csv(leads_path, dtype=str).fillna("")
+    except Exception:
+        return
+    if leads.empty or "email" not in leads.columns:
+        return
+
+    converted = {sid[len("inbound:"):]
+                 for sid in _read()["system_id"].astype(str)
+                 if sid.startswith("inbound:")}
+    # newest first, one row per email, drop already-converted
+    leads = leads.sort_values("timestamp", ascending=False)
+    leads = leads.drop_duplicates(subset=["email"], keep="first")
+    new = leads[~leads["email"].isin(converted)]
+
+    with st.expander(f"Inbound leads ({len(new)} new)", expanded=len(new) > 0):
+        if new.empty:
+            st.caption("No unconverted inbound leads. New calculator and "
+                       "intel-page leads land here automatically.")
+            return
+        for _, l in new.head(20).iterrows():
+            src = l.get("source", "") or "calculator"
+            camp = l.get("utm_campaign", "")
+            badge = f"{src}" + (f" · {camp}" if camp else "")
+            c1, c2 = st.columns([4, 1])
+            with c1:
+                st.markdown(
+                    f"**{l['email']}** — {l.get('facility_type','?')}, "
+                    f"{l.get('state','?')} · {l.get('n_rns','?')} RNs · "
+                    f"{l.get('timestamp','')[:10]}  \n"
+                    f":material/campaign: {badge}"
+                    + ("  ·  :material/attach_file: invoice attached"
+                       if l.get("invoice_file") else "")
+                )
+            with c2:
+                if st.button("Add to pipeline", key=f"inb_{l['email']}",
+                             use_container_width=True):
+                    did = create_deal(rep_email, f"inbound:{l['email']}",
+                                      f"Inbound — {l['email'].split('@')[-1]} "
+                                      f"({l.get('facility_type','?')}, {l.get('state','?')})")
+                    update_deal(did, discovery_notes=(
+                        f"Inbound lead {l.get('timestamp','')}: {l['email']} · "
+                        f"{l.get('facility_type','')} · {l.get('state','')} · "
+                        f"{l.get('n_rns','')} RNs · source={src}"
+                        + (f" · campaign={camp}" if camp else "")
+                        + (f" · invoice={l.get('invoice_file')}"
+                           if l.get("invoice_file") else "")))
+                    st.rerun()
+
+
 def streamlit_calibration_section(st) -> None:
     """Quoted-vs-closed calibration: how the market prices against the engine.
 

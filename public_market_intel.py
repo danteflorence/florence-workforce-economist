@@ -13,14 +13,44 @@ Funnel:
 """
 from __future__ import annotations
 
+import csv
 import json
-from datetime import date
+import os
+import re
+from datetime import date, datetime
 from pathlib import Path
 
 import pandas as pd
 import streamlit as st
 
 DATA_DIR = Path(__file__).parent / "data"
+CALCULATOR_URL = os.environ.get("CALCULATOR_URL", "http://localhost:8502")
+
+# Same schema the calculator's log_lead writes (it schema-migrates on drift).
+_LEAD_FIELDS = [
+    "timestamp", "email", "state", "facility_type", "n_rns",
+    "florence_fee_per_rn_month", "fica_savings_per_rn_month",
+    "net_cost_per_rn_month", "annual_revenue_uplift", "term_savings_total",
+    "source", "utm_source", "utm_medium", "utm_campaign", "invoice_file",
+]
+
+
+def _log_report_lead(email: str) -> None:
+    path = DATA_DIR / "customer_leads.csv"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    is_new = not path.exists()
+    try:
+        qp = st.query_params
+        utm = [(qp.get("utm_source") or "")[:64], (qp.get("utm_medium") or "")[:64],
+               (qp.get("utm_campaign") or "")[:64]]
+    except Exception:
+        utm = ["", "", ""]
+    with open(path, "a", newline="") as f:
+        w = csv.writer(f)
+        if is_new:
+            w.writerow(_LEAD_FIELDS)
+        w.writerow([datetime.utcnow().isoformat(timespec="seconds"), email,
+                    "", "", "", "", "", "", "", "", "intel_report", *utm, ""])
 
 st.set_page_config(
     page_title="Florence Market Intelligence",
@@ -358,10 +388,52 @@ for col, (num, title, body) in zip(flow_cols, steps):
     )
 
 
+# ─── Lead magnet: the annual industry report ─────────────────────────
+st.markdown("<div style='height:36px;'></div>", unsafe_allow_html=True)
+st.markdown('<div class="florence-eyebrow">Free report</div>', unsafe_allow_html=True)
+st.markdown(f"<h2>The State of the U.S. Nursing Workforce — {date.today().year}.</h2>",
+            unsafe_allow_html=True)
+st.markdown(
+    '<p style="font-family:Inter,sans-serif; color:#475467; max-width:680px;">'
+    "Market structure, openings-to-quits dynamics, wage geography, and where "
+    "permanent international RN supply fits — assembled from the same BLS and "
+    "CMS data that powers this page. Enter your email and the report is yours."
+    "</p>",
+    unsafe_allow_html=True,
+)
+with st.form("report_form", clear_on_submit=False):
+    rpt_email = st.text_input("Work email", placeholder="you@company.com",
+                              key="rpt_email")
+    rpt_submit = st.form_submit_button("Get the report →", type="primary")
+if rpt_submit:
+    if not re.match(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
+                    rpt_email or ""):
+        st.error("Please enter a valid work email address.")
+    else:
+        _log_report_lead(rpt_email)
+        try:
+            import industry_report as _ir
+            st.session_state["intel_report_md"] = _ir.build_markdown()
+        except Exception:
+            st.session_state["intel_report_md"] = None
+        if st.session_state.get("intel_report_md"):
+            st.success("Here's your report — the download button below is live.")
+        else:
+            st.success(f"Thanks — we'll email the report to **{rpt_email}** "
+                       "within one business day.")
+if st.session_state.get("intel_report_md"):
+    st.download_button(
+        ":material/download: Download the report (Markdown)",
+        st.session_state["intel_report_md"].encode("utf-8"),
+        file_name=f"florence_state_of_nursing_workforce_{date.today().year}.md",
+        mime="text/markdown",
+        type="primary",
+    )
+
 # ─── Closing CTA ────────────────────────────────────────────────────
 st.markdown("<div style='height:40px;'></div>", unsafe_allow_html=True)
 st.markdown(
-    """
+    f"""
     <div class="callout-card dark" style='text-align:center;'>
       <div class="label">Ready to do the math?</div>
       <h2 style='color:white;'>See what permanent international RNs<br>
@@ -370,7 +442,7 @@ st.markdown(
         Our calculator runs your state's prevailing wage against your facility
         type and shows the incremental revenue every additional RN unlocks.
       </p>
-      <a class="cta-button" href="http://localhost:8502" target="_blank">
+      <a class="cta-button" href="{CALCULATOR_URL}" target="_blank">
         Open the calculator →
       </a>
     </div>

@@ -3317,6 +3317,11 @@ if view == "pipeline":
     _pipe_active_deal = st.session_state.get("workbench_active_deal")
 
     if not _pipe_active_deal:
+        # Inbound calculator/intel leads → one click into the pipeline
+        _workbench_pipeline.streamlit_inbound_leads_section(
+            st, rep_email=_pipe_rep_email,
+        )
+
         # Pipeline list view
         _workbench_pipeline.streamlit_pipeline_view(
             st, rep_email=_pipe_rep_email,
