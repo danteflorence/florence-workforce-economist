@@ -21,8 +21,8 @@ DATA_DIR = Path(__file__).resolve().parent / "data"
 # embarrass us in front of a CFO").
 SOURCES = [
     # OEWS releases annually each April; soft limit 24mo means the badge turns
-    # amber as soon as a newer release exists un-ingested (May 2025 is out).
-    ("RN wages", "BLS OEWS May 2024", dt.date(2024, 5, 1), 24, 32),
+    # amber as soon as a newer release exists un-ingested.
+    ("RN wages", "BLS OEWS May 2025", dt.date(2025, 5, 1), 24, 32),
     ("Agency rates", "CMS HCRIS FY2023–FY2024 cost reports", dt.date(2024, 6, 30), 30, 42),
     ("System ownership", "NASHP HCT 2024 + CMS PECOS 2026-05", dt.date(2026, 5, 1), 14, 20),
 ]

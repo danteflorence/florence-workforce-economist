@@ -191,19 +191,21 @@ h1, h2, h3, h4 {
 """
 st.markdown(FLORENCE_CSS, unsafe_allow_html=True)
 
-# State RN wage data for personalization (from internal calculator)
+# State RN mean HOURLY wage (BLS OEWS May 2025, SOC 29-1141, H_MEAN).
+# The previous table held annual-mean-in-$K but was consumed as $/hr,
+# overstating wages ~2x — fixed with the May 2025 refresh.
 STATE_RN_WAGES = {
-    "AK": 113.69, "AL": 75.41, "AR": 76.65, "AZ": 92.79, "CA": 137.69,
-    "CO": 91.69, "CT": 105.21, "DC": 116.10, "DE": 92.42, "FL": 84.27,
-    "GA": 87.13, "HI": 116.42, "IA": 78.99, "ID": 88.06, "IL": 92.93,
-    "IN": 81.86, "KS": 79.12, "KY": 81.18, "LA": 81.21, "MA": 109.81,
-    "MD": 95.10, "ME": 86.97, "MI": 89.92, "MN": 99.92, "MO": 80.18,
-    "MS": 74.83, "MT": 87.05, "NC": 84.69, "ND": 80.49, "NE": 81.46,
-    "NH": 88.40, "NJ": 102.83, "NM": 90.61, "NV": 105.66, "NY": 110.41,
-    "OH": 84.45, "OK": 80.55, "OR": 117.31, "PA": 89.69, "RI": 95.91,
-    "SC": 83.92, "SD": 73.55, "TN": 81.53, "TX": 88.06, "UT": 84.34,
-    "VA": 86.96, "VT": 84.99, "WA": 107.65, "WI": 87.71, "WV": 75.42,
-    "WY": 84.43,
+    "AK": 55.23, "AL": 37.03, "AR": 39.19, "AZ": 47.95, "CA": 72.25,
+    "CO": 47.78, "CT": 50.60, "DC": 51.43, "DE": 47.82, "FL": 43.58,
+    "GA": 45.71, "HI": 59.78, "IA": 38.72, "ID": 44.57, "IL": 45.36,
+    "IN": 42.86, "KS": 39.60, "KY": 41.41, "LA": 40.48, "MA": 56.71,
+    "MD": 47.60, "ME": 44.09, "MI": 45.34, "MN": 49.72, "MO": 41.30,
+    "MS": 37.96, "MT": 43.99, "NC": 43.50, "ND": 40.19, "NE": 42.47,
+    "NH": 47.07, "NJ": 52.93, "NM": 45.81, "NV": 50.82, "NY": 54.54,
+    "OH": 42.18, "OK": 40.90, "OR": 59.20, "PA": 45.20, "RI": 48.68,
+    "SC": 42.15, "SD": 37.09, "TN": 41.05, "TX": 45.86, "UT": 43.72,
+    "VA": 45.12, "VT": 46.47, "WA": 58.43, "WI": 45.53, "WV": 41.81,
+    "WY": 42.60,
 }
 # Specialty premium (% above baseline RN wage)
 SPECIALTY_PREMIUM = {
@@ -305,7 +307,7 @@ st.markdown("<hr style='border-color:#E4E7EC; margin:14px 0 8px 0;'>", unsafe_al
 # ─── Personalized greeting / hero ───────────────────────────────────
 current_state = nurse["current_state"]
 specialty = nurse["specialty"]
-base_wage = STATE_RN_WAGES.get(current_state, 90.0)
+base_wage = STATE_RN_WAGES.get(current_state, 46.0)
 premium = SPECIALTY_PREMIUM.get(specialty, 0.0)
 estimated_wage = base_wage * (1 + premium)
 annual = estimated_wage * 2080
@@ -490,7 +492,7 @@ st.markdown(
     """
     <div class="disclosure">
       <b>Methodology.</b> Wage data from U.S. Bureau of Labor Statistics
-      Occupational Employment and Wage Statistics (OEWS), May 2024 release,
+      Occupational Employment and Wage Statistics (OEWS), May 2025 release,
       Registered Nurses (SOC 29-1141). Specialty premium estimates derived from
       hospital compensation surveys and reflect typical national differentials;
       your facility may pay differently. Career path progressions are typical

@@ -4,7 +4,7 @@ Build the unified hospital universe table from:
   2) CommonSpirit demo dataset (136 facilities with real staff/agency rates)
   3) HCRIS Hospital Provider Cost Report 2023 (~5,867 hospitals with FTE,
      salaries, wage-related costs, contract labor)
-  4) State-level RN mean hourly wage benchmarks (placeholder; BLS OEWS May 2024)
+  4) State-level RN mean hourly wage benchmarks (placeholder; BLS OEWS May 2025)
   5) State-level agency-rate benchmarks (derived from CommonSpirit + imputed)
 
 Output: hospital_universe.csv with one row per hospital. Key fields:
@@ -54,24 +54,24 @@ OUTPUT_CSV = DATA_DIR / "hospital_universe.csv"
 BENCHMARKS_CSV = DATA_DIR / "state_benchmarks.csv"
 
 # ---------------------------------------------------------------------------
-# State-level RN mean hourly wage — BLS OEWS May 2024 (placeholder estimates)
+# State-level RN mean hourly wage — BLS OEWS May 2025 (placeholder estimates)
 # Replace with real BLS ingest in production. These are within ~$2/hr of
 # public BLS OEWS values and should not be used for binding quotes.
 # ---------------------------------------------------------------------------
 STATE_RN_WAGE = {
-    "AK": 55.10, "AL": 36.80, "AR": 38.40, "AZ": 47.20, "CA": 65.95,
-    "CO": 44.60, "CT": 47.20, "DC": 50.15, "DE": 43.50, "FL": 39.50,
-    "GA": 41.30, "HI": 60.45, "IA": 36.95, "ID": 41.40, "IL": 43.75,
-    "IN": 37.75, "KS": 36.40, "KY": 38.30, "LA": 39.20, "MA": 53.20,
-    "MD": 45.75, "ME": 43.20, "MI": 40.60, "MN": 46.85, "MO": 38.10,
-    "MS": 35.45, "MT": 39.80, "NC": 38.80, "ND": 38.95, "NE": 38.45,
-    "NH": 44.65, "NJ": 50.95, "NM": 42.75, "NV": 53.10, "NY": 52.85,
-    "OH": 40.25, "OK": 39.45, "OR": 53.85, "PA": 42.50, "RI": 47.40,
-    "SC": 39.10, "SD": 34.70, "TN": 35.80, "TX": 44.05, "UT": 40.05,
-    "VA": 42.40, "VT": 42.95, "WA": 51.85, "WI": 41.70, "WV": 38.35,
-    "WY": 38.65,
-    # Territories — coarse defaults
-    "PR": 22.00, "VI": 30.00, "GU": 32.00, "MP": 25.00, "AS": 22.00,
+    "AK": 55.23, "AL": 37.03, "AR": 39.19, "AZ": 47.95, "CA": 72.25,
+    "CO": 47.78, "CT": 50.60, "DC": 51.43, "DE": 47.82, "FL": 43.58,
+    "GA": 45.71, "HI": 59.78, "IA": 38.72, "ID": 44.57, "IL": 45.36,
+    "IN": 42.86, "KS": 39.60, "KY": 41.41, "LA": 40.48, "MA": 56.71,
+    "MD": 47.60, "ME": 44.09, "MI": 45.34, "MN": 49.72, "MO": 41.30,
+    "MS": 37.96, "MT": 43.99, "NC": 43.50, "ND": 40.19, "NE": 42.47,
+    "NH": 47.07, "NJ": 52.93, "NM": 45.81, "NV": 50.82, "NY": 54.54,
+    "OH": 42.18, "OK": 40.90, "OR": 59.20, "PA": 45.20, "RI": 48.68,
+    "SC": 42.15, "SD": 37.09, "TN": 41.05, "TX": 45.86, "UT": 43.72,
+    "VA": 45.12, "VT": 46.47, "WA": 58.43, "WI": 45.53, "WV": 41.81,
+    "WY": 42.60,
+    # Territories (GU/MP/AS unpublished in May 2025 — prior values kept)
+    "PR": 22.21, "VI": 43.23, "GU": 32.00, "MP": 25.00, "AS": 22.00,
 }
 NATIONAL_RN_WAGE = sum(STATE_RN_WAGE.values()) / len(STATE_RN_WAGE)
 

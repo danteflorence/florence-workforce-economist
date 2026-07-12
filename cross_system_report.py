@@ -129,7 +129,7 @@ td.num {{ text-align: right; font-variant-numeric: tabular-nums; }}
 </div>
 
 <div class="footer">
-  Data sources: CMS HCRIS Hospital 2552-10 NMRC line 01100 (per-hospital agency rates) + BLS OEWS May 2024 MSA wages +
+  Data sources: CMS HCRIS Hospital 2552-10 NMRC line 01100 (per-hospital agency rates) + BLS OEWS May 2025 MSA wages +
   Kaiser-specific AMN $622M MSP overlay (other systems' overlays pending disclosure).
   Engine v0.5-methodology-v2-2026-05. Data layer v0.6.
 </div>
@@ -205,7 +205,7 @@ def render_pdf(df: pd.DataFrame, output: Path) -> Path:
     ))
     story.append(Spacer(1, 4))
     story.append(Paragraph(
-        "Data sources: CMS HCRIS Hospital 2552-10 NMRC line 01100 + BLS OEWS May 2024 MSA + Kaiser AMN $622M MSP overlay. "
+        "Data sources: CMS HCRIS Hospital 2552-10 NMRC line 01100 + BLS OEWS May 2025 MSA + Kaiser AMN $622M MSP overlay. "
         "Engine v0.5-methodology-v2-2026-05. Data layer v0.6.",
         ParagraphStyle("foot", parent=styles["Normal"], fontSize=7, textColor=MUTED)
     ))

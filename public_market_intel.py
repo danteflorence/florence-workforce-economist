@@ -298,7 +298,7 @@ try:
     state_dict = dict(zip(state_bench["state"], state_bench["rn_wage"]))
     fig = state_choropleth(
         state_dict,
-        title="Prevailing RN hourly wage by state (BLS OEWS, May 2024)",
+        title="Prevailing RN hourly wage by state (BLS OEWS, May 2025)",
         colorbar_title="$/hr", value_format="$,.2f", height=480,
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -458,7 +458,7 @@ st.markdown(
       <b>Data sources.</b> JOLTS healthcare data: U.S. Bureau of Labor Statistics,
       Job Openings and Labor Turnover Survey, Healthcare and Social Assistance
       sector (NAICS 62), monthly publication. State RN wages: BLS Occupational
-      Employment and Wage Statistics (OEWS), May 2024 release, Registered Nurses
+      Employment and Wage Statistics (OEWS), May 2025 release, Registered Nurses
       (SOC 29-1141). Florence Market Intelligence refreshes monthly with public
       BLS releases. This page is illustrative and educational; engage your own
       legal, tax, and operations counsel before contracting any workforce program.

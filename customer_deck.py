@@ -415,7 +415,7 @@ def _slide_compliance(prs, d: DeckInputs):
 
     body = (
         "Universe   ·   CMS Hospital General Information + NASHP Hospital Cost Tool (2020–2024).\n\n"
-        "Wage data   ·   BLS OEWS May 2024 MSA-level RN wages (SOC 29-1141) with HCRIS per-hospital and state-level fallback.\n\n"
+        "Wage data   ·   BLS OEWS May 2025 MSA-level RN wages (SOC 29-1141) with HCRIS per-hospital and state-level fallback.\n\n"
         "Agency rates   ·   CMS HCRIS NMRC Worksheet S-3 Part II line 01100 (Direct Patient Care contract labor hourly).\n\n"
         f"Pricing   ·   Florence Workforce Restoration Economics v2 — FICA-offset target at {d.target_offset_pct:.0%}. "
         "Florence fee sized as FICA savings ÷ target offset percentage, clamped to $750–$2,000 / RN / month.\n\n"

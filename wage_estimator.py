@@ -7,7 +7,7 @@ Tier 1 (highest confidence): HCRIS per-hospital "total_avg_hourly_wage" × RN mu
   calibrated against BLS national norms (~1.4× blended wage = RN wage).
   Confidence: 0.85 — real per-hospital signal, RN-specific via multiplier.
 
-Tier 2: BLS OEWS MSA-level (top 50 MSAs hardcoded from May 2024 release).
+Tier 2: BLS OEWS MSA-level (top 50 MSAs hardcoded from May 2025 release).
   Real BLS data for major metros. Production version pulls live from BLS API.
   Confidence: 0.80
 
@@ -37,114 +37,97 @@ OUTPUT_CSV = DATA_DIR / "per_hospital_rn_wages.csv"
 RN_TO_BLENDED_MULTIPLIER = 1.40
 
 # ---------------------------------------------------------------------------
-# MSA-level RN mean hourly wage table (BLS OEWS May 2024 published values).
+# MSA-level RN mean hourly wage table (BLS OEWS May 2025 published values).
 # Top 60 MSAs by RN employment + selected high-wage markets.
 # Production should ingest live BLS via API.
 # ---------------------------------------------------------------------------
 MSA_RN_WAGE = {
     # California — high-wage markets
-    "41860": ("San Francisco-Oakland-Hayward, CA",    78.95),
-    "41940": ("San Jose-Sunnyvale-Santa Clara, CA",    81.46),
-    "31080": ("Los Angeles-Long Beach-Anaheim, CA",    66.85),
-    "41740": ("San Diego-Carlsbad, CA",                65.20),
-    "40140": ("Riverside-San Bernardino-Ontario, CA",  62.10),
-    "40900": ("Sacramento-Roseville-Arden-Arcade, CA", 73.45),
-    "41500": ("Salinas, CA",                           71.10),
-    "23420": ("Fresno, CA",                            61.55),
-    "12540": ("Bakersfield, CA",                       57.05),
-    "47300": ("Visalia-Porterville, CA",               55.85),
-    "32900": ("Modesto, CA",                           63.40),
-    "44700": ("Stockton-Lodi, CA",                     65.80),
-    "42100": ("Santa Rosa, CA",                        72.75),
-    "42220": ("Santa Maria-Santa Barbara, CA",         65.95),
-
-    # Hawaii / Alaska
-    "26180": ("Urban Honolulu, HI",                    60.45),
-    "11260": ("Anchorage, AK",                         57.30),
-
-    # Pacific Northwest
-    "42660": ("Seattle-Tacoma-Bellevue, WA",           61.50),
-    "38900": ("Portland-Vancouver-Hillsboro, OR-WA",   58.80),
-
-    # Mountain
-    "19740": ("Denver-Aurora-Lakewood, CO",            46.20),
-    "38060": ("Phoenix-Mesa-Scottsdale, AZ",           48.95),
-    "46060": ("Tucson, AZ",                            46.30),
-    "39900": ("Reno, NV",                              52.40),
-    "29820": ("Las Vegas-Henderson-Paradise, NV",      54.65),
-
-    # Texas
-    "26420": ("Houston-The Woodlands-Sugar Land, TX",  46.85),
-    "19100": ("Dallas-Fort Worth-Arlington, TX",       45.20),
-    "12420": ("Austin-Round Rock, TX",                 45.95),
-    "41700": ("San Antonio-New Braunfels, TX",         42.65),
-    "21340": ("El Paso, TX",                           40.10),
-
-    # South Atlantic
-    "33100": ("Miami-Fort Lauderdale-West Palm Beach, FL", 40.30),
-    "36740": ("Orlando-Kissimmee-Sanford, FL",         39.95),
-    "45300": ("Tampa-St. Petersburg-Clearwater, FL",   40.55),
-    "27260": ("Jacksonville, FL",                      39.40),
-    "12060": ("Atlanta-Sandy Springs-Roswell, GA",     42.85),
-    "16740": ("Charlotte-Concord-Gastonia, NC-SC",     39.95),
-    "39580": ("Raleigh, NC",                           39.30),
-
-    # Midwest
-    "16980": ("Chicago-Naperville-Elgin, IL-IN-WI",    45.50),
-    "19820": ("Detroit-Warren-Dearborn, MI",           40.85),
-    "33340": ("Milwaukee-Waukesha-West Allis, WI",     42.70),
-    "33460": ("Minneapolis-St. Paul-Bloomington, MN-WI", 47.80),
-    "17460": ("Cleveland-Elyria, OH",                  39.20),
-    "18140": ("Columbus, OH",                          39.55),
-    "17140": ("Cincinnati, OH-KY-IN",                  38.85),
-    "28140": ("Kansas City, MO-KS",                    38.30),
-    "41180": ("St. Louis, MO-IL",                      37.70),
-    "26900": ("Indianapolis-Carmel-Anderson, IN",      38.45),
-
-    # Northeast
-    "35620": ("New York-Newark-Jersey City, NY-NJ-PA", 56.10),
-    "37980": ("Philadelphia-Camden-Wilmington, PA-NJ-DE-MD", 47.30),
-    "14460": ("Boston-Cambridge-Newton, MA-NH",        56.95),
-    "47900": ("Washington-Arlington-Alexandria, DC-VA-MD-WV", 50.20),
-    "12580": ("Baltimore-Columbia-Towson, MD",         48.30),
-    "37980": ("Philadelphia",                           47.30),
-    "35614": ("New York-Jersey City-White Plains, NY-NJ", 56.10),
-    "39300": ("Providence-Warwick, RI-MA",             47.55),
-    "31700": ("Manchester-Nashua, NH",                 44.65),
-    "13780": ("Burlington-South Burlington, VT",       43.95),
-
-    # Other selected markets
-    "12260": ("Augusta-Richmond County, GA-SC",        36.45),
-    "31140": ("Louisville/Jefferson County, KY-IN",    37.55),
-    "34980": ("Nashville-Davidson--Murfreesboro--Franklin, TN", 36.85),
-    "32820": ("Memphis, TN-MS-AR",                     35.60),
-    "13820": ("Birmingham-Hoover, AL",                 36.30),
-    "33340": ("Milwaukee-Waukesha-West Allis, WI",     42.70),
-    "40060": ("Richmond, VA",                          40.55),
-    "47260": ("Virginia Beach-Norfolk-Newport News, VA-NC", 39.75),
-    "13140": ("Beaumont-Port Arthur, TX",              41.05),
-    "44060": ("Spokane-Spokane Valley, WA",            51.85),
-    "31540": ("Madison, WI",                           43.85),
-    "26420": ("Houston",                               46.85),
-
-    # Critical access / sample rural markets retain state defaults
+    "41860": ("San Francisco-Oakland-Hayward, CA",  85.05),
+    "41940": ("San Jose-Sunnyvale-Santa Clara, CA",  93.73),
+    "31080": ("Los Angeles-Long Beach-Anaheim, CA",  67.48),
+    "41740": ("San Diego-Carlsbad, CA",  69.74),
+    "40140": ("Riverside-San Bernardino-Ontario, CA",  65.71),
+    "40900": ("Sacramento-Roseville-Arden-Arcade, CA",  78.94),
+    "41500": ("Salinas, CA",  66.73),
+    "23420": ("Fresno, CA",  61.00),
+    "12540": ("Bakersfield, CA",  61.63),
+    "47300": ("Visalia-Porterville, CA",  59.67),
+    "32900": ("Modesto, CA",  62.35),
+    "44700": ("Stockton-Lodi, CA",  69.91),
+    "42100": ("Santa Rosa, CA",  76.84),
+    "42220": ("Santa Maria-Santa Barbara, CA",  81.73),
+    "26180": ("Urban Honolulu, HI",  60.45),  # May 2024 carryover (2025 unpublished)
+    "11260": ("Anchorage, AK",  56.09),
+    "42660": ("Seattle-Tacoma-Bellevue, WA",  60.76),
+    "38900": ("Portland-Vancouver-Hillsboro, OR-WA",  60.21),
+    "19740": ("Denver-Aurora-Lakewood, CO",  48.52),
+    "38060": ("Phoenix-Mesa-Scottsdale, AZ",  48.60),
+    "46060": ("Tucson, AZ",  46.06),
+    "39900": ("Reno, NV",  50.42),
+    "29820": ("Las Vegas-Henderson-Paradise, NV",  51.13),
+    "26420": ("Houston-The Woodlands-Sugar Land, TX",  48.21),
+    "19100": ("Dallas-Fort Worth-Arlington, TX",  48.47),
+    "12420": ("Austin-Round Rock, TX",  46.93),
+    "41700": ("San Antonio-New Braunfels, TX",  45.08),
+    "21340": ("El Paso, TX",  42.51),
+    "33100": ("Miami-Fort Lauderdale-West Palm Beach, FL",  45.67),
+    "36740": ("Orlando-Kissimmee-Sanford, FL",  42.87),
+    "45300": ("Tampa-St. Petersburg-Clearwater, FL",  44.56),
+    "27260": ("Jacksonville, FL",  42.94),
+    "12060": ("Atlanta-Sandy Springs-Roswell, GA",  47.96),
+    "16740": ("Charlotte-Concord-Gastonia, NC-SC",  44.83),
+    "39580": ("Raleigh, NC",  44.18),
+    "16980": ("Chicago-Naperville-Elgin, IL-IN-WI",  47.08),
+    "19820": ("Detroit-Warren-Dearborn, MI",  45.90),
+    "33340": ("Milwaukee-Waukesha-West Allis, WI",  46.18),
+    "33460": ("Minneapolis-St. Paul-Bloomington, MN-WI",  51.19),
+    "17460": ("Cleveland-Elyria, OH",  39.20),  # May 2024 carryover (2025 unpublished)
+    "18140": ("Columbus, OH",  42.68),
+    "17140": ("Cincinnati, OH-KY-IN",  43.24),
+    "28140": ("Kansas City, MO-KS",  42.18),
+    "41180": ("St. Louis, MO-IL",  42.46),
+    "26900": ("Indianapolis-Carmel-Anderson, IN",  43.09),
+    "35620": ("New York-Newark-Jersey City, NY-NJ-PA",  57.50),
+    "37980": ("Philadelphia-Camden-Wilmington, PA-NJ-DE-MD",  48.75),
+    "14460": ("Boston-Cambridge-Newton, MA-NH",  58.57),
+    "47900": ("Washington-Arlington-Alexandria, DC-VA-MD-WV",  50.28),
+    "12580": ("Baltimore-Columbia-Towson, MD",  47.64),
+    "37980": ("Philadelphia",  48.75),
+    "35614": ("New York-Jersey City-White Plains, NY-NJ",  56.10),  # May 2024 carryover (2025 unpublished)
+    "39300": ("Providence-Warwick, RI-MA",  49.06),
+    "31700": ("Manchester-Nashua, NH",  46.58),
+    "13780": ("Burlington-South Burlington, VT",  47.81),
+    "12260": ("Augusta-Richmond County, GA-SC",  44.00),
+    "31140": ("Louisville/Jefferson County, KY-IN",  43.36),
+    "34980": ("Nashville-Davidson--Murfreesboro--Franklin, TN",  44.40),
+    "32820": ("Memphis, TN-MS-AR",  42.01),
+    "13820": ("Birmingham-Hoover, AL",  37.95),
+    "33340": ("Milwaukee-Waukesha-West Allis, WI",  46.18),
+    "40060": ("Richmond, VA",  44.24),
+    "47260": ("Virginia Beach-Norfolk-Newport News, VA-NC",  42.96),
+    "13140": ("Beaumont-Port Arthur, TX",  41.30),
+    "44060": ("Spokane-Spokane Valley, WA",  54.46),
+    "31540": ("Madison, WI",  48.29),
+    "26420": ("Houston",  48.21),
 }
 
 
 # State-level fallback (same as previous BLS state-level table)
 STATE_RN_WAGE = {
-    "AK": 55.10, "AL": 36.80, "AR": 38.40, "AZ": 47.20, "CA": 65.95,
-    "CO": 44.60, "CT": 47.20, "DC": 50.15, "DE": 43.50, "FL": 39.50,
-    "GA": 41.30, "HI": 60.45, "IA": 36.95, "ID": 41.40, "IL": 43.75,
-    "IN": 37.75, "KS": 36.40, "KY": 38.30, "LA": 39.20, "MA": 53.20,
-    "MD": 45.75, "ME": 43.20, "MI": 40.60, "MN": 46.85, "MO": 38.10,
-    "MS": 35.45, "MT": 39.80, "NC": 38.80, "ND": 38.95, "NE": 38.45,
-    "NH": 44.65, "NJ": 50.95, "NM": 42.75, "NV": 53.10, "NY": 52.85,
-    "OH": 40.25, "OK": 39.45, "OR": 53.85, "PA": 42.50, "RI": 47.40,
-    "SC": 39.10, "SD": 34.70, "TN": 35.80, "TX": 44.05, "UT": 40.05,
-    "VA": 42.40, "VT": 42.95, "WA": 51.85, "WI": 41.70, "WV": 38.35,
-    "WY": 38.65,
-    "PR": 22.00, "VI": 30.00, "GU": 32.00, "MP": 25.00, "AS": 22.00,
+    "AK": 55.23, "AL": 37.03, "AR": 39.19, "AZ": 47.95, "CA": 72.25,
+    "CO": 47.78, "CT": 50.60, "DC": 51.43, "DE": 47.82, "FL": 43.58,
+    "GA": 45.71, "HI": 59.78, "IA": 38.72, "ID": 44.57, "IL": 45.36,
+    "IN": 42.86, "KS": 39.60, "KY": 41.41, "LA": 40.48, "MA": 56.71,
+    "MD": 47.60, "ME": 44.09, "MI": 45.34, "MN": 49.72, "MO": 41.30,
+    "MS": 37.96, "MT": 43.99, "NC": 43.50, "ND": 40.19, "NE": 42.47,
+    "NH": 47.07, "NJ": 52.93, "NM": 45.81, "NV": 50.82, "NY": 54.54,
+    "OH": 42.18, "OK": 40.90, "OR": 59.20, "PA": 45.20, "RI": 48.68,
+    "SC": 42.15, "SD": 37.09, "TN": 41.05, "TX": 45.86, "UT": 43.72,
+    "VA": 45.12, "VT": 46.47, "WA": 58.43, "WI": 45.53, "WV": 41.81,
+    "WY": 42.60,
+    # Territories (GU/MP/AS unpublished in May 2025 — prior values kept)
+    "PR": 22.21, "VI": 43.23, "GU": 32.00, "MP": 25.00, "AS": 22.00,
 }
 NATIONAL_RN_WAGE = sum(STATE_RN_WAGE.values()) / len(STATE_RN_WAGE)
 
@@ -213,7 +196,7 @@ def main() -> None:
                     "taxable_wage_per_hour": wage,
                     "wage_source": source,
                     "wage_confidence": conf,
-                    "source_year": "2024",
+                    "source_year": "2025",
                 })
                 break
 

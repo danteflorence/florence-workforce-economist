@@ -172,7 +172,7 @@ def section_wage_geography() -> str:
     range_ratio = top5["rn_wage"].iloc[0] / bot5["rn_wage"].iloc[0]
 
     return f"""
-## Wage geography (BLS OEWS, May 2024 release)
+## Wage geography (BLS OEWS, May 2025 release)
 
 Prevailing RN wages vary {range_ratio:.1f}× across U.S. states.
 

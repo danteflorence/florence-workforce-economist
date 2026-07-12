@@ -207,22 +207,22 @@ HOURS_PER_MONTH = 156
 TERM_MONTHS_DEFAULT = 36
 FLAT_FEE_DEFAULT = 50_000
 
-# Per-state RN annual mean wage (BLS OEWS May 2024) — for the calculator base
-STATE_RN_WAGES = {
-    "AK": 113.69, "AL": 75.41, "AR": 76.65, "AZ": 92.79, "CA": 137.69,
-    "CO": 91.69, "CT": 105.21, "DC": 116.10, "DE": 92.42, "FL": 84.27,
-    "GA": 87.13, "HI": 116.42, "IA": 78.99, "ID": 88.06, "IL": 92.93,
-    "IN": 81.86, "KS": 79.12, "KY": 81.18, "LA": 81.21, "MA": 109.81,
-    "MD": 95.10, "ME": 86.97, "MI": 89.92, "MN": 99.92, "MO": 80.18,
-    "MS": 74.83, "MT": 87.05, "NC": 84.69, "ND": 80.49, "NE": 81.46,
-    "NH": 88.40, "NJ": 102.83, "NM": 90.61, "NV": 105.66, "NY": 110.41,
-    "OH": 84.45, "OK": 80.55, "OR": 117.31, "PA": 89.69, "RI": 95.91,
-    "SC": 83.92, "SD": 73.55, "TN": 81.53, "TX": 88.06, "UT": 84.34,
-    "VA": 86.96, "VT": 84.99, "WA": 107.65, "WI": 87.71, "WV": 75.42,
-    "WY": 84.43,
+# Per-state RN mean HOURLY wage (BLS OEWS May 2025, SOC 29-1141, H_MEAN).
+# NOTE: the previous table held annual-mean-in-$K but was consumed as hourly,
+# overstating the wage input ~2x. Fixed with the May 2025 refresh.
+STATE_RN_WAGES_HOURLY = {
+    "AK": 55.23, "AL": 37.03, "AR": 39.19, "AZ": 47.95, "CA": 72.25,
+    "CO": 47.78, "CT": 50.60, "DC": 51.43, "DE": 47.82, "FL": 43.58,
+    "GA": 45.71, "HI": 59.78, "IA": 38.72, "ID": 44.57, "IL": 45.36,
+    "IN": 42.86, "KS": 39.60, "KY": 41.41, "LA": 40.48, "MA": 56.71,
+    "MD": 47.60, "ME": 44.09, "MI": 45.34, "MN": 49.72, "MO": 41.30,
+    "MS": 37.96, "MT": 43.99, "NC": 43.50, "ND": 40.19, "NE": 42.47,
+    "NH": 47.07, "NJ": 52.93, "NM": 45.81, "NV": 50.82, "NY": 54.54,
+    "OH": 42.18, "OK": 40.90, "OR": 59.20, "PA": 45.20, "RI": 48.68,
+    "SC": 42.15, "SD": 37.09, "TN": 41.05, "TX": 45.86, "UT": 43.72,
+    "VA": 45.12, "VT": 46.47, "WA": 58.43, "WI": 45.53, "WV": 41.81,
+    "WY": 42.60,
 }
-# RN wage is annual mean / 2080 hrs. Convert to hourly.
-STATE_RN_WAGES_HOURLY = {k: v for k, v in STATE_RN_WAGES.items()}
 
 # Setting-specific revenue per RN per year (matches non_hospital_pricing constants)
 REVENUE_PER_RN_ANNUAL = {
@@ -307,7 +307,7 @@ def log_lead(email: str, state: str, facility_type: str, n_rns: int,
 
 def compute_economics(state: str, facility_type: str, n_rns: int) -> dict:
     """Run the FICA + capacity-revenue math for the customer."""
-    wage = STATE_RN_WAGES_HOURLY.get(state, 90.0)
+    wage = STATE_RN_WAGES_HOURLY.get(state, 46.0)  # ≈ national RN hourly mean
     monthly_wage = wage * HOURS_PER_MONTH
     fica_savings = monthly_wage * EMPLOYER_FICA_RATE
     # Flat $50K / 36mo
@@ -443,7 +443,7 @@ with c3:
 st.caption(
     f"Using prevailing RN wage for **{state}**: "
     f"**${STATE_RN_WAGES_HOURLY[state]:,.2f}/hour** "
-    f"(BLS Occupational Employment & Wage Statistics, May 2024)."
+    f"(BLS Occupational Employment & Wage Statistics, May 2025)."
 )
 
 # ─── Compute + display ──────────────────────────────────────────────
@@ -667,8 +667,8 @@ st.markdown(
     """
     <div class="disclosure">
       <b>Methodology.</b> Wage data from the U.S. Bureau of Labor Statistics
-      Occupational Employment and Wage Statistics (OEWS, May 2024), Registered
-      Nurses (SOC 29-1141), state-level annual mean ÷ 2,080 hours.
+      Occupational Employment and Wage Statistics (OEWS, May 2025), Registered
+      Nurses (SOC 29-1141), state-level mean hourly wage (H_MEAN).
       Florence placement fee: flat $50,000 per RN amortized over a 36-month
       placement term. Incremental revenue per RN per year is a setting-specific
       estimate based on industry benchmarks ($300K Home Health Agency, $250K

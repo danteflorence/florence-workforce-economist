@@ -199,7 +199,7 @@ def build_report(
     methodology_text = [
         ("Wage data",
          f"U.S. Bureau of Labor Statistics, Occupational Employment and Wage "
-         f"Statistics (OEWS), May 2024, Registered Nurses (SOC 29-1141), "
+         f"Statistics (OEWS), May 2025, Registered Nurses (SOC 29-1141), "
          f"state-level annual mean ÷ 2,080 hours. For {state}: "
          f"${result['wage']:,.2f}/hour."),
         ("Florence fee structure",
